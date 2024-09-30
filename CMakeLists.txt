@@ -4,4 +4,5 @@ set(CMAKE_CXX_STANDARD 20)
 
 project(CubiEngine LANGUAGES CXX)
 
+add_subdirectory(External)
 add_subdirectory(CubiEngine)
