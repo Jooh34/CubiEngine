@@ -18,6 +18,13 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(imgui)
 
+FetchContent_Declare(
+    D3D12MemoryAllocator
+    GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator
+    GIT_TAG v2.0.1
+    GIT_PROGRESS TRUE
+)
+
 option(TINYGLTF_BUILD_LOADER_EXAMPLE "" OFF)
 FetchContent_Declare(
     tinygltf
@@ -25,7 +32,7 @@ FetchContent_Declare(
     GIT_TAG        544969b7324cd6bba29f6203c7d78c7ea92dbab0
 )
 
-FetchContent_MakeAvailable(tinygltf)
+FetchContent_MakeAvailable(tinygltf D3D12MemoryAllocator)
 
 add_library(libimgui
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -46,5 +53,5 @@ target_include_directories(libimgui PUBLIC
 target_link_libraries(libimgui PUBLIC SDL2::SDL2main SDL2::SDL2-static)
 
 add_library(External INTERFACE)
-target_link_libraries(External INTERFACE tinygltf libimgui SDL2::SDL2main SDL2::SDL2test)
+target_link_libraries(External INTERFACE D3D12MemoryAllocator tinygltf libimgui SDL2::SDL2main SDL2::SDL2test)
 target_include_directories(External INTERFACE ${sdl2_SOURCE_DIR}/include ${D3D12MemoryAllocator_SOURCE_DIR}/include ${tinygltf_SOURCE_DIR})

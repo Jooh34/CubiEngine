@@ -33,3 +33,7 @@
 
 # CubiEngine
 Build/*
+External/DirectXAgilitySDK
+External/DirectXShaderCompiler
+out/
+*.zip
