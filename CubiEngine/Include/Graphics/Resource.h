@@ -1,3 +1,7 @@
+#pragma once
+
+static uint32_t INVALID_INDEX_U32 = 0xFFFFFFFF;
+
 struct ShaderModule
 {
     std::wstring_view vertexShaderPath{};
@@ -26,4 +30,17 @@ struct GraphicsPipelineStateCreationDesc
     FrontFaceWindingOrder frontFaceWindingOrder{FrontFaceWindingOrder::ClockWise};
     D3D12_CULL_MODE cullMode{D3D12_CULL_MODE_BACK};
     std::wstring_view pipelineName{};
+};
+
+struct Texture
+{
+    uint32_t Width{};
+    uint32_t Height{};
+
+    wrl::ComPtr<ID3D12Resource> Resource{};
+
+    uint32_t SrvIndex{ INVALID_INDEX_U32 };
+    uint32_t UavIndex{ INVALID_INDEX_U32 };
+    uint32_t DsvIndex{ INVALID_INDEX_U32 };
+    uint32_t RtvIndex{ INVALID_INDEX_U32 };
 };

@@ -2,6 +2,7 @@
 
 FCommandQueue::FCommandQueue(ID3D12Device5* const device, const D3D12_COMMAND_LIST_TYPE commandListType,
     const std::wstring_view name)
+    : CommandQueueFenceValue(0)
 {
     // Create the command queue based on list type.
     const D3D12_COMMAND_QUEUE_DESC commandQueueDesc = {
@@ -40,9 +41,9 @@ void FCommandQueue::WaitForFenceValue(const uint64_t InFenceValue)
     }
 }
 
-void FCommandQueue::Execute(const std::vector<ID3D12CommandList*>& CmdList)
+void FCommandQueue::Execute(ID3D12CommandList& CmdList)
 {
-    CommandQueue->ExecuteCommandLists(1u, CmdList.data());
+    CommandQueue->ExecuteCommandLists(1u, (ID3D12CommandList *const*)&CmdList);
 }
 
 void FCommandQueue::Flush()

@@ -15,12 +15,12 @@ public:
     bool IsFenceComplete(const uint64_t InFenceValue) const;
     void WaitForFenceValue(const uint64_t InFenceValue);
 
-    void Execute(const std::vector<ID3D12CommandList*>& CmdList);
+    void Execute(ID3D12CommandList& CmdList);
     void Flush();
 
 private:
     wrl::ComPtr<ID3D12CommandQueue> CommandQueue{};
     wrl::ComPtr<ID3D12Fence> Fence{};
 
-    uint64_t CommandQueueFenceValue;
+    uint64_t CommandQueueFenceValue{};
 };

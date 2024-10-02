@@ -18,6 +18,7 @@ void FGraphicsDevice::InitDeviceResources()
     InitD3D12Core();
     InitCommandQueues();
     InitDescriptorHeaps();
+    InitContexts();
     InitBindlessRootSignature();
 }
 
@@ -51,7 +52,7 @@ void FGraphicsDevice::InitSwapchainResources(const uint32_t Width, const uint32_
 
     CurrentFrameIndex = SwapChain->GetCurrentBackBufferIndex();
 
-    //createBackBufferRTVs();
+    CreateBackBufferRTVs();
 }
 
 void FGraphicsDevice::InitD3D12Core()
@@ -112,13 +113,47 @@ void FGraphicsDevice::InitDescriptorHeaps()
         GNumSamplerDescriptorHeap, L"Sampler Descriptor Heap");
 }
 
+void FGraphicsDevice::InitContexts()
+{
+    // Create graphics contexts (one per frame in flight).
+    for (const uint32_t i : std::views::iota(0u, FRAMES_IN_FLIGHT))
+    {
+        PerFrameGraphicsContexts[i] = std::make_unique<FGraphicsContext>(this);
+    }
+}
+
 void FGraphicsDevice::InitBindlessRootSignature()
 {
     // Setup bindless root signature.
     FPipelineState::CreateBindlessRootSignature(Device.Get(), L"Shaders/Triangle.hlsl");
 }
 
-void FGraphicsDevice::Prensent()
+void FGraphicsDevice::CreateBackBufferRTVs()
+{
+    FDescriptorHandle RtvHandle = RtvDescriptorHeap->GetDescriptorHandleFromStart();
+
+    // Create Backbuffer render target views.
+    for (const uint32_t i : std::views::iota(0u, FRAMES_IN_FLIGHT))
+    {
+        wrl::ComPtr<ID3D12Resource> BackBuffer{};
+        ThrowIfFailed(SwapChain->GetBuffer(i, IID_PPV_ARGS(&BackBuffer)));
+
+        Device->CreateRenderTargetView(BackBuffer.Get(), nullptr, RtvHandle.CpuDescriptorHandle);
+
+        BackBuffers[i].Resource = BackBuffer;
+        BackBuffers[i].Resource->SetName(L"SwapChain BackBuffer");
+        BackBuffers[i].RtvIndex = RtvDescriptorHeap->GetDescriptorIndex(RtvHandle);
+
+        RtvDescriptorHeap->OffsetDescriptor(RtvHandle);
+    }
+}
+
+void FGraphicsDevice::BeginFrame()
+{
+    PerFrameGraphicsContexts[CurrentFrameIndex]->Reset();
+}
+
+void FGraphicsDevice::Present()
 {
     ThrowIfFailed(SwapChain->Present(1u, 0u));
 }
@@ -131,3 +166,4 @@ void FGraphicsDevice::EndFrame()
 
     DirectCommandQueue->WaitForFenceValue(FenceValues[CurrentFrameIndex].DirectQueueFenceValue);
 }
+

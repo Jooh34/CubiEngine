@@ -30,6 +30,10 @@ set(SRC_FILES
     "Include/Graphics/CommandQueue.h"
     "Source/Graphics/PipelineState.cpp"
     "Include/Graphics/PipelineState.h"
+    "Source/Graphics/GraphicsContext.cpp"
+    "Include/Graphics/GraphicsContext.h"
+    "Source/Graphics/Context.cpp"
+    "Include/Graphics/Context.h"
     "Source/Graphics/ShaderCompiler.cpp"
     "Include/Graphics/ShaderCompiler.h"
 )
