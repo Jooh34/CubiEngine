@@ -13,4 +13,6 @@ public:
 
 private:
     std::unique_ptr<FGraphicsDevice> GraphicsDevice;
+
+    float RenderTargetColorTest[4] = { 0,0,0,1 };
 };

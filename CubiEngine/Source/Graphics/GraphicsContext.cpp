@@ -41,3 +41,11 @@ void FGraphicsContext::Reset() const
 
     SetDescriptorHeaps();
 }
+
+void FGraphicsContext::ClearRenderTargetView(const Texture& InRenderTarget, std::span<const float, 4> Color)
+{
+    const auto rtvDescriptorHandle =
+        Device->GetRtvDescriptorHeap()->GetDescriptorHandleFromIndex(InRenderTarget.RtvIndex);
+
+    CommandList->ClearRenderTargetView(rtvDescriptorHandle.CpuDescriptorHandle, Color.data(), 0u, nullptr);
+}

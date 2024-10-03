@@ -41,9 +41,14 @@ void FCommandQueue::WaitForFenceValue(const uint64_t InFenceValue)
     }
 }
 
-void FCommandQueue::Execute(ID3D12CommandList& CmdList)
+void FCommandQueue::ExecuteContext(FContext* Context)
 {
-    CommandQueue->ExecuteCommandLists(1u, (ID3D12CommandList *const*)&CmdList);
+    std::vector<ID3D12CommandList*> CommandLists{};
+
+    CommandLists.emplace_back(Context->GetCommandList());
+    ThrowIfFailed(Context->GetCommandList()->Close());
+
+    CommandQueue->ExecuteCommandLists(CommandLists.size(), CommandLists.data());
 }
 
 void FCommandQueue::Flush()

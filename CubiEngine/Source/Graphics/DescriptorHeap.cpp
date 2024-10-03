@@ -31,6 +31,14 @@ FDescriptorHeap::FDescriptorHeap(ID3D12Device* const device, const D3D12_DESCRIP
     CurrentDescriptorHandle = DescriptorHandleFromHeapStart;
 }
 
+FDescriptorHandle FDescriptorHeap::GetDescriptorHandleFromIndex(const uint32_t Index) const
+{
+    FDescriptorHandle Handle = GetDescriptorHandleFromStart();
+    OffsetDescriptor(Handle, Index);
+
+    return std::move(Handle);
+}
+
 void FDescriptorHeap::OffsetDescriptor(FDescriptorHandle& InHandle, const uint32_t Offset) const
 {
     InHandle.CpuDescriptorHandle.ptr += DescriptorSize * static_cast<unsigned long long>(Offset);

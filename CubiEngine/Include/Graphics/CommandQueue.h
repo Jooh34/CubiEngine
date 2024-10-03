@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Graphics/Context.h"
+
 class FCommandQueue
 {
 public:
@@ -15,7 +17,8 @@ public:
     bool IsFenceComplete(const uint64_t InFenceValue) const;
     void WaitForFenceValue(const uint64_t InFenceValue);
 
-    void Execute(ID3D12CommandList& CmdList);
+    void ExecuteContext(FContext* Context);
+
     void Flush();
 
 private:

@@ -21,6 +21,7 @@ public:
         const uint32_t descriptorCount, const std::wstring_view descriptorHeapName);
 
     FDescriptorHandle GetDescriptorHandleFromStart() const { return DescriptorHandleFromHeapStart; }
+    FDescriptorHandle GetDescriptorHandleFromIndex(const uint32_t Index) const;
     uint32_t GetDescriptorIndex(const FDescriptorHandle& InDescriptorHandle) const
     {
         return static_cast<uint32_t> (

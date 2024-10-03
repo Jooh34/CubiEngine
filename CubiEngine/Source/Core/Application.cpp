@@ -44,6 +44,7 @@ bool Application::Init(int Width, int Height)
 
 void Application::Run()
 {
+    Sleep(1000);
     while (IsRunning)
     {
         HandleEvents();

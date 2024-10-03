@@ -44,6 +44,9 @@ public:
     FDescriptorHeap* GetRtvDescriptorHeap() const { return RtvDescriptorHeap.get(); }
     FDescriptorHeap* GetDsvDescriptorHeap() const { return DsvDescriptorHeap.get(); }
     FDescriptorHeap* GetSamplerDescriptorHeap() const { return SamplerDescriptorHeap.get(); }
+    
+    FGraphicsContext* GetCurrentGraphicsContext() const { return PerFrameGraphicsContexts[CurrentFrameIndex].get(); }
+    Texture& GetCurrentBackBuffer() { return BackBuffers[CurrentFrameIndex]; }
 
 private:
     HWND WindowHandle;

@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <ranges>
 
+#include <directxmath.h>
 #include <Windows.h>
 #include <SDL.h>
 #include <SDL_syswm.h>

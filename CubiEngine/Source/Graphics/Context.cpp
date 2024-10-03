@@ -5,3 +5,15 @@ void FContext::Reset() const
     ThrowIfFailed(CommandAllocator->Reset());
     ThrowIfFailed(CommandList->Reset(CommandAllocator.Get(), nullptr));
 }
+
+void FContext::AddResourceBarrier(ID3D12Resource* const Resource, const D3D12_RESOURCE_STATES PreviousState,
+    const D3D12_RESOURCE_STATES NewState)
+{
+    ResourceBarriers.emplace_back(CD3DX12_RESOURCE_BARRIER::Transition(Resource, PreviousState, NewState));
+}
+
+void FContext::ExecuteResourceBarriers()
+{
+    CommandList->ResourceBarrier(static_cast<UINT>(ResourceBarriers.size()), ResourceBarriers.data());
+    ResourceBarriers.clear();
+}
