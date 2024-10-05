@@ -9,6 +9,8 @@
 #include <array>
 #include <filesystem>
 #include <ranges>
+#include <unordered_map>
+#include <string_view>
 
 #include <directxmath.h>
 #include <Windows.h>
@@ -26,6 +28,7 @@
 
 // Namespace aliases.
 namespace wrl = Microsoft::WRL;
+namespace Dx = DirectX;
 
 #ifdef _DEBUG
 constexpr bool DEBUG_MODE = true;

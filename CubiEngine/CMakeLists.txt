@@ -16,8 +16,12 @@ set(SRC_FILES
     "Source/Core/FileSystem.cpp"
     "Include/Core/FileSystem.h"
 
-    "Source/Renderer/Renderer.cpp"
-    "Include/Renderer/Renderer.h"
+    "Source/Scene/Renderer.cpp"
+    "Include/Scene/Renderer.h"
+    "Source/Scene/Model.cpp"
+    "Include/Scene/Model.h"
+    "Source/Scene/Scene.cpp"
+    "Include/Scene/Scene.h"
 
     "Include/Graphics/Resource.h"
     "Include/Graphics/d3dx12.h"

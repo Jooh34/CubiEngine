@@ -1,4 +1,5 @@
-#include "Renderer/Renderer.h"
+#include "Scene/Renderer.h"
+
 FRenderer::FRenderer(HWND Handle, int Width, int Height)
 {
     GraphicsDevice = std::make_unique<FGraphicsDevice>(

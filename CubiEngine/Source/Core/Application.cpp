@@ -1,6 +1,6 @@
 #include "Core/Application.h"
 #include "Core/FileSystem.h"
-#include "Renderer/Renderer.h"
+#include "Scene/Renderer.h"
 
 Application::Application(const std::string& Title)
     : WindowTitle(Title)
