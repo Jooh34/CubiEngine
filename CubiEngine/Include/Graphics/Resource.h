@@ -32,7 +32,32 @@ struct GraphicsPipelineStateCreationDesc
     std::wstring_view pipelineName{};
 };
 
-struct Texture
+enum class ETextureUsage
+{
+    DepthStencil,
+    RenderTarget,
+    TextureFromPath,
+    TextureFromData,
+    HDRTextureFromPath,
+    CubeMap,
+    UAVTexture
+};
+
+struct FTextureCreationDesc
+{
+    ETextureUsage usage{};
+    uint32_t Width{};
+    uint32_t Height{};
+    DXGI_FORMAT Format{ DXGI_FORMAT_R8G8B8A8_UNORM };
+    D3D12_RESOURCE_STATES InitialState { D3D12_RESOURCE_STATE_COMMON };
+    uint32_t MipLevels{ 1u };
+    uint32_t DepthOrArraySize{ 1u };
+    uint32_t BytesPerPixel{ 4u };
+    std::string_view Name{};
+    std::string Path{};
+};
+
+struct FTexture
 {
     uint32_t Width{};
     uint32_t Height{};
@@ -43,4 +68,30 @@ struct Texture
     uint32_t UavIndex{ INVALID_INDEX_U32 };
     uint32_t DsvIndex{ INVALID_INDEX_U32 };
     uint32_t RtvIndex{ INVALID_INDEX_U32 };
+};
+
+struct FSamplerCreationDesc
+{
+    D3D12_SAMPLER_DESC SamplerDesc{};
+};
+
+struct FSampler
+{
+    uint32_t SamplerIndex{ INVALID_INDEX_U32 };
+};
+
+struct FAllocation
+{
+    wrl::ComPtr<D3D12MA::Allocation> DmaAllocation{};
+    std::optional<void*> MappedPointer{};
+    wrl::ComPtr<ID3D12Resource> Resource{};
+};
+
+struct FPBRMaterial
+{
+    FTexture AlbedoTexture;
+    FSampler AlbedoSampler;
+
+    FTexture NormalTexture;
+    FSampler NormalSampler;
 };

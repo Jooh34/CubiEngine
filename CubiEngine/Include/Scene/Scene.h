@@ -5,8 +5,12 @@
 class FScene
 {
 public:
-    FScene();
+    FScene(FGraphicsDevice* Device);
+    ~FScene();
 
+    void AddModel(const FModelCreationDesc& Desc);
+
+private:
     std::unordered_map<std::string, std::unique_ptr<FModel>> Models{};
-    void AddModel(const FGraphicsDevice* Device, const ModelCreationDesc& Desc);
+    FGraphicsDevice* Device;
 };

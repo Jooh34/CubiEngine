@@ -25,6 +25,13 @@ FetchContent_Declare(
     GIT_PROGRESS TRUE
 )
 
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb
+    GIT_TAG 8b5f1f37b5b75829fc72d38e7b5d4bcbf8a26d55
+    GIT_PROGRESS TRUE
+)
+
 option(TINYGLTF_BUILD_LOADER_EXAMPLE "" OFF)
 FetchContent_Declare(
     tinygltf
@@ -32,7 +39,7 @@ FetchContent_Declare(
     GIT_TAG        544969b7324cd6bba29f6203c7d78c7ea92dbab0
 )
 
-FetchContent_MakeAvailable(tinygltf D3D12MemoryAllocator)
+FetchContent_MakeAvailable(tinygltf stb D3D12MemoryAllocator)
 
 add_library(libimgui
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -54,4 +61,4 @@ target_link_libraries(libimgui PUBLIC SDL2::SDL2main SDL2::SDL2-static)
 
 add_library(External INTERFACE)
 target_link_libraries(External INTERFACE D3D12MemoryAllocator tinygltf libimgui SDL2::SDL2main SDL2::SDL2test)
-target_include_directories(External INTERFACE ${sdl2_SOURCE_DIR}/include ${D3D12MemoryAllocator_SOURCE_DIR}/include ${tinygltf_SOURCE_DIR})
+target_include_directories(External INTERFACE ${sdl2_SOURCE_DIR}/include ${D3D12MemoryAllocator_SOURCE_DIR}/include ${stb_SOURCE_DIR} ${tinygltf_SOURCE_DIR})

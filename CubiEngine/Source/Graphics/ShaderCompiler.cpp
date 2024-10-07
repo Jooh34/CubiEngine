@@ -23,7 +23,7 @@ namespace ShaderCompiler
             ThrowIfFailed(::DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&compiler)));
             ThrowIfFailed(utils->CreateDefaultIncludeHandler(&includeHandler));
 
-            shaderDirectory = FileSystem::GetFullPath(L"Shaders");
+            shaderDirectory = FFileSystem::GetFullPath(L"Shaders");
             Log(std::format(L"Shader base directory : {}.", shaderDirectory));
         }
 

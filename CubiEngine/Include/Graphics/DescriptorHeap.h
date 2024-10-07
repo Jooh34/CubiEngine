@@ -30,8 +30,11 @@ public:
     }
 
     uint32_t GetCurrentDescriptorIndex() const { return GetDescriptorIndex(CurrentDescriptorHandle); }
+    FDescriptorHandle GetCurrentDescriptorHandle() const { return CurrentDescriptorHandle; }
 
     void OffsetDescriptor(FDescriptorHandle& InHandle, const uint32_t Offset = 1u) const;
+    void OffsetCurrentHandle(const uint32_t Offset = 1u);
+
     ID3D12DescriptorHeap* const GetDescriptorHeap() const { return DescriptorHeap.Get(); }
 
 private:

@@ -40,14 +40,14 @@ FPipelineState::FPipelineState(ID3D12Device5* const device,
     const auto& vertexShaderBlob =
         ShaderCompiler::Compile(
             ShaderTypes::Vertex,
-            FileSystem::GetFullPath(pipelineStateCreationDesc.shaderModule.vertexShaderPath),
+            FFileSystem::GetFullPath(pipelineStateCreationDesc.shaderModule.vertexShaderPath),
             pipelineStateCreationDesc.shaderModule.vertexEntryPoint)
         .shaderBlob;
 
     const auto& pixelShaderBlob =
         ShaderCompiler::Compile(
             ShaderTypes::Pixel,
-            FileSystem::GetFullPath(pipelineStateCreationDesc.shaderModule.pixelShaderPath),
+            FFileSystem::GetFullPath(pipelineStateCreationDesc.shaderModule.pixelShaderPath),
             pipelineStateCreationDesc.shaderModule.pixelEntryPoint)
         .shaderBlob;
 
@@ -91,7 +91,7 @@ FPipelineState::FPipelineState(ID3D12Device5* const device,
 
 void FPipelineState::CreateBindlessRootSignature(ID3D12Device* const device, const std::wstring_view shaderPath)
 {
-    const auto path = FileSystem::GetFullPath(shaderPath);
+    const auto path = FFileSystem::GetFullPath(shaderPath);
     const auto shader = ShaderCompiler::Compile(ShaderTypes::Vertex, path, L"VsMain", true);
 
     if (!shader.rootSignatureBlob.Get())

@@ -21,6 +21,9 @@
 #include <dxcapi.h>
 #include <wrl.h>
 #include <dxgi1_6.h>
+#include <D3D12MemAlloc.h>
+#include <tiny_gltf.h>
+#include <stb_image.h>
 
 // Custom includes.
 #include "Utils.h"

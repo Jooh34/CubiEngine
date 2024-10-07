@@ -1,0 +1,16 @@
+[SourceExplorer.ignore]
+.git
+Build/*
+
+[SearchableFiles.include]
+*.c
+*.cpp
+*.h
+*.inl
+*.md
+*.txt
+*hlsl
+*hlsli
+
+[SearchableFiles.ignore]
+.git

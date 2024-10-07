@@ -44,3 +44,8 @@ void FDescriptorHeap::OffsetDescriptor(FDescriptorHandle& InHandle, const uint32
     InHandle.CpuDescriptorHandle.ptr += DescriptorSize * static_cast<unsigned long long>(Offset);
     InHandle.GpuDescriptorHandle.ptr += DescriptorSize * static_cast<unsigned long long>(Offset);
 }
+
+void FDescriptorHeap::OffsetCurrentHandle(const uint32_t Offset)
+{
+    OffsetDescriptor(CurrentDescriptorHandle, Offset);
+}

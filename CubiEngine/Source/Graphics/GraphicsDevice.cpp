@@ -11,6 +11,33 @@ FGraphicsDevice::FGraphicsDevice(const int Width, const int Height,
 
 FGraphicsDevice::~FGraphicsDevice()
 {
+    DirectCommandQueue->Flush(); // flush GPU works
+}
+
+FSampler FGraphicsDevice::CreateSampler(const FSamplerCreationDesc& Desc) const
+{
+    FSampler Sampler{};
+
+    Sampler.SamplerIndex = SamplerDescriptorHeap->GetCurrentDescriptorIndex();
+    FDescriptorHandle Handle = SamplerDescriptorHeap->GetCurrentDescriptorHandle();
+
+    Device->CreateSampler(&Desc.SamplerDesc, Handle.CpuDescriptorHandle);
+
+    SamplerDescriptorHeap->OffsetCurrentHandle();
+
+    return Sampler;
+}
+
+FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreationDesc, const void* Data) const
+{
+    FTexture Texture{};
+
+    if (TextureCreationDesc.usage == ETextureUsage::TextureFromData)
+    {
+
+    }
+    
+    return Texture;
 }
 
 void FGraphicsDevice::InitDeviceResources()

@@ -1,6 +1,6 @@
 #include "Core/FileSystem.h"
 
-void FileSystem::LocateRootDirectory()
+void FFileSystem::LocateRootDirectory()
 {
     auto currentDirectory = std::filesystem::current_path();
 

@@ -13,7 +13,7 @@ Application::~Application()
 
 bool Application::Init(int Width, int Height)
 {
-    FileSystem::LocateRootDirectory();
+    FFileSystem::LocateRootDirectory();
 
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {

@@ -12,7 +12,7 @@ public:
     void SetDescriptorHeaps() const;
     void Reset() const;
 
-    void ClearRenderTargetView(const Texture& InRenderTarget, std::span<const float, 4> Color);
+    void ClearRenderTargetView(const FTexture& InRenderTarget, std::span<const float, 4> Color);
 
 private:
     FGraphicsDevice* Device;

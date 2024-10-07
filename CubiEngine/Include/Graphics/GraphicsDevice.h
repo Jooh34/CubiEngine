@@ -20,8 +20,10 @@ public:
     
     ~FGraphicsDevice();
 
-    void InitDeviceResources();
+    FSampler CreateSampler(const FSamplerCreationDesc& Desc) const;
+    FTexture CreateTexture(const FTextureCreationDesc& TextureCreationDesc, const void* Data = nullptr) const;
 
+    void InitDeviceResources();
     void InitSwapchainResources(const uint32_t Width, const uint32_t Height);
 
     void InitD3D12Core();
@@ -46,7 +48,7 @@ public:
     FDescriptorHeap* GetSamplerDescriptorHeap() const { return SamplerDescriptorHeap.get(); }
     
     FGraphicsContext* GetCurrentGraphicsContext() const { return PerFrameGraphicsContexts[CurrentFrameIndex].get(); }
-    Texture& GetCurrentBackBuffer() { return BackBuffers[CurrentFrameIndex]; }
+    FTexture& GetCurrentBackBuffer() { return BackBuffers[CurrentFrameIndex]; }
 
 private:
     HWND WindowHandle;
@@ -61,7 +63,7 @@ private:
     DXGI_FORMAT SwapchainFormat;
     uint64_t CurrentFrameIndex{};
     std::array<FFenceValues, FRAMES_IN_FLIGHT> FenceValues{}; // Signal for Command Queue
-    std::array<Texture, FRAMES_IN_FLIGHT> BackBuffers{};
+    std::array<FTexture, FRAMES_IN_FLIGHT> BackBuffers{};
 
     std::array<std::unique_ptr<FGraphicsContext>, FRAMES_IN_FLIGHT> PerFrameGraphicsContexts{};
 
