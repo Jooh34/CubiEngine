@@ -46,6 +46,9 @@ set(SRC_FILES
     "Include/Graphics/ShaderCompiler.h"
     "Source/Graphics/MemoryAllocator.cpp"
     "Include/Graphics/MemoryAllocator.h"
+
+    "Source/Renderer/UnlitPass.cpp"
+    "Include/Renderer/UnlitPass.h"
 )
 
 add_executable(CubiEngine ${SRC_FILES} "Main.cpp")

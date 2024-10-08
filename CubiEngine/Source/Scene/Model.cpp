@@ -17,7 +17,6 @@ FModel::FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreation
     std::string warning{};
     tinygltf::TinyGLTF GLTFContext{};
     tinygltf::Model GLTFModel{};
-    
 
     if (FullPath.find(".glb") != std::string::npos)
     {
@@ -184,17 +183,70 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
         }
         {
             // Normal
+            if (material.normalTexture.index >= 0)
+            {
+                const tinygltf::Texture& normalTexture = GLTFModel.textures[material.normalTexture.index];
+                const tinygltf::Image& normalImage = GLTFModel.images[normalTexture.source];
+
+                PbrMaterial.NormalTexture =
+                    CreateTexture(normalImage, FTextureCreationDesc{
+                                               .Usage = ETextureUsage::TextureFromData,
+                                               .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+                                               .MipLevels = 1u,
+                                               .Name = ModelName + " normal texture",
+                    });
+
+                PbrMaterial.NormalSampler = Samplers[normalTexture.sampler];
+            }
         }
         {
             // Occlusion
+            if (material.occlusionTexture.index >= 0)
+            {
+                const tinygltf::Texture& aoTexture = GLTFModel.textures[material.occlusionTexture.index];
+                const tinygltf::Image& aoImage = GLTFModel.images[aoTexture.source];
+
+                PbrMaterial.AOTexture = CreateTexture(aoImage, FTextureCreationDesc{
+                                                               .Usage = ETextureUsage::TextureFromData,
+                                                               .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+                                                               .MipLevels = 1u,
+                                                               .Name = ModelName + " occlusion texture",
+                });
+                PbrMaterial.AOSampler = Samplers[aoTexture.sampler];
+            }
         }
         {
             // Emissive
+            const tinygltf::Texture& emissiveTexture = GLTFModel.textures[material.emissiveTexture.index];
+            const tinygltf::Image& emissiveImage = GLTFModel.images[emissiveTexture.source];
+
+            PbrMaterial.EmissiveTexture = CreateTexture(emissiveImage, FTextureCreationDesc{
+                                                 .Usage = ETextureUsage::TextureFromData,
+                                                 .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+                                                 .MipLevels = 1u,
+                                                 .Name = ModelName + " emissive texture",
+                    });
+            PbrMaterial.EmissiveSampler = Samplers[emissiveTexture.sampler];
         }
+
         PbrMaterial.MaterialBuffer = GraphicsDevice->CreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
             .Usage = EBufferUsage::ConstantBuffer,
             .Name = ModelName + "_MaterialBuffer" + std::to_string(index),
         });
+
+        PbrMaterial.MaterialBufferData = {
+                .albedoColor = XMFLOAT3 {
+                    material.pbrMetallicRoughness.baseColorFactor[0],
+                    material.pbrMetallicRoughness.baseColorFactor[1],
+                    material.pbrMetallicRoughness.baseColorFactor[2],
+                },
+                .roughnessFactor = 1.0f,
+                .metallicFactor = 1.0f,
+                .emissiveFactor = 0.0f,
+        };
+
+        PbrMaterial.MaterialIndex = index;
+        Materials[index++] = std::move(PbrMaterial);
     }
 }
 
