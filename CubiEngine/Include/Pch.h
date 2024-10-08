@@ -32,6 +32,9 @@
 // Namespace aliases.
 namespace wrl = Microsoft::WRL;
 namespace Dx = DirectX;
+using Dx::XMFLOAT2;
+using Dx::XMFLOAT3;
+using Dx::XMFLOAT4;
 
 #ifdef _DEBUG
 constexpr bool DEBUG_MODE = true;

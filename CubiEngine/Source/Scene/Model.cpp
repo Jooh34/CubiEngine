@@ -4,15 +4,14 @@
 #include "Graphics/GraphicsDevice.h"
 
 FModel::FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
-    :Name(ModelCreationDesc.ModelName)
+    :ModelName(ModelCreationDesc.ModelName)
 {
     std::string FullPath = FFileSystem::GetAssetPath() + ModelCreationDesc.ModelPath.data();
     
-    if (FullPath.find_last_of("/\\") != std::string::npos)
+    if (FullPath.find_last_of("/") != std::string::npos)
     {
-        ModelDir = FullPath.substr(0, FullPath.find_first_of("/\\")) + "/";
+        ModelDir = FullPath.substr(0, FullPath.find_last_of("/")) + "/";
     }
-
 
     std::string error{};
     std::string warning{};
@@ -39,6 +38,12 @@ FModel::FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreation
     
     LoadSamplers(GraphicsDevice, GLTFModel);
     LoadMaterials(GraphicsDevice, GLTFModel);
+
+    const tinygltf::Scene& scene = GLTFModel.scenes[GLTFModel.defaultScene];
+    for (const int& nodeIndex : scene.nodes)
+    {
+        LoadNode(GraphicsDevice, ModelCreationDesc, nodeIndex, GLTFModel);
+    }
 }
 
 void FModel::LoadSamplers(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel)
@@ -128,6 +133,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
 
             Desc.Width = static_cast<uint32_t>(Width);
             Desc.Height = static_cast<uint32_t>(Height);
+            Desc.Usage = ETextureUsage::TextureFromData;
 
             FTexture texture = GraphicsDevice->CreateTexture(Desc, (std::byte*)data);
 
@@ -135,4 +141,212 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
         };
 
     Materials.resize(GLTFModel.materials.size());
+    size_t index = 0;
+
+    for (const tinygltf::Material& material : GLTFModel.materials)
+    {
+        FPBRMaterial PbrMaterial{};
+        {
+            // Albedo
+            if (material.pbrMetallicRoughness.baseColorTexture.index >= 0)
+            {
+                const tinygltf::Texture& albedoTexture =
+                    GLTFModel.textures[material.pbrMetallicRoughness.baseColorTexture.index];
+                const tinygltf::Image& albedoImage = GLTFModel.images[albedoTexture.source];
+
+                PbrMaterial.AlbedoTexture =
+                    CreateTexture(albedoImage, FTextureCreationDesc{
+                                                   .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+                                                   .MipLevels = 1u, // Todo:Mips
+                                                   .Name = ModelName + " albedo texture",
+                        });
+                PbrMaterial.AlbedoSampler = Samplers[albedoTexture.sampler];
+            }
+        }
+        {
+            // MetalicRoughness
+            if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0)
+            {
+
+                const tinygltf::Texture& metalRoughnessTexture =
+                    GLTFModel.textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index];
+                const tinygltf::Image& metalRoughnessImage = GLTFModel.images[metalRoughnessTexture.source];
+
+                PbrMaterial.MetalRoughnessTexture =
+                    CreateTexture(metalRoughnessImage, FTextureCreationDesc{
+                                                           .Usage = ETextureUsage::TextureFromData,
+                                                           .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+                                                           .MipLevels = 1u,
+                                                           .Name = ModelName + " metal roughness texture",
+                    });
+                PbrMaterial.MetalRoughnessSampler = Samplers[metalRoughnessTexture.sampler];
+            }
+        }
+        {
+            // Normal
+        }
+        {
+            // Occlusion
+        }
+        {
+            // Emissive
+        }
+        PbrMaterial.MaterialBuffer = GraphicsDevice->CreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
+            .Usage = EBufferUsage::ConstantBuffer,
+            .Name = ModelName + "_MaterialBuffer" + std::to_string(index),
+        });
+    }
+}
+
+void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc,
+    const uint32_t NodeIndex, const tinygltf::Model& GLTFModel)
+{
+    const tinygltf::Node& node = GLTFModel.nodes[NodeIndex];
+    if (node.mesh < 0)
+    {
+        for (const int& child : node.children)
+        {
+            LoadNode(GraphicsDevice, ModelCreationDesc, child, GLTFModel);
+        }
+        return;
+    }
+
+    const tinygltf::Mesh& nodeMesh = GLTFModel.meshes[node.mesh];
+    for (const size_t i : std::views::iota(0u, nodeMesh.primitives.size()))
+    {
+        tinygltf::Primitive primitive = nodeMesh.primitives[i];
+
+        FMesh Mesh{};
+        const std::string MeshName = ModelName + "Mesh " + std::to_string(NodeIndex);
+
+        std::vector<XMFLOAT3> Positions{};
+        std::vector<XMFLOAT2> TextureCoords{};
+        std::vector<XMFLOAT3> Normals{};
+        std::vector<uint16_t> Indices{};
+
+        const tinygltf::Model& model = GLTFModel;
+
+        // Position
+        size_t accessorNum = 0;
+        const float* positions;
+        int positionStride;
+        {
+            const tinygltf::Accessor& accessor = model.accessors[primitive.attributes["POSITION"]];
+            const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+            const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+            positionStride = accessor.ByteStride(bufferView);
+            positions = reinterpret_cast<const float*>(&buffer.data[accessor.byteOffset + bufferView.byteOffset]);
+
+            accessorNum = accessor.count;
+        }
+
+        // TextureCoord
+        const float* texcoords;
+        int texcoordStride;
+        {
+            const tinygltf::Accessor& accessor = model.accessors[primitive.attributes["TEXCOORD_0"]];
+            const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+            const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+            texcoordStride = accessor.ByteStride(bufferView);
+            texcoords = reinterpret_cast<const float*>(&buffer.data[accessor.byteOffset + bufferView.byteOffset]);
+        }
+
+        // Normal
+        const float* normals;
+        int normalStride;
+        {
+            const tinygltf::Accessor& accessor = model.accessors[primitive.attributes["NORMAL"]];
+            const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+            const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+            normalStride = accessor.ByteStride(bufferView);
+            normals = reinterpret_cast<const float*>(&buffer.data[accessor.byteOffset + bufferView.byteOffset]);
+        }
+
+        // Index Buffer
+        const uint16_t* indices;
+        int indexStride;
+        tinygltf::Accessor indexAccessor{};
+        {
+            indexAccessor = model.accessors[primitive.indices];
+            const tinygltf::BufferView& bufferView = model.bufferViews[indexAccessor.bufferView];
+            const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+            indexStride = indexAccessor.ByteStride(bufferView);
+            indices = reinterpret_cast<const uint16_t*>(&buffer.data[indexAccessor.byteOffset + bufferView.byteOffset]);
+        }
+
+        {
+            {
+                // Fill in the vertices array.
+                for (size_t i : std::views::iota(0u, accessorNum))
+                {
+                    const XMFLOAT3 position = {
+                        (positions + (i * positionStride))[0],
+                        (positions + (i * positionStride))[1],
+                        (positions + (i * positionStride))[2],
+                    };
+
+                    const XMFLOAT2 textureCoord = {
+                        (texcoords + (i * texcoordStride))[0],
+                        (texcoords + (i * texcoordStride))[1],
+                    };
+
+                    const XMFLOAT3 normal = {
+                        (normals + (i * normalStride))[0],
+                        (normals + (i * normalStride))[1],
+                        (normals + (i * normalStride))[2],
+                    };
+
+                    Positions.emplace_back(position);
+                    TextureCoords.emplace_back(textureCoord);
+                    Normals.emplace_back(normal);
+                }
+            }
+        }
+        
+        {
+            size_t indexCount = indexAccessor.count;
+            Indices.resize(indexCount);
+            // Fill indices array.
+            for (size_t i = 0; i < indexCount; ++i) {
+                Indices[i] = indices[i];
+            }
+        }
+
+        Mesh.PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+            FBufferCreationDesc{
+                .Usage = EBufferUsage::StructuredBuffer,
+                .Name = MeshName + " position buffer",
+            },
+            Positions);
+
+        Mesh.TextureCoordsBuffer = GraphicsDevice->CreateBuffer<XMFLOAT2>(
+            FBufferCreationDesc{
+                .Usage = EBufferUsage::StructuredBuffer,
+                .Name = MeshName + " texture coord buffer",
+            },
+            TextureCoords);
+
+        Mesh.NormalBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+            FBufferCreationDesc{
+                .Usage = EBufferUsage::StructuredBuffer,
+                .Name = MeshName + " normal buffer",
+            },
+            Normals);
+
+        Mesh.IndexBuffer = GraphicsDevice->CreateBuffer<uint16_t>(
+            FBufferCreationDesc{
+                .Usage = EBufferUsage::StructuredBuffer,
+                .Name = MeshName + " index buffer",
+            },
+            Indices);
+
+        Mesh.IndicesCount = static_cast<uint32_t>(Indices.size());
+        Mesh.MaterialIndex = primitive.material;
+
+        Meshes.push_back(Mesh);
+    }
 }

@@ -32,6 +32,29 @@ struct GraphicsPipelineStateCreationDesc
     std::wstring_view pipelineName{};
 };
 
+struct FAllocation
+{
+    void Update(const void* Data, const size_t Size);
+    void Reset();
+
+    wrl::ComPtr<D3D12MA::Allocation> DmaAllocation{};
+    std::optional<void*> MappedPointer{};
+    wrl::ComPtr<ID3D12Resource> Resource{};
+};
+
+struct FBuffer
+{
+    // To be used primarily for constant buffers.
+    void Update(const void* data);
+
+    FAllocation Allocation{};
+    size_t SizeInBytes{};
+
+    uint32_t SrvIndex{ INVALID_INDEX_U32 };
+    uint32_t UavIndex{ INVALID_INDEX_U32 };
+    uint32_t CbvIndex{ INVALID_INDEX_U32 };
+};
+
 enum class ETextureUsage
 {
     DepthStencil,
@@ -45,7 +68,7 @@ enum class ETextureUsage
 
 struct FTextureCreationDesc
 {
-    ETextureUsage usage{};
+    ETextureUsage Usage{};
     uint32_t Width{};
     uint32_t Height{};
     DXGI_FORMAT Format{ DXGI_FORMAT_R8G8B8A8_UNORM };
@@ -61,13 +84,32 @@ struct FTexture
 {
     uint32_t Width{};
     uint32_t Height{};
-
-    wrl::ComPtr<ID3D12Resource> Resource{};
-
+    FAllocation Allocation{};
+    
     uint32_t SrvIndex{ INVALID_INDEX_U32 };
     uint32_t UavIndex{ INVALID_INDEX_U32 };
     uint32_t DsvIndex{ INVALID_INDEX_U32 };
     uint32_t RtvIndex{ INVALID_INDEX_U32 };
+};
+
+struct FCbvCreationDesc
+{
+    D3D12_CONSTANT_BUFFER_VIEW_DESC CbvDesc;
+};
+
+struct FSrvCreationDesc
+{
+    D3D12_SHADER_RESOURCE_VIEW_DESC SrvDesc;
+};
+
+struct FDsvCreationDesc
+{
+    D3D12_DEPTH_STENCIL_VIEW_DESC DsvDesc;
+};
+
+struct FRtvCreationDesc
+{
+    D3D12_RENDER_TARGET_VIEW_DESC RtvDesc;
 };
 
 struct FSamplerCreationDesc
@@ -80,18 +122,40 @@ struct FSampler
     uint32_t SamplerIndex{ INVALID_INDEX_U32 };
 };
 
-struct FAllocation
+struct FResourceCreationDesc
 {
-    wrl::ComPtr<D3D12MA::Allocation> DmaAllocation{};
-    std::optional<void*> MappedPointer{};
-    wrl::ComPtr<ID3D12Resource> Resource{};
+    D3D12_RESOURCE_DESC ResourceDesc{};
+
+    static FResourceCreationDesc CreateBufferResourceCreationDesc(const uint64_t size)
+    {
+        FResourceCreationDesc resourceCreationDesc = {
+            .ResourceDesc{
+                .Dimension = D3D12_RESOURCE_DIMENSION_BUFFER,
+                .Width = size,
+                .Height = 1u,
+                .DepthOrArraySize = 1u,
+                .MipLevels = 1u,
+                .Format = DXGI_FORMAT_UNKNOWN,
+                .SampleDesc{.Count = 1u, .Quality = 0u},
+                .Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR,
+                .Flags = D3D12_RESOURCE_FLAG_NONE,
+            },
+        };
+
+        return resourceCreationDesc;
+    }
 };
 
-struct FPBRMaterial
+enum class EBufferUsage
 {
-    FTexture AlbedoTexture;
-    FSampler AlbedoSampler;
+    UploadBuffer,
+    IndexBuffer,
+    StructuredBuffer,
+    ConstantBuffer,
+};
 
-    FTexture NormalTexture;
-    FSampler NormalSampler;
+struct FBufferCreationDesc
+{
+    EBufferUsage Usage{};
+    std::string_view Name{};
 };

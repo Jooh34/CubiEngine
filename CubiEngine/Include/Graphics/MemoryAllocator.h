@@ -7,8 +7,11 @@ class FMemoryAllocator
 public:
     FMemoryAllocator(ID3D12Device* const Device, IDXGIAdapter* const Adapter);
 
-    FAllocation CreateTextureResourceAllocation(const FTextureCreationDesc& textureCreationDesc);
+    FAllocation CreateBufferResourceAllocation(const FBufferCreationDesc& BufferCreationDesc,
+        const FResourceCreationDesc& ResourceCreationDesc);
+    FAllocation CreateTextureResourceAllocation(const FTextureCreationDesc& TextureCreationDesc);
 
 private:
     wrl::ComPtr<D3D12MA::Allocator> DmaAllocator{};
+    std::recursive_mutex ResourceAllocationMutex{};
 };

@@ -19,7 +19,7 @@ void FRenderer::Render()
     FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
     FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
 
-    GraphicsContext->AddResourceBarrier(BackBuffer.Resource.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    GraphicsContext->AddResourceBarrier(BackBuffer.Allocation.Resource.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
     GraphicsContext->ExecuteResourceBarriers();
 
     RenderTargetColorTest[1] += 0.01f;
@@ -27,7 +27,7 @@ void FRenderer::Render()
 
     GraphicsContext->ClearRenderTargetView(BackBuffer, RenderTargetColorTest);
 
-    GraphicsContext->AddResourceBarrier(BackBuffer.Resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+    GraphicsContext->AddResourceBarrier(BackBuffer.Allocation.Resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
     GraphicsContext->ExecuteResourceBarriers();
 
     GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
