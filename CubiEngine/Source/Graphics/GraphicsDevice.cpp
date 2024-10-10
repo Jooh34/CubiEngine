@@ -56,6 +56,16 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreat
         Width = TextureCreationDesc.Width;
         Height = TextureCreationDesc.Height;
     }
+    else if (TextureCreationDesc.Usage == ETextureUsage::DepthStencil)
+    {
+        Width = TextureCreationDesc.Width;
+        Height = TextureCreationDesc.Height;
+    }
+    else if (TextureCreationDesc.Usage == ETextureUsage::RenderTarget)
+    {
+        Width = TextureCreationDesc.Width;
+        Height = TextureCreationDesc.Height;
+    }
     // TODO: handle another usage
     
     FTexture Texture{};

@@ -14,6 +14,8 @@ public:
     FGraphicsDevice* GetGraphicsDevice() { return GraphicsDevice.get(); }
 
 private:
+    uint32_t Width{};
+    uint32_t Height{};
     std::unique_ptr<FUnlitPass> UnlitPass;
     FTexture DepthTexture;
 

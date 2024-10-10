@@ -119,3 +119,13 @@ void FGraphicsContext::DrawIndexedInstanced(const uint32_t IndicesCount, const u
 {
     CommandList->DrawIndexedInstanced(IndicesCount, InstanceCount, 0u, 0u, 0u);
 }
+
+void FGraphicsContext::SetGraphicsRootSignature() const
+{
+    CommandList->SetGraphicsRootSignature(FPipelineState::StaticRootSignature.Get());
+}
+
+void FGraphicsContext::SetGraphicsRoot32BitConstants(const void* RenderResources) const
+{
+    CommandList->SetGraphicsRoot32BitConstants(0u, NUMBER_32_BIT_CONSTANTS, RenderResources, 0u);
+}

@@ -454,7 +454,8 @@ void FModel::Render(const FGraphicsContext* const GraphicsContext,
         UnlitRenderResources.positionBufferIndex = Mesh.PositionBuffer.SrvIndex;
         UnlitRenderResources.textureCoordBufferIndex = Mesh.TextureCoordsBuffer.SrvIndex;
         UnlitRenderResources.transformBufferIndex = Transform.TransformBuffer.CbvIndex;
-
+        
+        GraphicsContext->SetGraphicsRoot32BitConstants(&UnlitRenderResources);
         GraphicsContext->DrawIndexedInstanced(Mesh.IndicesCount);
     }
 }

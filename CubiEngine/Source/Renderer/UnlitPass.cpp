@@ -51,7 +51,7 @@ void FUnlitPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsCon
 
     GraphicsContext->ClearRenderTargetView(UnlitTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
     
-    interlop::UnlitPassRenderResources UnlitRenderResources;
+    interlop::UnlitPassRenderResources UnlitRenderResources{};
 
     Scene->RenderModels(GraphicsContext, UnlitRenderResources);
 }
