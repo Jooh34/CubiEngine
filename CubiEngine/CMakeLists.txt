@@ -16,8 +16,6 @@ set(SRC_FILES
     "Source/Core/FileSystem.cpp"
     "Include/Core/FileSystem.h"
 
-    "Source/Scene/Renderer.cpp"
-    "Include/Scene/Renderer.h"
     "Source/Scene/Model.cpp"
     "Include/Scene/Model.h"
     "Source/Scene/Scene.cpp"
@@ -47,6 +45,8 @@ set(SRC_FILES
     "Source/Graphics/MemoryAllocator.cpp"
     "Include/Graphics/MemoryAllocator.h"
 
+    "Source/Renderer/Renderer.cpp"
+    "Include/Renderer/Renderer.h"
     "Source/Renderer/UnlitPass.cpp"
     "Include/Renderer/UnlitPass.h"
 )

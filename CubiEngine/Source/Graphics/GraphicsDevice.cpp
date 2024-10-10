@@ -4,7 +4,7 @@
 #include "Graphics/CopyContext.h"
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 
-FGraphicsDevice::FGraphicsDevice(const int Width, const int Height,
+FGraphicsDevice::FGraphicsDevice(const uint32_t Width, const uint32_t Height,
     const DXGI_FORMAT SwapchainFormat, const HWND WindowHandle)
     : SwapchainFormat(SwapchainFormat), WindowHandle(WindowHandle)
 {
@@ -168,6 +168,12 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreat
 
     // Todo: mipmap generation
     return Texture;
+}
+
+FPipelineState FGraphicsDevice::CreatePipelineState(const FGraphicsPipelineStateCreationDesc Desc) const
+{
+    FPipelineState PipelineState(Device.Get(), Desc);
+    return PipelineState;
 }
 
 void FGraphicsDevice::InitDeviceResources()
@@ -424,12 +430,11 @@ FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationD
     template FBuffer FGraphicsDevice::CreateBuffer<TYPE>( \
         const FBufferCreationDesc& BufferCreationDesc, const std::span<const TYPE> Data) const; \
 
-template FBuffer FGraphicsDevice::CreateBuffer<interlop::MaterialBuffer>(
-    const FBufferCreationDesc& BufferCreationDesc, const std::span<const interlop::MaterialBuffer> Data) const;
-template FBuffer FGraphicsDevice::CreateBuffer<XMFLOAT3>(
-    const FBufferCreationDesc& BufferCreationDesc, const std::span<const XMFLOAT3> Data) const;
+CREATE_BUFFER_TEMPLATE_FUNC(interlop::MaterialBuffer)
+CREATE_BUFFER_TEMPLATE_FUNC(XMFLOAT3)
 CREATE_BUFFER_TEMPLATE_FUNC(XMFLOAT2)
 CREATE_BUFFER_TEMPLATE_FUNC(uint16_t)
+CREATE_BUFFER_TEMPLATE_FUNC(interlop::TransformBuffer)
 
 void FGraphicsDevice::CreateBackBufferRTVs()
 {

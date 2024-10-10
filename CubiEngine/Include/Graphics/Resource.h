@@ -20,16 +20,16 @@ enum class FrontFaceWindingOrder
     CounterClockWise
 };
 
-struct GraphicsPipelineStateCreationDesc
+struct FGraphicsPipelineStateCreationDesc
 {
-    ShaderModule shaderModule{};
-    std::vector<DXGI_FORMAT> rtvFormats{DXGI_FORMAT_R16G16B16A16_FLOAT};
-    uint32_t rtvCount{1u};
-    DXGI_FORMAT depthFormat{DXGI_FORMAT_D32_FLOAT};
-    D3D12_COMPARISON_FUNC depthComparisonFunc{D3D12_COMPARISON_FUNC_LESS};
-    FrontFaceWindingOrder frontFaceWindingOrder{FrontFaceWindingOrder::ClockWise};
-    D3D12_CULL_MODE cullMode{D3D12_CULL_MODE_BACK};
-    std::wstring_view pipelineName{};
+    ShaderModule ShaderModule{};
+    std::vector<DXGI_FORMAT> RtvFormats{DXGI_FORMAT_R16G16B16A16_FLOAT};
+    uint32_t RtvCount{1u};
+    DXGI_FORMAT DepthFormat{DXGI_FORMAT_D32_FLOAT};
+    D3D12_COMPARISON_FUNC DepthComparisonFunc{D3D12_COMPARISON_FUNC_LESS};
+    FrontFaceWindingOrder FrontFaceWindingOrder{FrontFaceWindingOrder::ClockWise};
+    D3D12_CULL_MODE CullMode{D3D12_CULL_MODE_BACK};
+    std::wstring_view PipelineName{};
 };
 
 struct FAllocation

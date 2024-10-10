@@ -5,8 +5,9 @@
 class FPipelineState
 {
 public:
+    FPipelineState() = default;
     FPipelineState(ID3D12Device5* const device,
-        const GraphicsPipelineStateCreationDesc& pipelineStateCreationDesc);
+        const FGraphicsPipelineStateCreationDesc& pipelineStateCreationDesc);
     
     // The shader path passed in needs to be relative (with respect to root directory), it will internally find the
     // complete path (with respect to the executable).

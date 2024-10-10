@@ -19,31 +19,3 @@
     // if HLSL
     #define ConstantBufferStruct struct
 #endif
-
-namespace interlop
-{
-    ConstantBufferStruct SceneBuffer
-    {
-        float4x4 viewProjectionMatrix;
-        float4x4 projectionMatrix;
-        float4x4 inverseProjectionMatrix;
-        float4x4 viewMatrix;
-        float4x4 inverseViewMatrix;
-    };
-
-    ConstantBufferStruct MaterialBuffer
-    {
-        float3 albedoColor;
-        float roughnessFactor;
-
-        float metallicFactor;
-        float emissiveFactor;
-        float2 padding;
-    };
-
-    ConstantBufferStruct TransformBuffer
-    {
-        float4x4 modelMatrix;
-        float4x4 inverseModelMatrix;
-    };
-} // namespace interlop

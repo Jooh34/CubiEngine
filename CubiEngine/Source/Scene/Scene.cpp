@@ -21,3 +21,12 @@ void FScene::AddModel(const FModelCreationDesc& Desc)
 
     Models[Key] = std::make_unique<FModel>(Device, Desc);
 }
+
+void FScene::RenderModels(FGraphicsContext* const GraphicsContext,
+    interlop::UnlitPassRenderResources& UnlitRenderResources)
+{
+    for (const auto& [_, Model] : Models)
+    {
+        Model->Render(GraphicsContext, UnlitRenderResources);
+    }
+}

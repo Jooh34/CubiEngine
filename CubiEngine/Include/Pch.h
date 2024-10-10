@@ -37,6 +37,7 @@ using Dx::XMFLOAT2;
 using Dx::XMFLOAT3;
 using Dx::XMFLOAT4;
 using Dx::XMMATRIX;
+using Dx::XMVECTOR;
 
 #ifdef _DEBUG
 constexpr bool DEBUG_MODE = true;

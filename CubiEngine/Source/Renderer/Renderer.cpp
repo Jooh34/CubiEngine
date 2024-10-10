@@ -1,11 +1,24 @@
-#include "Scene/Renderer.h"
+#include "Renderer/Renderer.h"
 
-FRenderer::FRenderer(HWND Handle, int Width, int Height)
+FRenderer::FRenderer(HWND Handle, uint32_t Width, uint32_t Height)
 {
     GraphicsDevice = std::make_unique<FGraphicsDevice>(
         Width, Height, DXGI_FORMAT_R10G10B10A2_UNORM, Handle);
 
     Scene = std::make_unique<FScene>(GraphicsDevice.get());
+
+    UnlitPass = std::make_unique<FUnlitPass>(GraphicsDevice.get(), Width, Height);
+
+    FTextureCreationDesc DepthTextureDesc = {
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = Width,
+        .Height = Height,
+        .Format = DXGI_FORMAT_D32_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_DEPTH_WRITE,
+        .Name = "Depth Texture",
+    };
+
+    DepthTexture = GraphicsDevice->CreateTexture(DepthTextureDesc);
 }
 
 FRenderer::~FRenderer()
@@ -26,6 +39,7 @@ void FRenderer::Render()
     if (RenderTargetColorTest[1] > 1.f) RenderTargetColorTest[1] -= 1.f;
 
     GraphicsContext->ClearRenderTargetView(BackBuffer, RenderTargetColorTest);
+    GraphicsContext->ClearDepthStencilView(DepthTexture);
 
     GraphicsContext->AddResourceBarrier(BackBuffer.Allocation.Resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
     GraphicsContext->ExecuteResourceBarriers();

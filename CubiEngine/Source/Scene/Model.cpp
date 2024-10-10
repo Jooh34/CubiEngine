@@ -2,10 +2,42 @@
 #include "Core/FileSystem.h"
 #include "Graphics/Resource.h"
 #include "Graphics/GraphicsDevice.h"
+#include "ShaderInterlop/ConstantBuffers.hlsli"
 
+void FTransform::Update()
+{
+    const XMVECTOR scalingVector = XMLoadFloat3(&Scale);
+    const XMVECTOR rotationVector = XMLoadFloat3(&Rotation);
+    const XMVECTOR translationVector = XMLoadFloat3(&Translate);
+
+    const XMMATRIX modelMatrix = Dx::XMMatrixScalingFromVector(scalingVector) *
+        Dx::XMMatrixRotationRollPitchYawFromVector(rotationVector) *
+        Dx::XMMatrixTranslationFromVector(translationVector);
+
+    const interlop::TransformBuffer transformBufferData = {
+        .modelMatrix = modelMatrix,
+        .inverseModelMatrix = DirectX::XMMatrixInverse(nullptr, modelMatrix),
+    };
+
+    TransformBuffer.Update(&transformBufferData);
+
+}
 FModel::FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
     :ModelName(ModelCreationDesc.ModelName)
 {
+
+    Transform.TransformBuffer =
+        GraphicsDevice->CreateBuffer<interlop::TransformBuffer>(FBufferCreationDesc{
+            .Usage = EBufferUsage::ConstantBuffer,
+            .Name = ModelName + " Transform Buffer",
+        });
+
+    Transform.Scale = ModelCreationDesc.Scale;
+    Transform.Rotation = ModelCreationDesc.Rotation;
+    Transform.Translate = ModelCreationDesc.Translate;
+
+    Transform.Update();
+
     std::string FullPath = FFileSystem::GetAssetPath() + ModelCreationDesc.ModelPath.data();
     
     if (FullPath.find_last_of("/") != std::string::npos)
@@ -217,16 +249,19 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
         }
         {
             // Emissive
-            const tinygltf::Texture& emissiveTexture = GLTFModel.textures[material.emissiveTexture.index];
-            const tinygltf::Image& emissiveImage = GLTFModel.images[emissiveTexture.source];
+            if (material.emissiveTexture.index >= 0)
+            {
+                const tinygltf::Texture& emissiveTexture = GLTFModel.textures[material.emissiveTexture.index];
+                const tinygltf::Image& emissiveImage = GLTFModel.images[emissiveTexture.source];
 
-            PbrMaterial.EmissiveTexture = CreateTexture(emissiveImage, FTextureCreationDesc{
-                                                 .Usage = ETextureUsage::TextureFromData,
-                                                 .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-                                                 .MipLevels = 1u,
-                                                 .Name = ModelName + " emissive texture",
-                    });
-            PbrMaterial.EmissiveSampler = Samplers[emissiveTexture.sampler];
+                PbrMaterial.EmissiveTexture = CreateTexture(emissiveImage, FTextureCreationDesc{
+                                                     .Usage = ETextureUsage::TextureFromData,
+                                                     .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+                                                     .MipLevels = 1u,
+                                                     .Name = ModelName + " emissive texture",
+                        });
+                PbrMaterial.EmissiveSampler = Samplers[emissiveTexture.sampler];
+            }
         }
 
         PbrMaterial.MaterialBuffer = GraphicsDevice->CreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
@@ -400,5 +435,26 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
         Mesh.MaterialIndex = primitive.material;
 
         Meshes.push_back(Mesh);
+    }
+}
+
+void FModel::Render(const FGraphicsContext* const GraphicsContext,
+    interlop::UnlitPassRenderResources& UnlitRenderResources)
+{
+    for (const FMesh& Mesh : Meshes)
+    {
+        GraphicsContext->SetIndexBuffer(Mesh.IndexBuffer);
+
+        UnlitRenderResources.albedoTextureIndex = Materials[Mesh.MaterialIndex].AlbedoTexture.SrvIndex;
+        UnlitRenderResources.albedoTextureSamplerIndex =
+            Materials[Mesh.MaterialIndex].AlbedoSampler.SamplerIndex;
+
+        UnlitRenderResources.materialBufferIndex = Materials[Mesh.MaterialIndex].MaterialBuffer.CbvIndex;
+
+        UnlitRenderResources.positionBufferIndex = Mesh.PositionBuffer.SrvIndex;
+        UnlitRenderResources.textureCoordBufferIndex = Mesh.TextureCoordsBuffer.SrvIndex;
+        UnlitRenderResources.transformBufferIndex = Transform.TransformBuffer.CbvIndex;
+
+        GraphicsContext->DrawIndexedInstanced(Mesh.IndicesCount);
     }
 }

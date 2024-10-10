@@ -49,3 +49,73 @@ void FGraphicsContext::ClearRenderTargetView(const FTexture& InRenderTarget, std
 
     CommandList->ClearRenderTargetView(rtvDescriptorHandle.CpuDescriptorHandle, Color.data(), 0u, nullptr);
 }
+
+void FGraphicsContext::ClearDepthStencilView(const FTexture& Texture)
+{
+    const auto DsvHandle =
+        Device->GetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(Texture.DsvIndex);
+
+    CommandList->ClearDepthStencilView(DsvHandle.CpuDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH,
+        1.0f, 1u, 0u, nullptr);
+}
+
+void FGraphicsContext::SetRenderTarget(const FTexture& RenderTarget, const FTexture& DepthStencilTexture) const
+{
+    D3D12_CPU_DESCRIPTOR_HANDLE RtvHandle =
+        Device->GetRtvDescriptorHeap()->GetDescriptorHandleFromIndex(RenderTarget.RtvIndex).CpuDescriptorHandle;
+
+    D3D12_CPU_DESCRIPTOR_HANDLE DsvHandle =
+        Device->GetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(DepthStencilTexture.DsvIndex).CpuDescriptorHandle;
+
+    CommandList->OMSetRenderTargets(1, &RtvHandle, TRUE, &DsvHandle);
+}
+
+void FGraphicsContext::SetRenderTargets(const std::span<const FTexture> RenderTargets, const FTexture& DepthStencilTexture) const
+{
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> RtvHandles(RenderTargets.size());
+    
+    for (int i=0; i<RenderTargets.size(); i++)
+    {
+        RtvHandles[i] = Device->GetRtvDescriptorHeap()
+            ->GetDescriptorHandleFromIndex(RenderTargets[i].RtvIndex).CpuDescriptorHandle;
+    }
+
+    D3D12_CPU_DESCRIPTOR_HANDLE DsvHandle =
+        Device->GetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(DepthStencilTexture.DsvIndex).CpuDescriptorHandle;
+
+    CommandList->OMSetRenderTargets(RtvHandles.size(), RtvHandles.data(), TRUE, &DsvHandle);
+}
+
+void FGraphicsContext::SetGraphicsPipelineState(const FPipelineState& PipelineState) const
+{
+    CommandList->SetPipelineState(PipelineState.PipelineStateObject.Get());
+}
+
+void FGraphicsContext::SetViewport(const D3D12_VIEWPORT& Viewport) const
+{
+    static D3D12_RECT scissorRect{ .left = 0u, .top = 0u, .right = (LONG)Viewport.Width, .bottom = (LONG)Viewport.Height };
+
+    CommandList->RSSetViewports(1u, &Viewport);
+    CommandList->RSSetScissorRects(1u, &scissorRect);
+}
+
+void FGraphicsContext::SetPrimitiveTopologyLayout(const D3D_PRIMITIVE_TOPOLOGY PrimitiveTopology) const
+{
+    CommandList->IASetPrimitiveTopology(PrimitiveTopology);
+}
+
+void FGraphicsContext::SetIndexBuffer(const FBuffer& Buffer) const
+{
+    const D3D12_INDEX_BUFFER_VIEW indexBufferView = {
+        .BufferLocation = Buffer.Allocation.Resource->GetGPUVirtualAddress(),
+        .SizeInBytes = static_cast<UINT>(Buffer.SizeInBytes),
+        .Format = DXGI_FORMAT_R16_UINT,
+    };
+
+    CommandList->IASetIndexBuffer(&indexBufferView);
+}
+
+void FGraphicsContext::DrawIndexedInstanced(const uint32_t IndicesCount, const uint32_t InstanceCount) const
+{
+    CommandList->DrawIndexedInstanced(IndicesCount, InstanceCount, 0u, 0u, 0u);
+}

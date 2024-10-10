@@ -10,7 +10,7 @@ public:
     Application(const std::string& Title);
     virtual ~Application();
 
-    bool Init(int Width, int Height);
+    bool Init(uint32_t Width, uint32_t Height);
 
     void Run();
     void Render();

@@ -1,6 +1,6 @@
 #include "Core/Application.h"
 #include "Core/FileSystem.h"
-#include "Scene/Renderer.h"
+#include "Renderer/Renderer.h"
 
 Application::Application(const std::string& Title)
     : WindowTitle(Title)
@@ -11,7 +11,7 @@ Application::~Application()
 {
 }
 
-bool Application::Init(int Width, int Height)
+bool Application::Init(uint32_t Width, uint32_t Height)
 {
     FFileSystem::LocateRootDirectory();
 

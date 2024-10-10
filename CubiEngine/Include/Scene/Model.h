@@ -2,8 +2,10 @@
 
 #include "Graphics/Resource.h"
 #include "Graphics/Material.h"
+#include "ShaderInterlop/RenderResources.hlsli"
 
 class FGraphicsDevice;
+class FGraphicsContext;
 
 struct FTransform
 {
@@ -11,10 +13,8 @@ struct FTransform
     Dx::XMFLOAT3 Scale{ 1.0f, 1.0f, 1.0f };
     Dx::XMFLOAT3 Translate{ 0.0f, 0.0f, 0.0f };
 
-    //Buffer transformBuffer{};
-
-    void update();
-
+    FBuffer TransformBuffer{};
+    void Update();
 };
 
 struct FModelCreationDesc
@@ -45,6 +45,8 @@ class FModel
 public:
     FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc);
 
+    void Render(const FGraphicsContext* const GraphicsContext,
+        interlop::UnlitPassRenderResources& UnlitRenderResources);
 private:
     std::string ModelName;
     std::string ModelDir;
@@ -53,6 +55,8 @@ private:
     std::vector<FPBRMaterial> Materials;
     
     std::vector<FMesh> Meshes{};
+
+    FTransform Transform;
 
     void LoadSamplers(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel);
     void LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel);

@@ -16,7 +16,7 @@ struct FFenceValues
 class FGraphicsDevice
 {
 public:
-    FGraphicsDevice(const int Width, const int Height,
+    FGraphicsDevice(const uint32_t Width, const uint32_t Height,
         const DXGI_FORMAT SwapchainFormat, const HWND WindowHandle);
 
     FGraphicsDevice() = delete;
@@ -25,7 +25,7 @@ public:
 
     FSampler CreateSampler(const FSamplerCreationDesc& Desc) const;
     FTexture CreateTexture(const FTextureCreationDesc& TextureCreationDesc, const void* Data = nullptr) const;
-
+    FPipelineState CreatePipelineState(const FGraphicsPipelineStateCreationDesc Desc) const;
 
     void CreateBackBufferRTVs();
     
