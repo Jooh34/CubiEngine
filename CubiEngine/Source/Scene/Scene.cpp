@@ -13,6 +13,10 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         .ModelPath = "Models/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
         .ModelName = L"MetalRoughSpheres",
     };
+    //FModelCreationDesc Desc{
+    //    .ModelPath = "Models/Sponza/sponza.glb",
+    //    .ModelName = L"Sponza",
+    //};
     AddModel(Desc);
 }
 

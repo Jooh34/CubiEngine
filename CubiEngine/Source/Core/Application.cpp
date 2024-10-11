@@ -56,8 +56,6 @@ bool Application::Init(uint32_t Width, uint32_t Height)
 
 void Application::Run()
 {
-    Sleep(1000);
-
     std::chrono::high_resolution_clock Clock{};
     std::chrono::high_resolution_clock::time_point PrevTime = Clock.now();
 
