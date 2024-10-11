@@ -16,7 +16,7 @@ void FTransform::Update()
 
     const interlop::TransformBuffer transformBufferData = {
         .modelMatrix = modelMatrix,
-        .inverseModelMatrix = DirectX::XMMatrixInverse(nullptr, modelMatrix),
+        .inverseModelMatrix = Dx::XMMatrixInverse(nullptr, modelMatrix),
     };
 
     TransformBuffer.Update(&transformBufferData);
@@ -316,7 +316,7 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
 
         // Position
         size_t accessorNum = 0;
-        const float* positions;
+        const uint8_t* positions;
         int positionStride;
         {
             const tinygltf::Accessor& accessor = model.accessors[primitive.attributes["POSITION"]];
@@ -324,13 +324,13 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
             const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
             positionStride = accessor.ByteStride(bufferView);
-            positions = reinterpret_cast<const float*>(&buffer.data[accessor.byteOffset + bufferView.byteOffset]);
+            positions = reinterpret_cast<const uint8_t*>(&buffer.data[accessor.byteOffset + bufferView.byteOffset]);
 
             accessorNum = accessor.count;
         }
 
         // TextureCoord
-        const float* texcoords;
+        const uint8_t* texcoords;
         int texcoordStride;
         {
             const tinygltf::Accessor& accessor = model.accessors[primitive.attributes["TEXCOORD_0"]];
@@ -338,11 +338,11 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
             const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
             texcoordStride = accessor.ByteStride(bufferView);
-            texcoords = reinterpret_cast<const float*>(&buffer.data[accessor.byteOffset + bufferView.byteOffset]);
+            texcoords = reinterpret_cast<const uint8_t*>(&buffer.data[accessor.byteOffset + bufferView.byteOffset]);
         }
 
         // Normal
-        const float* normals;
+        const uint8_t* normals;
         int normalStride;
         {
             const tinygltf::Accessor& accessor = model.accessors[primitive.attributes["NORMAL"]];
@@ -350,11 +350,11 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
             const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
             normalStride = accessor.ByteStride(bufferView);
-            normals = reinterpret_cast<const float*>(&buffer.data[accessor.byteOffset + bufferView.byteOffset]);
+            normals = reinterpret_cast<const uint8_t*>(&buffer.data[accessor.byteOffset + bufferView.byteOffset]);
         }
 
         // Index Buffer
-        const uint16_t* indices;
+        const uint8_t* indices;
         int indexStride;
         tinygltf::Accessor indexAccessor{};
         {
@@ -363,7 +363,7 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
             const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
             indexStride = indexAccessor.ByteStride(bufferView);
-            indices = reinterpret_cast<const uint16_t*>(&buffer.data[indexAccessor.byteOffset + bufferView.byteOffset]);
+            indices = reinterpret_cast<const uint8_t*>(&buffer.data[indexAccessor.byteOffset + bufferView.byteOffset]);
         }
 
         {
@@ -372,20 +372,20 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
                 for (size_t i : std::views::iota(0u, accessorNum))
                 {
                     const XMFLOAT3 position = {
-                        (positions + (i * positionStride))[0],
-                        (positions + (i * positionStride))[1],
-                        (positions + (i * positionStride))[2],
+                        (reinterpret_cast<float const*>(positions + (i * positionStride)))[0],
+                        (reinterpret_cast<float const*>(positions + (i * positionStride)))[1],
+                        (reinterpret_cast<float const*>(positions + (i * positionStride)))[2],
                     };
 
                     const XMFLOAT2 textureCoord = {
-                        (texcoords + (i * texcoordStride))[0],
-                        (texcoords + (i * texcoordStride))[1],
+                        (reinterpret_cast<float const*>(texcoords + (i * texcoordStride)))[0],
+                        (reinterpret_cast<float const*>(texcoords + (i * texcoordStride)))[1],
                     };
 
                     const XMFLOAT3 normal = {
-                        (normals + (i * normalStride))[0],
-                        (normals + (i * normalStride))[1],
-                        (normals + (i * normalStride))[2],
+                        (reinterpret_cast<float const*>(normals + (i * normalStride)))[0],
+                        (reinterpret_cast<float const*>(normals + (i * normalStride)))[1],
+                        (reinterpret_cast<float const*>(normals + (i * normalStride)))[2],
                     };
 
                     Positions.emplace_back(position);
@@ -399,8 +399,8 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
             size_t indexCount = indexAccessor.count;
             Indices.resize(indexCount);
             // Fill indices array.
-            for (size_t i = 0; i < indexCount; ++i) {
-                Indices[i] = indices[i];
+            for (const size_t i : std::views::iota(0u, indexCount)) {
+                Indices[i] = (reinterpret_cast<uint16_t const*>(indices + (i * indexStride))[0]);
             }
         }
 
@@ -436,6 +436,10 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
         Mesh.MaterialIndex = primitive.material;
 
         Meshes.push_back(Mesh);
+    }
+    for (const int& ChildIndex : node.children)
+    {
+        LoadNode(GraphicsDevice, ModelCreationDesc, ChildIndex, GLTFModel);
     }
 }
 

@@ -44,7 +44,6 @@ PsOutput PsMain(VSOutput psInput)
     ConstantBuffer<interlop::MaterialBuffer> materialBuffer = ResourceDescriptorHeap[renderResources.materialBufferIndex];
 
     PsOutput output;
-
     output.albedo = getAlbedo(psInput.textureCoord, renderResources.albedoTextureIndex, renderResources.albedoTextureSamplerIndex, materialBuffer.albedoColor);
     
     return output;

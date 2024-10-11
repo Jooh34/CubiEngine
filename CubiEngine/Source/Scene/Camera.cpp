@@ -2,7 +2,7 @@
 
 FCamera::FCamera(uint32_t Width, uint32_t Height)
 {
-    CamPosition = { 0.f,0.f,0.f,1.f };
+    CamPosition = { 0.f,5.f,-30.f,1.f };
     Pitch = 0.f;
     Yaw = 0.f;
     Roll = 0.f;
@@ -10,7 +10,7 @@ FCamera::FCamera(uint32_t Width, uint32_t Height)
     FovY = Dx::XM_PIDIV4;
     AspectRatio = static_cast<float>(Width) / Height;
     NearZ = 0.1f;
-    FarZ = 10000.f;
+    FarZ = 1000.f;
 
     UpdateMatrix();
 }
