@@ -20,3 +20,8 @@ void FBuffer::Update(const void* data)
 {
     Allocation.Update(data, SizeInBytes);
 }
+
+ID3D12Resource* FTexture::GetResource() const
+{
+    return Allocation.Resource.Get();
+}

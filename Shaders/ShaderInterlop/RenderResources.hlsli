@@ -20,7 +20,6 @@ namespace interlop
     {
         uint positionBufferIndex;
         uint textureCoordBufferIndex;
-        uint normalBufferIndex;
 
         uint transformBufferIndex;
 

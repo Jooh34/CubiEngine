@@ -11,6 +11,8 @@ FCamera::FCamera(uint32_t Width, uint32_t Height)
     AspectRatio = static_cast<float>(Width) / Height;
     NearZ = 0.1f;
     FarZ = 10000.f;
+
+    UpdateMatrix();
 }
 
 void FCamera::UpdateMatrix()

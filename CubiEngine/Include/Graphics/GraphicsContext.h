@@ -30,6 +30,8 @@ public:
     void SetGraphicsRootSignature() const;
     void SetGraphicsRoot32BitConstants(const void* RenderResources)  const;
 
+    void CopyResource(ID3D12Resource* const Destination, ID3D12Resource* const Source) const;
+
 private:
     FGraphicsDevice* Device;
 

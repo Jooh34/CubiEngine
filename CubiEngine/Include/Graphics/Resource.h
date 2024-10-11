@@ -76,12 +76,13 @@ struct FTextureCreationDesc
     uint32_t MipLevels{ 1u };
     uint32_t DepthOrArraySize{ 1u };
     uint32_t BytesPerPixel{ 4u };
-    std::string_view Name{};
+    std::wstring_view Name{};
     std::string Path{};
 };
 
 struct FTexture
 {
+    ID3D12Resource* GetResource() const;
     uint32_t Width{};
     uint32_t Height{};
     FAllocation Allocation{};
@@ -157,5 +158,5 @@ enum class EBufferUsage
 struct FBufferCreationDesc
 {
     EBufferUsage Usage{};
-    std::string_view Name{};
+    std::wstring_view Name{};
 };

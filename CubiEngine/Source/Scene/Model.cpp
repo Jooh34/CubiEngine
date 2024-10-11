@@ -25,11 +25,10 @@ void FTransform::Update()
 FModel::FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
     :ModelName(ModelCreationDesc.ModelName)
 {
-
     Transform.TransformBuffer =
         GraphicsDevice->CreateBuffer<interlop::TransformBuffer>(FBufferCreationDesc{
             .Usage = EBufferUsage::ConstantBuffer,
-            .Name = ModelName + " Transform Buffer",
+            .Name = ModelName + L" Transform Buffer",
         });
 
     Transform.Scale = ModelCreationDesc.Scale;
@@ -189,7 +188,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                     CreateTexture(albedoImage, FTextureCreationDesc{
                                                    .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
                                                    .MipLevels = 1u, // Todo:Mips
-                                                   .Name = ModelName + " albedo texture",
+                                                   .Name = ModelName + L" albedo texture",
                         });
                 PbrMaterial.AlbedoSampler = Samplers[albedoTexture.sampler];
             }
@@ -208,7 +207,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                                                            .Usage = ETextureUsage::TextureFromData,
                                                            .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
                                                            .MipLevels = 1u,
-                                                           .Name = ModelName + " metal roughness texture",
+                                                           .Name = ModelName + L" metal roughness texture",
                     });
                 PbrMaterial.MetalRoughnessSampler = Samplers[metalRoughnessTexture.sampler];
             }
@@ -225,7 +224,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                                                .Usage = ETextureUsage::TextureFromData,
                                                .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
                                                .MipLevels = 1u,
-                                               .Name = ModelName + " normal texture",
+                                               .Name = ModelName + L" normal texture",
                     });
 
                 PbrMaterial.NormalSampler = Samplers[normalTexture.sampler];
@@ -242,7 +241,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                                                                .Usage = ETextureUsage::TextureFromData,
                                                                .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
                                                                .MipLevels = 1u,
-                                                               .Name = ModelName + " occlusion texture",
+                                                               .Name = ModelName + L" occlusion texture",
                 });
                 PbrMaterial.AOSampler = Samplers[aoTexture.sampler];
             }
@@ -258,7 +257,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                                                      .Usage = ETextureUsage::TextureFromData,
                                                      .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
                                                      .MipLevels = 1u,
-                                                     .Name = ModelName + " emissive texture",
+                                                     .Name = ModelName + L" emissive texture",
                         });
                 PbrMaterial.EmissiveSampler = Samplers[emissiveTexture.sampler];
             }
@@ -266,7 +265,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
 
         PbrMaterial.MaterialBuffer = GraphicsDevice->CreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
             .Usage = EBufferUsage::ConstantBuffer,
-            .Name = ModelName + "_MaterialBuffer" + std::to_string(index),
+            .Name = ModelName + L"_MaterialBuffer" + std::to_wstring(index),
         });
 
         PbrMaterial.MaterialBufferData = {
@@ -306,7 +305,7 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
         tinygltf::Primitive primitive = nodeMesh.primitives[i];
 
         FMesh Mesh{};
-        const std::string MeshName = ModelName + "Mesh " + std::to_string(NodeIndex);
+        const std::wstring MeshName = ModelName + L"Mesh " + std::to_wstring(NodeIndex);
 
         std::vector<XMFLOAT3> Positions{};
         std::vector<XMFLOAT2> TextureCoords{};
@@ -408,28 +407,28 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
         Mesh.PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
-                .Name = MeshName + " position buffer",
+                .Name = MeshName + L" position buffer",
             },
             Positions);
 
         Mesh.TextureCoordsBuffer = GraphicsDevice->CreateBuffer<XMFLOAT2>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
-                .Name = MeshName + " texture coord buffer",
+                .Name = MeshName + L" texture coord buffer",
             },
             TextureCoords);
 
         Mesh.NormalBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
-                .Name = MeshName + " normal buffer",
+                .Name = MeshName + L" normal buffer",
             },
             Normals);
 
         Mesh.IndexBuffer = GraphicsDevice->CreateBuffer<uint16_t>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
-                .Name = MeshName + " index buffer",
+                .Name = MeshName + L" index buffer",
             },
             Indices);
 

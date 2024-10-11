@@ -44,7 +44,7 @@ namespace ShaderCompiler
                 return L"";
             }
         }();
-
+        
         std::vector<LPCWSTR> compilationArguments = {
             L"-HV",
             L"2021",
@@ -64,6 +64,7 @@ namespace ShaderCompiler
         if constexpr (DEBUG_MODE)
         {
             compilationArguments.push_back(DXC_ARG_DEBUG);
+            compilationArguments.push_back(L"/Qembed_debug");
         }
         else
         {

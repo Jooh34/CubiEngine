@@ -2,6 +2,16 @@
 #include "Core/FileSystem.h"
 #include "Renderer/Renderer.h"
 
+// Setting the Agility SDK parameters.
+extern "C"
+{
+    __declspec(dllexport) extern const UINT D3D12SDKVersion = 715u;
+}
+extern "C"
+{
+    __declspec(dllexport) extern const char* D3D12SDKPath = ".\\D3D12\\";
+}
+
 Application::Application(const std::string& Title)
     : WindowTitle(Title)
 {

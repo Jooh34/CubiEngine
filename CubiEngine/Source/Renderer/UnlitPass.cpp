@@ -14,7 +14,7 @@ FUnlitPass::FUnlitPass(FGraphicsDevice* Device, const uint32_t Width, const uint
         },
         .RtvFormats =
         {
-            DXGI_FORMAT_R16G16B16A16_FLOAT
+            DXGI_FORMAT_R10G10B10A2_UNORM
         },
         .RtvCount = 1,
         .PipelineName = L"Unlit Pass Pipeline"
@@ -24,11 +24,10 @@ FUnlitPass::FUnlitPass(FGraphicsDevice* Device, const uint32_t Width, const uint
         .Usage = ETextureUsage::RenderTarget,
         .Width = Width,
         .Height = Height,
-        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+        .Format = DXGI_FORMAT_R10G10B10A2_UNORM,
         .InitialState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-        .Name = "Unlit Texture",
+        .Name = L"Unlit Texture",
     };
-
     UnlitPipelineState = Device->CreatePipelineState(PipelineDesc);
     UnlitTexture = Device->CreateTexture(TextureDesc);
 }

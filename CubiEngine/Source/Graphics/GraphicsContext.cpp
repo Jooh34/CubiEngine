@@ -129,3 +129,9 @@ void FGraphicsContext::SetGraphicsRoot32BitConstants(const void* RenderResources
 {
     CommandList->SetGraphicsRoot32BitConstants(0u, NUMBER_32_BIT_CONSTANTS, RenderResources, 0u);
 }
+
+void FGraphicsContext::CopyResource(ID3D12Resource* const Destination, ID3D12Resource* const Source) const
+{
+    CommandList->CopyResource(Destination, Source);
+}
+

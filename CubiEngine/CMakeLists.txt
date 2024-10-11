@@ -76,6 +76,7 @@ set(fileList
     D3D12Core.dll D3D12Core.pdb
     d3d12SDKLayers.dll d3d12SDKLayers.pdb
     d3dconfig.exe d3dconfig.pdb
+    DirectSR.dll DirectSR.pdb
 )
 
 foreach(Var IN LISTS fileList)

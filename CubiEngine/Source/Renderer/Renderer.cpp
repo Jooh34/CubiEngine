@@ -16,7 +16,7 @@ FRenderer::FRenderer(HWND Handle, uint32_t Width, uint32_t Height)
         .Height = Height,
         .Format = DXGI_FORMAT_D32_FLOAT,
         .InitialState = D3D12_RESOURCE_STATE_DEPTH_WRITE,
-        .Name = "Depth Texture",
+        .Name = L"Depth Texture",
     };
 
     DepthTexture = GraphicsDevice->CreateTexture(DepthTextureDesc);
@@ -39,7 +39,7 @@ void FRenderer::Render()
     FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
     FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
 
-    GraphicsContext->AddResourceBarrier(BackBuffer.Allocation.Resource.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    GraphicsContext->AddResourceBarrier(BackBuffer.GetResource(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
     GraphicsContext->ExecuteResourceBarriers();
 
     //RenderTargetColorTest[1] += 0.01f;
@@ -53,10 +53,20 @@ void FRenderer::Render()
     if (UnlitPass)
     {
         UnlitPass->Render(Scene.get(), GraphicsContext, DepthTexture, Width, Height);
+
+        // Copy to final image
+        GraphicsContext->AddResourceBarrier(UnlitPass->UnlitTexture.GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        GraphicsContext->AddResourceBarrier(BackBuffer.GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_DEST);
+        GraphicsContext->ExecuteResourceBarriers();
+
+        GraphicsContext->CopyResource(BackBuffer.GetResource(), UnlitPass->UnlitTexture.GetResource());
+
+        GraphicsContext->AddResourceBarrier(UnlitPass->UnlitTexture.GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(BackBuffer.GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
+        GraphicsContext->ExecuteResourceBarriers();
     }
 
-    GraphicsContext->AddResourceBarrier(BackBuffer.Allocation.Resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-    GraphicsContext->ExecuteResourceBarriers();
+    //GraphicsContext->ExecuteResourceBarriers();
 
     GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
     GraphicsDevice->Present();

@@ -20,7 +20,7 @@ public:
         interlop::UnlitPassRenderResources& UnlitRenderResources);
 
 private:
-    std::unordered_map<std::string, std::unique_ptr<FModel>> Models{};
+    std::unordered_map<std::wstring, std::unique_ptr<FModel>> Models{};
     FGraphicsDevice* Device;
 
     FCamera Camera;

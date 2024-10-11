@@ -80,7 +80,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreat
         // Create upload buffer.
         const FBufferCreationDesc UploadBufferCreationDesc = {
             .Usage = EBufferUsage::UploadBuffer,
-            .Name = "Upload buffer - " + std::string(TextureCreationDesc.Name),
+            .Name = L"Upload buffer - " + std::wstring(TextureCreationDesc.Name),
         };
 
         const UINT64 UploadBufferSize = GetRequiredIntermediateSize(Texture.Allocation.Resource.Get(), 0, 1);
@@ -381,7 +381,7 @@ FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationD
         // Create upload buffer.
         const FBufferCreationDesc UploadBufferCreationDesc = {
             .Usage = EBufferUsage::UploadBuffer,
-            .Name = "Upload buffer - " + std::string(BufferCreationDesc.Name),
+            .Name = L"Upload buffer - " + std::wstring(BufferCreationDesc.Name),
         };
 
         FAllocation UploadAllocation =

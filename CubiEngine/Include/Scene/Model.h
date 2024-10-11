@@ -20,7 +20,7 @@ struct FTransform
 struct FModelCreationDesc
 {
     std::string_view ModelPath{};
-    std::string_view ModelName{};
+    std::wstring_view ModelName{};
 
     Dx::XMFLOAT3 Rotation{0.0f, 0.0f, 0.0f};
     Dx::XMFLOAT3 Scale{1.0f, 1.0f, 1.0f};
@@ -48,7 +48,7 @@ public:
     void Render(const FGraphicsContext* const GraphicsContext,
         interlop::UnlitPassRenderResources& UnlitRenderResources);
 private:
-    std::string ModelName;
+    std::wstring ModelName;
     std::string ModelDir;
 
     std::vector<FSampler> Samplers;

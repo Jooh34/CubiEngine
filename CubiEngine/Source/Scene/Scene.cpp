@@ -6,12 +6,12 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
 {
     SceneBuffer = Device->CreateBuffer<interlop::SceneBuffer>(FBufferCreationDesc{
        .Usage = EBufferUsage::ConstantBuffer,
-       .Name = "Scene Buffer",
+       .Name = L"Scene Buffer",
     });
 
     FModelCreationDesc Desc{
         .ModelPath = "Models/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
-        .ModelName = "MetalRoughSpheres",
+        .ModelName = L"MetalRoughSpheres",
     };
     AddModel(Desc);
 }
@@ -22,6 +22,8 @@ FScene::~FScene()
 
 void FScene::Update()
 {
+    Camera.UpdateMatrix();
+
     const interlop::SceneBuffer SceneBufferData = {
         .viewProjectionMatrix = Camera.GetViewProjMatrix(),
         .projectionMatrix = Camera.GetProjMatrix(),
@@ -35,7 +37,7 @@ void FScene::Update()
 
 void FScene::AddModel(const FModelCreationDesc& Desc)
 {
-    const std::string Key{ Desc.ModelName };
+    const std::wstring Key{ Desc.ModelName };
 
     Models[Key] = std::make_unique<FModel>(Device, Desc);
 }
