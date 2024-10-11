@@ -20,6 +20,8 @@ set(SRC_FILES
     "Include/Scene/Model.h"
     "Source/Scene/Scene.cpp"
     "Include/Scene/Scene.h"
+    "Source/Scene/Camera.cpp"
+    "Include/Scene/Camera.h"
 
     "Include/Graphics/d3dx12.h"
     "Include/Graphics/Material.h"

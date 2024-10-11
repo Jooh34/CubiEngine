@@ -280,6 +280,8 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                 .emissiveFactor = 0.0f,
         };
 
+        PbrMaterial.MaterialBuffer.Update(&PbrMaterial.MaterialBufferData);
+
         PbrMaterial.MaterialIndex = index;
         Materials[index++] = std::move(PbrMaterial);
     }

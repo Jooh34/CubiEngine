@@ -10,6 +10,7 @@ public:
     FRenderer(HWND Handle, uint32_t Width, uint32_t Height);
     ~FRenderer();
 
+    void Update();
     void Render();
     FGraphicsDevice* GetGraphicsDevice() { return GraphicsDevice.get(); }
 

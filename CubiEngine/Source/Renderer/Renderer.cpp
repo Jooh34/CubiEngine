@@ -6,7 +6,7 @@ FRenderer::FRenderer(HWND Handle, uint32_t Width, uint32_t Height)
     GraphicsDevice = std::make_unique<FGraphicsDevice>(
         Width, Height, DXGI_FORMAT_R10G10B10A2_UNORM, Handle);
 
-    Scene = std::make_unique<FScene>(GraphicsDevice.get());
+    Scene = std::make_unique<FScene>(GraphicsDevice.get(), Width, Height);
 
     UnlitPass = std::make_unique<FUnlitPass>(GraphicsDevice.get(), Width, Height);
 
@@ -26,8 +26,14 @@ FRenderer::~FRenderer()
 {
 }
 
+void FRenderer::Update()
+{
+    Scene->Update();
+}
+
 void FRenderer::Render()
 {
+    Update();
     GraphicsDevice->BeginFrame();
 
     FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();

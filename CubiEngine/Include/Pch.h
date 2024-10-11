@@ -38,6 +38,13 @@ using Dx::XMFLOAT3;
 using Dx::XMFLOAT4;
 using Dx::XMMATRIX;
 using Dx::XMVECTOR;
+using Dx::XMVector3TransformCoord;
+using Dx::XMVector3Normalize;
+using Dx::XMVectorAdd;
+using Dx::XMMatrixLookAtLH;
+using Dx::XMMatrixPerspectiveFovLH;
+using Dx::XMMatrixRotationRollPitchYaw;
+using Dx::XMMatrixInverse;
 
 #ifdef _DEBUG
 constexpr bool DEBUG_MODE = true;
