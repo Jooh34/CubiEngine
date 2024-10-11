@@ -15,6 +15,8 @@ set(SRC_FILES
     "Include/Core/Application.h"
     "Source/Core/FileSystem.cpp"
     "Include/Core/FileSystem.h"
+    "Source/Core/Input.cpp"
+    "Include/Core/Input.h"
 
     "Source/Scene/Model.cpp"
     "Include/Scene/Model.h"

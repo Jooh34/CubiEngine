@@ -6,6 +6,7 @@
 
 class FGraphicsContext;
 class FCamera;
+class FInput;
 
 class FScene
 {
@@ -13,7 +14,7 @@ public:
     FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height);
     ~FScene();
     
-    void Update();
+    void Update(float DeltaTime, FInput* Input);
     void AddModel(const FModelCreationDesc& Desc);
 
     void RenderModels(FGraphicsContext* const GraphicsContext,

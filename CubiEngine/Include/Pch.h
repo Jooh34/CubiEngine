@@ -45,6 +45,8 @@ using Dx::XMMatrixLookAtLH;
 using Dx::XMMatrixPerspectiveFovLH;
 using Dx::XMMatrixRotationRollPitchYaw;
 using Dx::XMMatrixInverse;
+using Dx::XMVectorScale;
+using Dx::XMVectorSubtract;
 
 #ifdef _DEBUG
 constexpr bool DEBUG_MODE = true;

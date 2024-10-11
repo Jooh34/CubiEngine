@@ -4,25 +4,24 @@
 #include "Scene/Scene.h"
 #include "Renderer/UnlitPass.h"
 
+class FInput;
 class FRenderer
 {
 public:
-    FRenderer(HWND Handle, uint32_t Width, uint32_t Height);
+    FRenderer(FGraphicsDevice* GraphicsDevice, uint32_t Width, uint32_t Height);
     ~FRenderer();
 
-    void Update();
+    void Update(float DeltaTime, FInput* Input);
     void Render();
-    FGraphicsDevice* GetGraphicsDevice() { return GraphicsDevice.get(); }
+    FGraphicsDevice* GetGraphicsDevice() { return GraphicsDevice; }
 
 private:
+    FGraphicsDevice* GraphicsDevice;
+
     uint32_t Width{};
     uint32_t Height{};
-    std::unique_ptr<FUnlitPass> UnlitPass;
     FTexture DepthTexture;
 
-    std::unique_ptr<FGraphicsDevice> GraphicsDevice;
     std::unique_ptr<FScene> Scene;
-
-    float RenderTargetColorTest[4] = { 0,0,0,1 };
-
+    std::unique_ptr<FUnlitPass> UnlitPass;
 };

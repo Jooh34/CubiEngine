@@ -20,9 +20,9 @@ FScene::~FScene()
 {
 }
 
-void FScene::Update()
+void FScene::Update(float DeltaTime, FInput* Input)
 {
-    Camera.UpdateMatrix();
+    Camera.Update(DeltaTime, Input);
 
     const interlop::SceneBuffer SceneBufferData = {
         .viewProjectionMatrix = Camera.GetViewProjMatrix(),

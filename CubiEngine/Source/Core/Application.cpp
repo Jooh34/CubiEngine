@@ -46,7 +46,9 @@ bool Application::Init(uint32_t Width, uint32_t Height)
     WindowHandle = wmInfo.info.win.window;
 
     // Initialize renderer
-    D3DRenderer = new FRenderer(WindowHandle, Width, Height);
+    GraphicsDevice = std::make_unique<FGraphicsDevice>(
+        Width, Height, DXGI_FORMAT_R10G10B10A2_UNORM, WindowHandle);
+    D3DRenderer = new FRenderer(GraphicsDevice.get(), Width, Height);
 
     IsRunning = true;
     return true;
@@ -55,33 +57,44 @@ bool Application::Init(uint32_t Width, uint32_t Height)
 void Application::Run()
 {
     Sleep(1000);
+
+    std::chrono::high_resolution_clock Clock{};
+    std::chrono::high_resolution_clock::time_point PrevTime = Clock.now();
+
     while (IsRunning)
     {
         HandleEvents();
-        Render();
+
+        const std::chrono::high_resolution_clock::time_point CurTime = Clock.now();
+        const float DeltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(CurTime - PrevTime).count();
+        PrevTime = CurTime;
+
+        Render(DeltaTime);
     }
 
     Cleanup();
 }
 
-void Application::Render()
+void Application::Render(float DeltaTime)
 {
+    D3DRenderer->Update(DeltaTime, &Input);
     D3DRenderer->Render();
 }
 
 void Application::Cleanup()
 {
+    SDL_DestroyWindow(Window);
+    SDL_Quit();
+
     if (D3DRenderer) {
         delete D3DRenderer;
     }
-
-    SDL_DestroyWindow(Window);
-    SDL_Quit();
 }
 
 void Application::HandleEvents()
 {
     SDL_Event Event;
+    Input.Reset();
     while (SDL_PollEvent(&Event))
     {
         if (Event.type == SDL_QUIT)
@@ -95,5 +108,12 @@ void Application::HandleEvents()
                 IsRunning = false;
             }
         }
+        if (Event.window.event == SDL_WINDOWEVENT_RESIZED)
+        {
+            uint32_t Width = Event.window.data1;
+            uint32_t Height = Event.window.data2;
+            // TODO : Window Resize
+        }
+        Input.ProcessEvent(Event);
     }
 }
