@@ -47,6 +47,8 @@ public:
 
     void Render(const FGraphicsContext* const GraphicsContext,
         interlop::UnlitPassRenderResources& UnlitRenderResources);
+    void Render(const FGraphicsContext* const GraphicsContext,
+        interlop::DeferredGPassRenderResources& DeferredGPassRenderResources);
 private:
     std::wstring ModelName;
     std::string ModelDir;

@@ -55,3 +55,13 @@ void FScene::RenderModels(FGraphicsContext* const GraphicsContext,
         Model->Render(GraphicsContext, UnlitRenderResources);
     }
 }
+
+void FScene::RenderModels(FGraphicsContext* const GraphicsContext,
+    interlop::DeferredGPassRenderResources& DeferredGRenderResources)
+{
+    DeferredGRenderResources.sceneBufferIndex = SceneBuffer.CbvIndex;
+    for (const auto& [_, Model] : Models)
+    {
+        Model->Render(GraphicsContext, DeferredGRenderResources);
+    }
+}

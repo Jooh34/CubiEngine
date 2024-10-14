@@ -4,6 +4,7 @@
 #include "Graphics/PipelineState.h"
 
 class FGraphicsDevice;
+class FScene;
 
 struct FGBuffer
 {
@@ -12,10 +13,12 @@ struct FGBuffer
     FTexture AoMetalicRoughness{};
 };
 
-class DeferredGPass
+class FDeferredGPass
 {
 public:
-    DeferredGPass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height);
+    FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height);
+    void Render(FScene* const Scene, FGraphicsContext* const GraphicsContext,
+        const FTexture& DepthBuffer, uint32_t Width, uint32_t Height);
 
     FGBuffer GBuffer;
 

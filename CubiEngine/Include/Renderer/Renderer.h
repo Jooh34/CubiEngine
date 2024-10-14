@@ -2,7 +2,7 @@
 
 #include "Graphics/GraphicsDevice.h"
 #include "Scene/Scene.h"
-#include "Renderer/UnlitPass.h"
+#include "Renderer/DeferredGPass.h"
 
 class FInput;
 class FRenderer
@@ -23,5 +23,5 @@ private:
     FTexture DepthTexture;
 
     std::unique_ptr<FScene> Scene;
-    std::unique_ptr<FUnlitPass> UnlitPass;
+    std::unique_ptr<FDeferredGPass> DeferredGPass;
 };

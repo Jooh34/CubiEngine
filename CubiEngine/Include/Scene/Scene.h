@@ -19,6 +19,8 @@ public:
 
     void RenderModels(FGraphicsContext* const GraphicsContext,
         interlop::UnlitPassRenderResources& UnlitRenderResources);
+    void RenderModels(FGraphicsContext* const GraphicsContext,
+        interlop::DeferredGPassRenderResources& DeferredGRenderResources);
 
 private:
     std::unordered_map<std::wstring, std::unique_ptr<FModel>> Models{};

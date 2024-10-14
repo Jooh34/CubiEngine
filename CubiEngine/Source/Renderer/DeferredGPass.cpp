@@ -1,7 +1,10 @@
 #include "Renderer/DeferredGPass.h"
 #include "Graphics/GraphicsDevice.h"
+#include "Graphics/Resource.h"
+#include "Scene/Scene.h"
+#include "ShaderInterlop/RenderResources.hlsli"
 
-DeferredGPass::DeferredGPass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height)
+FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height)
 {
     FGraphicsPipelineStateCreationDesc Desc{
         .ShaderModule =
@@ -48,4 +51,33 @@ DeferredGPass::DeferredGPass(const FGraphicsDevice* const Device, uint32_t Width
     GBuffer.Albedo = Device->CreateTexture(AlbedoDesc);
     GBuffer.NormalEmissive = Device->CreateTexture(NormalDesc);
     GBuffer.AoMetalicRoughness = Device->CreateTexture(AoMetalicRoughnessDesc);
+}
+
+void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsContext, const FTexture& DepthBuffer, uint32_t Width, uint32_t Height)
+{
+    GraphicsContext->SetGraphicsPipelineState(PipelineState);
+    std::array<FTexture, 3> Textures = {
+        GBuffer.Albedo,
+        GBuffer.NormalEmissive,
+        GBuffer.AoMetalicRoughness,
+    };
+    GraphicsContext->SetRenderTargets(Textures, DepthBuffer);
+    GraphicsContext->SetViewport(D3D12_VIEWPORT{
+        .TopLeftX = 0.0f,
+        .TopLeftY = 0.0f,
+        .Width = static_cast<float>(Width),
+        .Height = static_cast<float>(Height),
+        .MinDepth = 0.0f,
+        .MaxDepth = 1.0f,
+        });
+
+    GraphicsContext->SetPrimitiveTopologyLayout(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    GraphicsContext->ClearRenderTargetView(GBuffer.Albedo, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+    GraphicsContext->ClearRenderTargetView(GBuffer.NormalEmissive, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+    GraphicsContext->ClearRenderTargetView(GBuffer.AoMetalicRoughness, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+
+    interlop::DeferredGPassRenderResources RenderResources{};
+
+    Scene->RenderModels(GraphicsContext, RenderResources);
 }

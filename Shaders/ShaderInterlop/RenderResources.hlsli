@@ -30,4 +30,32 @@ namespace interlop
 
         uint materialBufferIndex;
     };
+
+    struct DeferredGPassRenderResources
+    {
+        uint positionBufferIndex;
+        uint textureCoordBufferIndex;
+        uint normalBufferIndex;
+
+        uint transformBufferIndex;
+
+        uint sceneBufferIndex;
+
+        uint albedoTextureIndex;
+        uint albedoTextureSamplerIndex;
+
+        uint metalRoughnessTextureIndex;
+        uint metalRoughnessTextureSamplerIndex;
+
+        uint normalTextureIndex;
+        uint normalTextureSamplerIndex;
+
+        uint aoTextureIndex;
+        uint aoTextureSamplerIndex;
+
+        uint emissiveTextureIndex;
+        uint emissiveTextureSamplerIndex;
+
+        uint materialBufferIndex;
+    };
 }

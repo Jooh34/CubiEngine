@@ -464,3 +464,42 @@ void FModel::Render(const FGraphicsContext* const GraphicsContext,
         GraphicsContext->DrawIndexedInstanced(Mesh.IndicesCount);
     }
 }
+
+void FModel::Render(const FGraphicsContext* const GraphicsContext,
+    interlop::DeferredGPassRenderResources& DeferredGPassRenderResources)
+{
+    for (const FMesh& Mesh : Meshes)
+    {
+        GraphicsContext->SetIndexBuffer(Mesh.IndexBuffer);
+
+        DeferredGPassRenderResources.albedoTextureIndex = Materials[Mesh.MaterialIndex].AlbedoTexture.SrvIndex;
+        DeferredGPassRenderResources.albedoTextureSamplerIndex =
+            Materials[Mesh.MaterialIndex].AlbedoSampler.SamplerIndex;
+
+        DeferredGPassRenderResources.metalRoughnessTextureIndex = Materials[Mesh.MaterialIndex].MetalRoughnessTexture.SrvIndex;
+        DeferredGPassRenderResources.metalRoughnessTextureSamplerIndex =
+            Materials[Mesh.MaterialIndex].MetalRoughnessSampler.SamplerIndex;
+
+        DeferredGPassRenderResources.normalTextureIndex = Materials[Mesh.MaterialIndex].NormalTexture.SrvIndex;
+        DeferredGPassRenderResources.normalTextureSamplerIndex =
+            Materials[Mesh.MaterialIndex].NormalSampler.SamplerIndex;
+
+        DeferredGPassRenderResources.aoTextureIndex = Materials[Mesh.MaterialIndex].AOTexture.SrvIndex;
+        DeferredGPassRenderResources.aoTextureSamplerIndex =
+            Materials[Mesh.MaterialIndex].AOSampler.SamplerIndex;
+
+        DeferredGPassRenderResources.emissiveTextureIndex = Materials[Mesh.MaterialIndex].EmissiveTexture.SrvIndex;
+        DeferredGPassRenderResources.emissiveTextureSamplerIndex =
+            Materials[Mesh.MaterialIndex].EmissiveSampler.SamplerIndex;
+
+        DeferredGPassRenderResources.materialBufferIndex = Materials[Mesh.MaterialIndex].MaterialBuffer.CbvIndex;
+
+        DeferredGPassRenderResources.positionBufferIndex = Mesh.PositionBuffer.SrvIndex;
+        DeferredGPassRenderResources.textureCoordBufferIndex = Mesh.TextureCoordsBuffer.SrvIndex;
+        DeferredGPassRenderResources.normalBufferIndex = Mesh.TextureCoordsBuffer.SrvIndex;
+        DeferredGPassRenderResources.transformBufferIndex = Transform.TransformBuffer.CbvIndex;
+
+        GraphicsContext->SetGraphicsRoot32BitConstants(&DeferredGPassRenderResources);
+        GraphicsContext->DrawIndexedInstanced(Mesh.IndicesCount);
+    }
+}
