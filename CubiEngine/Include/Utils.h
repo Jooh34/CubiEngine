@@ -8,7 +8,8 @@ inline void FatalError(const std::string_view message,
             "{}, Line Number -> {}, Column -> {}.\n",
             message, sourceLocation.file_name(), sourceLocation.function_name(), sourceLocation.line(),
             sourceLocation.column());
-
+    
+    printf("%s\n", errorMessage.c_str());
     throw std::runtime_error(errorMessage);
 }
 

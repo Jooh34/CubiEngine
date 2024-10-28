@@ -174,6 +174,21 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreat
 
             Texture.RtvIndex = CreateRtv(rtvCreationDesc, Texture.Allocation.Resource.Get());
         }
+
+        // Create UAV
+        /*if (TextureCreationDesc.Usage == ETextureUsage::RenderTarget)
+        {
+            const FUavCreationDesc UavCreationDesc = {
+                .UavDesc =
+                    {
+                        .Format = format,
+                        .ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D,
+                        .Texture2D{.MipSlice = 0u, .PlaneSlice = 0u},
+                    },
+            };
+
+            Texture.UavIndex = CreateUav(UavCreationDesc, Texture.Allocation.Resource.Get());
+        }*/
     }
 
     // Todo: mipmap generation
@@ -181,6 +196,12 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreat
 }
 
 FPipelineState FGraphicsDevice::CreatePipelineState(const FGraphicsPipelineStateCreationDesc Desc) const
+{
+    FPipelineState PipelineState(Device.Get(), Desc);
+    return PipelineState;
+}
+
+FPipelineState FGraphicsDevice::CreatePipelineState(const FComputePipelineStateCreationDesc Desc) const
 {
     FPipelineState PipelineState(Device.Get(), Desc);
     return PipelineState;
@@ -334,6 +355,17 @@ uint32_t FGraphicsDevice::CreateSrv(const FSrvCreationDesc& SrvCreationDesc, ID3
     return Index;
 }
 
+uint32_t FGraphicsDevice::CreateUav(const FUavCreationDesc& UavCreationDesc, ID3D12Resource* const Resource) const
+{
+    const uint32_t Index = CbvSrvUavDescriptorHeap->GetCurrentDescriptorIndex();
+
+    Device->CreateUnorderedAccessView(Resource, nullptr, &UavCreationDesc.UavDesc,
+        CbvSrvUavDescriptorHeap->GetCurrentDescriptorHandle().CpuDescriptorHandle);
+
+    CbvSrvUavDescriptorHeap->OffsetCurrentHandle();
+    return Index;
+}
+
 uint32_t FGraphicsDevice::CreateDsv(const FDsvCreationDesc& DsvCreationDesc, ID3D12Resource* const Resource) const
 {
     const uint32_t Index = DsvDescriptorHeap->GetCurrentDescriptorIndex();
@@ -341,7 +373,7 @@ uint32_t FGraphicsDevice::CreateDsv(const FDsvCreationDesc& DsvCreationDesc, ID3
     Device->CreateDepthStencilView(Resource, &DsvCreationDesc.DsvDesc,
         DsvDescriptorHeap->GetCurrentDescriptorHandle().CpuDescriptorHandle);
 
-    CbvSrvUavDescriptorHeap->OffsetCurrentHandle();
+    DsvDescriptorHeap->OffsetCurrentHandle();
     return Index;
 }
 
@@ -352,7 +384,7 @@ uint32_t FGraphicsDevice::CreateRtv(const FRtvCreationDesc& RtvCreationDesc, ID3
     Device->CreateRenderTargetView(Resource, &RtvCreationDesc.RtvDesc,
         RtvDescriptorHeap->GetCurrentDescriptorHandle().CpuDescriptorHandle);
 
-    CbvSrvUavDescriptorHeap->OffsetCurrentHandle();
+    RtvDescriptorHeap->OffsetCurrentHandle();
     return Index;
 }
 

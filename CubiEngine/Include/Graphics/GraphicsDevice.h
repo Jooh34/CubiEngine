@@ -26,6 +26,7 @@ public:
     FSampler CreateSampler(const FSamplerCreationDesc& Desc) const;
     FTexture CreateTexture(const FTextureCreationDesc& TextureCreationDesc, const void* Data = nullptr) const;
     FPipelineState CreatePipelineState(const FGraphicsPipelineStateCreationDesc Desc) const;
+    FPipelineState CreatePipelineState(const FComputePipelineStateCreationDesc Desc) const;
 
     void CreateBackBufferRTVs();
     
@@ -60,6 +61,7 @@ private:
     
     uint32_t CreateCbv(const FCbvCreationDesc& CbvCreationDesc) const;
     uint32_t CreateSrv(const FSrvCreationDesc& SrvCreationDesc, ID3D12Resource* const Resource) const;
+    uint32_t CreateUav(const FUavCreationDesc& UavCreationDesc, ID3D12Resource* const Resource) const;
     uint32_t CreateDsv(const FDsvCreationDesc& DsvCreationDesc, ID3D12Resource* const Resource) const;
     uint32_t CreateRtv(const FRtvCreationDesc& RtvCreationDesc, ID3D12Resource* const Resource) const;
 

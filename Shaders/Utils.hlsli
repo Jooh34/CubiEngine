@@ -24,8 +24,7 @@ float4 getAlbedo(const float2 textureCoords, const uint albedoTextureIndex, cons
 }
 
 
-float3 getNormal(float2 textureCoord, uint normalTextureIndex, uint normalTextureSamplerIndex, float3 normal, float3 worldSpaceNormal,
-                 float3x3 tbnMatrix)
+float3 getNormal(float2 textureCoord, uint normalTextureIndex, uint normalTextureSamplerIndex, float3 normal, float3x3 tbnMatrix)
 {
     if (normalTextureIndex != INVALID_INDEX)
     {
@@ -150,4 +149,12 @@ float3 viewSpaceCoordsFromDepthBuffer(const float depthValue, const float2 uvCoo
    
     float4 unprojectedPosition = mul(float4(ndc, depthValue, 1.0f), inverseProjectionMatrix);
     return unprojectedPosition.xyz / unprojectedPosition.w;
+}
+
+void packGBuffer(const float3 albedo, const float3 normal, const float ao, float2 metalRoughness, const float3 emissive,
+    out float4 GBufferA, out float4 GBufferB, out float4 GBufferC)
+{
+    GBufferA = float4(albedo, emissive.r);
+    GBufferB = float4(normal, emissive.g);
+    GBufferC = float4(ao, metalRoughness, emissive.b);
 }

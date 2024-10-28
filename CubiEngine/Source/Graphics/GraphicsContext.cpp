@@ -91,6 +91,11 @@ void FGraphicsContext::SetGraphicsPipelineState(const FPipelineState& PipelineSt
     CommandList->SetPipelineState(PipelineState.PipelineStateObject.Get());
 }
 
+void FGraphicsContext::SetComputePipelineState(const FPipelineState& PipelineState) const
+{
+    CommandList->SetPipelineState(PipelineState.PipelineStateObject.Get());
+}
+
 void FGraphicsContext::SetViewport(const D3D12_VIEWPORT& Viewport) const
 {
     static D3D12_RECT scissorRect{ .left = 0u, .top = 0u, .right = (LONG)Viewport.Width, .bottom = (LONG)Viewport.Height };
@@ -130,8 +135,23 @@ void FGraphicsContext::SetGraphicsRoot32BitConstants(const void* RenderResources
     CommandList->SetGraphicsRoot32BitConstants(0u, NUMBER_32_BIT_CONSTANTS, RenderResources, 0u);
 }
 
+void FGraphicsContext::SetComputeRootSignature() const
+{
+    CommandList->SetComputeRootSignature(FPipelineState::StaticRootSignature.Get());
+}
+
+void FGraphicsContext::SetComputeRoot32BitConstants(const void* RenderResources) const
+{
+    CommandList->SetComputeRoot32BitConstants(0u, NUMBER_32_BIT_CONSTANTS, RenderResources, 0u);
+}
+
 void FGraphicsContext::CopyResource(ID3D12Resource* const Destination, ID3D12Resource* const Source) const
 {
     CommandList->CopyResource(Destination, Source);
+}
+
+void FGraphicsContext::Dispatch(const uint32_t ThreadGroupDimX, const uint32_t ThreadGroupDimY, const uint32_t ThreadGroupDimZ)
+{
+    CommandList->Dispatch(ThreadGroupDimX, ThreadGroupDimY, ThreadGroupDimZ);
 }
 

@@ -3,6 +3,7 @@
 #include "Graphics/GraphicsDevice.h"
 #include "Scene/Scene.h"
 #include "Renderer/DeferredGPass.h"
+#include "Renderer/DebugPass.h"
 
 class FInput;
 class FRenderer
@@ -24,4 +25,5 @@ private:
 
     std::unique_ptr<FScene> Scene;
     std::unique_ptr<FDeferredGPass> DeferredGPass;
+    std::unique_ptr<FDebugPass> DebugPass;
 };

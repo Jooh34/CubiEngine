@@ -32,6 +32,12 @@ struct FGraphicsPipelineStateCreationDesc
     std::wstring_view PipelineName{};
 };
 
+struct FComputePipelineStateCreationDesc
+{
+    std::wstring_view CsShaderPath{};
+    std::wstring_view PipelineName{};
+};
+
 struct FAllocation
 {
     void Update(const void* Data, const size_t Size);
@@ -101,6 +107,11 @@ struct FCbvCreationDesc
 struct FSrvCreationDesc
 {
     D3D12_SHADER_RESOURCE_VIEW_DESC SrvDesc;
+};
+
+struct FUavCreationDesc
+{
+    D3D12_UNORDERED_ACCESS_VIEW_DESC UavDesc;
 };
 
 struct FDsvCreationDesc

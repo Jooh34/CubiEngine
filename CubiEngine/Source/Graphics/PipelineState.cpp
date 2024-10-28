@@ -89,6 +89,25 @@ FPipelineState::FPipelineState(ID3D12Device5* const device,
     PipelineStateObject->SetName(pipelineStateCreationDesc.PipelineName.data());
 }
 
+FPipelineState::FPipelineState(ID3D12Device5* const device, const FComputePipelineStateCreationDesc& pipelineStateCreationDesc)
+{
+    const auto& ComputeShaderBlob =
+        ShaderCompiler::Compile(ShaderTypes::Compute,
+        FFileSystem::GetFullPath(pipelineStateCreationDesc.CsShaderPath),
+        L"CsMain").shaderBlob;
+
+    const D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {
+        .pRootSignature = FPipelineState::StaticRootSignature.Get(),
+        .CS = {.pShaderBytecode = ComputeShaderBlob->GetBufferPointer(),
+               .BytecodeLength = ComputeShaderBlob->GetBufferSize()},
+        .NodeMask = 0u,
+    };
+
+    ThrowIfFailed(device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&PipelineStateObject)));
+
+    PipelineStateObject->SetName(pipelineStateCreationDesc.PipelineName.data());
+}
+
 void FPipelineState::CreateBindlessRootSignature(ID3D12Device* const device, const std::wstring_view shaderPath)
 {
     const auto path = FFileSystem::GetFullPath(shaderPath);

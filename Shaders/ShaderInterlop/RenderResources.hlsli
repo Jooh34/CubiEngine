@@ -58,4 +58,10 @@ namespace interlop
 
         uint materialBufferIndex;
     };
+
+    struct CopyRenderResources
+    {
+        uint srcTextureIndex;
+        uint dstTextureIndex;
+    };
 }

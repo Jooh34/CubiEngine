@@ -20,6 +20,7 @@ public:
     void SetRenderTargets(const std::span<const FTexture> RenderTargets, const FTexture& DepthStencilTexture) const;
 
     void SetGraphicsPipelineState(const FPipelineState& PipelineState) const;
+    void SetComputePipelineState(const FPipelineState& PipelineState) const;
 
     void SetViewport(const D3D12_VIEWPORT& Viewport) const;
     void SetPrimitiveTopologyLayout(const D3D_PRIMITIVE_TOPOLOGY PrimitiveTopology) const;
@@ -29,8 +30,12 @@ public:
 
     void SetGraphicsRootSignature() const;
     void SetGraphicsRoot32BitConstants(const void* RenderResources)  const;
+    void SetComputeRootSignature() const;
+    void SetComputeRoot32BitConstants(const void* RenderResources)  const;
 
     void CopyResource(ID3D12Resource* const Destination, ID3D12Resource* const Source) const;
+
+    void Dispatch(const uint32_t ThreadGroupDimX, const uint32_t ThreadGroupDimY, const uint32_t ThreadGroupDimZ);
 
 private:
     FGraphicsDevice* Device;

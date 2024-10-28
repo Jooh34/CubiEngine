@@ -2,15 +2,15 @@
 
 #include "Graphics/Resource.h"
 #include "Graphics/PipelineState.h"
+#include "Graphics/GraphicsDevice.h"
 
-class FGraphicsDevice;
 class FScene;
 
 struct FGBuffer
 {
-    FTexture Albedo{};
-    FTexture NormalEmissive{};
-    FTexture AoMetalicRoughness{};
+    FTexture GBufferA{}; // Albedo
+    FTexture GBufferB{}; // Normal
+    FTexture GBufferC{}; // AO + MetalRoughness
 };
 
 class FDeferredGPass
