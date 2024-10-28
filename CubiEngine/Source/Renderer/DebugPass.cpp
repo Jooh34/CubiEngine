@@ -2,7 +2,7 @@
 #include "Graphics/GraphicsDevice.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FDebugPass::FDebugPass(FGraphicsDevice* const GraphicsDevice)
+FDebugPass::FDebugPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
 {
     FComputePipelineStateCreationDesc PipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -11,6 +11,18 @@ FDebugPass::FDebugPass(FGraphicsDevice* const GraphicsDevice)
     };
 
     CopyPipelineState = GraphicsDevice->CreatePipelineState(PipelineDesc);
+
+
+    FTextureCreationDesc TextureDesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = Width,
+        .Height = Height,
+        .Format = DXGI_FORMAT_R10G10B10A2_UNORM,
+        .InitialState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+        .Name = L"Copy Texture",
+    };
+
+    TextureForCopy = GraphicsDevice->CreateTexture(TextureDesc);
 }
 
 void FDebugPass::Copy(FGraphicsContext* const GraphicsContext, const FTexture& SrcTexture, const FTexture& DstTexture, uint32_t Width, uint32_t Height)

@@ -176,7 +176,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreat
         }
 
         // Create UAV
-        /*if (TextureCreationDesc.Usage == ETextureUsage::RenderTarget)
+        if (TextureCreationDesc.Usage == ETextureUsage::RenderTarget)
         {
             const FUavCreationDesc UavCreationDesc = {
                 .UavDesc =
@@ -188,7 +188,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreat
             };
 
             Texture.UavIndex = CreateUav(UavCreationDesc, Texture.Allocation.Resource.Get());
-        }*/
+        }
     }
 
     // Todo: mipmap generation

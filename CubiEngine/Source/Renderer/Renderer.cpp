@@ -18,7 +18,7 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, uint32_t Width, uint32_t H
     DepthTexture = GraphicsDevice->CreateTexture(DepthTextureDesc);
 
     DeferredGPass = std::make_unique<FDeferredGPass>(GraphicsDevice, Width, Height);
-    DebugPass = std::make_unique<FDebugPass>(GraphicsDevice);
+    DebugPass = std::make_unique<FDebugPass>(GraphicsDevice, Width, Height);
 }
 
 FRenderer::~FRenderer()
@@ -66,16 +66,19 @@ void FRenderer::Render()
     if (DeferredGPass)
     {
         DeferredGPass->Render(Scene.get(), GraphicsContext, DepthTexture, Width, Height);
+        
+        FTexture& TextureToDebug = DeferredGPass->GBuffer.GBufferB;
 
         // Copy to final image
-        GraphicsContext->AddResourceBarrier(DeferredGPass->GBuffer.GBufferA.GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        GraphicsContext->AddResourceBarrier(TextureToDebug.GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
         GraphicsContext->AddResourceBarrier(BackBuffer.GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_DEST);
         GraphicsContext->ExecuteResourceBarriers();
 
-        //GraphicsContext->CopyResource(BackBuffer.GetResource(), DeferredGPass->GBuffer.GBufferA.GetResource());
-        DebugPass->Copy(GraphicsContext, DeferredGPass->GBuffer.GBufferA, BackBuffer, Width, Height);
+        DebugPass->Copy(GraphicsContext, TextureToDebug, DebugPass->TextureForCopy, Width, Height);
 
-        GraphicsContext->AddResourceBarrier(DeferredGPass->GBuffer.GBufferA.GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->CopyResource(BackBuffer.GetResource(), DebugPass->TextureForCopy.GetResource());
+
+        GraphicsContext->AddResourceBarrier(TextureToDebug.GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
         GraphicsContext->AddResourceBarrier(BackBuffer.GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
         GraphicsContext->ExecuteResourceBarriers();
     }
