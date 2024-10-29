@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Graphics/Resource.h"
+
 class FContext
 {
 public:
@@ -11,6 +13,7 @@ public:
     void Reset() const;
 
     void AddResourceBarrier(ID3D12Resource* const Resource, const D3D12_RESOURCE_STATES PreviousState, const D3D12_RESOURCE_STATES NewState);
+    void AddResourceBarrier(FTexture& Texture, const D3D12_RESOURCE_STATES NewState);
 
     void ExecuteResourceBarriers();
 

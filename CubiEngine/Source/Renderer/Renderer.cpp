@@ -70,16 +70,16 @@ void FRenderer::Render()
         FTexture& TextureToDebug = DeferredGPass->GBuffer.GBufferB;
 
         // Copy to final image
-        GraphicsContext->AddResourceBarrier(TextureToDebug.GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
-        GraphicsContext->AddResourceBarrier(BackBuffer.GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_DEST);
         GraphicsContext->ExecuteResourceBarriers();
 
         DebugPass->Copy(GraphicsContext, TextureToDebug, DebugPass->TextureForCopy, Width, Height);
-
+        
+        GraphicsContext->AddResourceBarrier(DebugPass->TextureForCopy, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
         GraphicsContext->CopyResource(BackBuffer.GetResource(), DebugPass->TextureForCopy.GetResource());
 
-        GraphicsContext->AddResourceBarrier(TextureToDebug.GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        GraphicsContext->AddResourceBarrier(BackBuffer.GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
+        GraphicsContext->AddResourceBarrier(TextureToDebug, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
         GraphicsContext->ExecuteResourceBarriers();
     }
 

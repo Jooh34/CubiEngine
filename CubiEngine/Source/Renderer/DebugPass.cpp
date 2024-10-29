@@ -25,8 +25,13 @@ FDebugPass::FDebugPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, ui
     TextureForCopy = GraphicsDevice->CreateTexture(TextureDesc);
 }
 
-void FDebugPass::Copy(FGraphicsContext* const GraphicsContext, const FTexture& SrcTexture, const FTexture& DstTexture, uint32_t Width, uint32_t Height)
+void FDebugPass::Copy(FGraphicsContext* const GraphicsContext, FTexture& SrcTexture, FTexture& DstTexture, uint32_t Width, uint32_t Height)
 {
+    // Resource Barrier
+    GraphicsContext->AddResourceBarrier(SrcTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    GraphicsContext->AddResourceBarrier(DstTexture, D3D12_RESOURCE_STATE_COPY_DEST);
+    GraphicsContext->ExecuteResourceBarriers();
+
     interlop::CopyRenderResources RenderResources = {
         .srcTextureIndex = SrcTexture.SrvIndex,
         .dstTextureIndex = DstTexture.UavIndex,

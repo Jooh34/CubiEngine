@@ -62,8 +62,10 @@ FAllocation FMemoryAllocator::CreateBufferResourceAllocation(const FBufferCreati
     return Allocation;
 }
 
-FAllocation FMemoryAllocator::CreateTextureResourceAllocation(const FTextureCreationDesc& TextureCreationDesc)
+FAllocation FMemoryAllocator::CreateTextureResourceAllocation(const FTextureCreationDesc& TextureCreationDesc, D3D12_RESOURCE_STATES& ResourceState)
 {
+    ResourceState = D3D12_RESOURCE_STATE_COMMON;
+
     FAllocation Allocation{};
 
     DXGI_FORMAT format = TextureCreationDesc.Format;
@@ -99,7 +101,6 @@ FAllocation FMemoryAllocator::CreateTextureResourceAllocation(const FTextureCrea
             },
     };
 
-    D3D12_RESOURCE_STATES ResourceState = D3D12_RESOURCE_STATE_COMMON;
     constexpr D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_DEFAULT;
 
     D3D12MA::ALLOCATION_DESC AllocationDesc = {
@@ -150,6 +151,11 @@ FAllocation FMemoryAllocator::CreateTextureResourceAllocation(const FTextureCrea
     }
 
     std::lock_guard<std::recursive_mutex> Guard(ResourceAllocationMutex);
+    
+    if (TextureCreationDesc.InitialState != D3D12_RESOURCE_STATE_COMMON)
+    {
+        ResourceState = TextureCreationDesc.InitialState;
+    }
 
     ThrowIfFailed(
         DmaAllocator->CreateResource(&AllocationDesc, &ResourceCreationDesc.ResourceDesc, ResourceState,

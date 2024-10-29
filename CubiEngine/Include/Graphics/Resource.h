@@ -97,6 +97,8 @@ struct FTexture
     uint32_t UavIndex{ INVALID_INDEX_U32 };
     uint32_t DsvIndex{ INVALID_INDEX_U32 };
     uint32_t RtvIndex{ INVALID_INDEX_U32 };
+
+    D3D12_RESOURCE_STATES ResourceState;
 };
 
 struct FCbvCreationDesc

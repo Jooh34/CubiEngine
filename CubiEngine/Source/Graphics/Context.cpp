@@ -12,6 +12,13 @@ void FContext::AddResourceBarrier(ID3D12Resource* const Resource, const D3D12_RE
     ResourceBarriers.emplace_back(CD3DX12_RESOURCE_BARRIER::Transition(Resource, PreviousState, NewState));
 }
 
+void FContext::AddResourceBarrier(FTexture& Texture, const D3D12_RESOURCE_STATES NewState)
+{
+    if (Texture.ResourceState == NewState) return;
+
+    AddResourceBarrier(Texture.GetResource(), Texture.ResourceState, NewState);
+}
+
 void FContext::ExecuteResourceBarriers()
 {
     CommandList->ResourceBarrier(static_cast<UINT>(ResourceBarriers.size()), ResourceBarriers.data());

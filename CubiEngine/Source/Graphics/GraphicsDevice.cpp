@@ -71,9 +71,11 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreat
     FTexture Texture{};
 
     // GPU only memory
-    Texture.Allocation = MemoryAllocator->CreateTextureResourceAllocation(TextureCreationDesc);
+    D3D12_RESOURCE_STATES ResourceState;
+    Texture.Allocation = MemoryAllocator->CreateTextureResourceAllocation(TextureCreationDesc, ResourceState);
     Texture.Width = Width;
     Texture.Height = Height;
+    Texture.ResourceState = ResourceState;
     
     if (TextureData) // Upload Texture Buffer
     {
