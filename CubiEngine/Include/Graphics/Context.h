@@ -12,12 +12,13 @@ public:
 
     void Reset() const;
 
-    void AddResourceBarrier(ID3D12Resource* const Resource, const D3D12_RESOURCE_STATES PreviousState, const D3D12_RESOURCE_STATES NewState);
     void AddResourceBarrier(FTexture& Texture, const D3D12_RESOURCE_STATES NewState);
 
     void ExecuteResourceBarriers();
 
 protected:
+    void AddResourceBarrier(ID3D12Resource* const Resource, const D3D12_RESOURCE_STATES PreviousState, const D3D12_RESOURCE_STATES NewState);
+
     wrl::ComPtr<ID3D12GraphicsCommandList1> CommandList{};
     wrl::ComPtr<ID3D12CommandAllocator> CommandAllocator{};
 

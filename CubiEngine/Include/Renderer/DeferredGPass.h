@@ -18,10 +18,15 @@ class FDeferredGPass
 public:
     FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height);
     void Render(FScene* const Scene, FGraphicsContext* const GraphicsContext,
-        const FTexture& DepthBuffer, uint32_t Width, uint32_t Height);
+        FTexture& DepthBuffer, uint32_t Width, uint32_t Height);
+
+    void RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext,
+        uint32_t Width, uint32_t Height);
 
     FGBuffer GBuffer;
+    FTexture HDRTexture;
 
 private:
-    FPipelineState PipelineState;
+    FPipelineState GeometryPassPipelineState;
+    FPipelineState LightPassPipelineState;
 };

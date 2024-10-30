@@ -39,11 +39,10 @@ void FDebugPass::Copy(FGraphicsContext* const GraphicsContext, FTexture& SrcText
 
     GraphicsContext->SetComputePipelineState(CopyPipelineState);
     GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
-    // shader (8,8,1)
 
+    // shader (8,8,1)
     GraphicsContext->Dispatch(
         max((uint32_t)std::ceil(Width / 8.0f), 1u),
         max((uint32_t)std::ceil(Height / 8.0f), 1u),
-        1);
-    // GraphicsContext->Dispatch();
+    1);
 }

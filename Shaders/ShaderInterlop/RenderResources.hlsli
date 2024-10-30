@@ -64,4 +64,13 @@ namespace interlop
         uint srcTextureIndex;
         uint dstTextureIndex;
     };
+
+    struct PBRRenderResources
+    {
+        uint GBufferAIndex;
+        uint GBufferBIndex;
+        uint GBufferCIndex;
+        
+        uint outputTextureIndex;
+    };
 }

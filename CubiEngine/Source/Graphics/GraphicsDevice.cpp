@@ -496,6 +496,7 @@ void FGraphicsDevice::CreateBackBufferRTVs()
         BackBuffers[i].Allocation.Resource = BackBuffer;
         BackBuffers[i].Allocation.Resource->SetName(L"SwapChain BackBuffer");
         BackBuffers[i].RtvIndex = RtvDescriptorHeap->GetDescriptorIndex(RtvHandle);
+        BackBuffers[i].ResourceState = D3D12_RESOURCE_STATE_PRESENT;
 
         RtvDescriptorHeap->OffsetDescriptor(RtvHandle);
     }

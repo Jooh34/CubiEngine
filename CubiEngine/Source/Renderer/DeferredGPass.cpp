@@ -46,16 +46,40 @@ FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Wid
         .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
         .Name = L"GBuffer C",
     };
+    FTextureCreationDesc HDRTextureDesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = Width,
+        .Height = Height,
+        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+        .Name = L"HDR",
+    };
 
-    PipelineState = Device->CreatePipelineState(Desc);
+    GeometryPassPipelineState = Device->CreatePipelineState(Desc);
     GBuffer.GBufferA = Device->CreateTexture(GBufferADesc);
     GBuffer.GBufferB = Device->CreateTexture(GBufferBDesc);
     GBuffer.GBufferC = Device->CreateTexture(GBufferCDesc);
+    HDRTexture = Device->CreateTexture(HDRTextureDesc);
+    
+    FComputePipelineStateCreationDesc LightPassPipelineDesc = FComputePipelineStateCreationDesc
+    {
+        .CsShaderPath = L"Shaders/RenderPass/DeferredLightingPBR.hlsl",
+        .PipelineName = L"LightPass Pipeline"
+    };
+
+    LightPassPipelineState = Device->CreatePipelineState(LightPassPipelineDesc);
 }
 
-void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsContext, const FTexture& DepthBuffer, uint32_t Width, uint32_t Height)
+void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsContext, FTexture& DepthBuffer, uint32_t Width, uint32_t Height)
 {
-    GraphicsContext->SetGraphicsPipelineState(PipelineState);
+    // Resource Barrier
+    GraphicsContext->AddResourceBarrier(GBuffer.GBufferA, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    GraphicsContext->AddResourceBarrier(GBuffer.GBufferB, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    GraphicsContext->AddResourceBarrier(GBuffer.GBufferC, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    GraphicsContext->AddResourceBarrier(DepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    GraphicsContext->ExecuteResourceBarriers();
+
+    GraphicsContext->SetGraphicsPipelineState(GeometryPassPipelineState);
     std::array<FTexture, 3> Textures = {
         GBuffer.GBufferA,
         GBuffer.GBufferB,
@@ -81,4 +105,30 @@ void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const Graphic
     interlop::DeferredGPassRenderResources RenderResources{};
 
     Scene->RenderModels(GraphicsContext, RenderResources);
+}
+
+void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext, uint32_t Width, uint32_t Height)
+{
+    interlop::PBRRenderResources RenderResources = {
+        .GBufferAIndex = GBuffer.GBufferA.SrvIndex,
+        .GBufferBIndex = GBuffer.GBufferB.SrvIndex,
+        .GBufferCIndex = GBuffer.GBufferC.SrvIndex,
+        .outputTextureIndex = HDRTexture.UavIndex,
+    };
+
+    // Resource Barrier
+    GraphicsContext->AddResourceBarrier(GBuffer.GBufferA, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(GBuffer.GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(GBuffer.GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(HDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->ExecuteResourceBarriers();
+
+    GraphicsContext->SetComputePipelineState(LightPassPipelineState);
+    GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
+
+    // shader (8,8,1)
+    GraphicsContext->Dispatch(
+        max((uint32_t)std::ceil(Width / 8.0f), 1u),
+        max((uint32_t)std::ceil(Height / 8.0f), 1u),
+    1);
 }
