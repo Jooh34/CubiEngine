@@ -30,6 +30,26 @@ void FRenderer::Update(float DeltaTime, FInput* Input)
     Scene->Update(DeltaTime, Input);
 }
 
+void FRenderer::BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer)
+{
+    GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (DeferredGPass)
+    {
+        FGBuffer& GBuffer = DeferredGPass->GBuffer;
+        GraphicsContext->AddResourceBarrier(GBuffer.GBufferA, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(GBuffer.GBufferB, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(GBuffer.GBufferC, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    }
+    GraphicsContext->AddResourceBarrier(DepthTexture, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    GraphicsContext->ExecuteResourceBarriers();
+
+    float RenderTargetClearValue[4] = { 0,0,0,1 };
+    GraphicsContext->ClearRenderTargetView(BackBuffer, RenderTargetClearValue);
+
+    GraphicsContext->SetGraphicsRootSignature();
+    GraphicsContext->SetComputeRootSignature();
+}
+
 void FRenderer::Render()
 {
     GraphicsDevice->BeginFrame();
@@ -37,14 +57,8 @@ void FRenderer::Render()
     FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
     FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
 
-    GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    GraphicsContext->ExecuteResourceBarriers();
-    
-    float RenderTargetClearValue[4] = { 0,0,0,1 };
-    GraphicsContext->ClearRenderTargetView(BackBuffer, RenderTargetClearValue);
-    
-    GraphicsContext->SetGraphicsRootSignature();
-    GraphicsContext->SetComputeRootSignature();
+    // Resource Transition + BackBuffer Clear
+    BeginFrame(GraphicsContext, BackBuffer);
     
     //if (UnlitPass)
     //{

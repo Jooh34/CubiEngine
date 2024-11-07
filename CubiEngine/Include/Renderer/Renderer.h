@@ -13,6 +13,7 @@ public:
     ~FRenderer();
 
     void Update(float DeltaTime, FInput* Input);
+    void BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer);
     void Render();
     FGraphicsDevice* GetGraphicsDevice() { return GraphicsDevice; }
 

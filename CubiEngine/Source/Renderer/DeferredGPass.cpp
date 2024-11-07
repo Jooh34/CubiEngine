@@ -72,13 +72,6 @@ FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Wid
 
 void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsContext, FTexture& DepthBuffer, uint32_t Width, uint32_t Height)
 {
-    // Resource Barrier
-    GraphicsContext->AddResourceBarrier(GBuffer.GBufferA, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    GraphicsContext->AddResourceBarrier(GBuffer.GBufferB, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    GraphicsContext->AddResourceBarrier(GBuffer.GBufferC, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    GraphicsContext->AddResourceBarrier(DepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-    GraphicsContext->ExecuteResourceBarriers();
-
     GraphicsContext->SetGraphicsPipelineState(GeometryPassPipelineState);
     std::array<FTexture, 3> Textures = {
         GBuffer.GBufferA,
