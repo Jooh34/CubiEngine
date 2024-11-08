@@ -65,6 +65,14 @@ namespace interlop
         uint dstTextureIndex;
     };
 
+    struct TonemappingRenderResources
+    {
+        uint srcTextureIndex;
+        uint dstTextureIndex;
+        uint width;
+        uint height;
+    };
+
     struct PBRRenderResources
     {
         uint GBufferAIndex;

@@ -4,6 +4,7 @@
 #include "Scene/Scene.h"
 #include "Renderer/DeferredGPass.h"
 #include "Renderer/DebugPass.h"
+#include "Renderer/PostProcess.h"
 
 class FInput;
 class FRenderer
@@ -27,4 +28,5 @@ private:
     std::unique_ptr<FScene> Scene;
     std::unique_ptr<FDeferredGPass> DeferredGPass;
     std::unique_ptr<FDebugPass> DebugPass;
+    std::unique_ptr<FPostProcess> PostProcess;
 };

@@ -19,6 +19,7 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, uint32_t Width, uint32_t H
 
     DeferredGPass = std::make_unique<FDeferredGPass>(GraphicsDevice, Width, Height);
     DebugPass = std::make_unique<FDebugPass>(GraphicsDevice, Width, Height);
+    PostProcess = std::make_unique<FPostProcess>(GraphicsDevice, Width, Height);
 }
 
 FRenderer::~FRenderer()
@@ -61,22 +62,6 @@ void FRenderer::Render()
     // Resource Transition + BackBuffer Clear
     BeginFrame(GraphicsContext, BackBuffer, DepthTexture);
     
-    //if (UnlitPass)
-    //{
-    //    UnlitPass->Render(Scene.get(), GraphicsContext, DepthTexture, Width, Height);
-
-    //    // Copy to final image
-    //    GraphicsContext->AddResourceBarrier(UnlitPass->UnlitTexture.GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
-    //    GraphicsContext->AddResourceBarrier(BackBuffer.GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_DEST);
-    //    GraphicsContext->ExecuteResourceBarriers();
-
-    //    GraphicsContext->CopyResource(BackBuffer.GetResource(), UnlitPass->UnlitTexture.GetResource());
-
-    //    GraphicsContext->AddResourceBarrier(UnlitPass->UnlitTexture.GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    //    GraphicsContext->AddResourceBarrier(BackBuffer.GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
-    //    GraphicsContext->ExecuteResourceBarriers();
-    //}
-
     // ----- Deferred GPass ----
     if (DeferredGPass)
     {
@@ -113,13 +98,14 @@ void FRenderer::Render()
     // ----- Post Process -----
     {
         FTexture& HDR = DeferredGPass->HDRTexture;
+        FTexture& LDR = PostProcess->LDRTexture;
+        
+        PostProcess->Tonemapping(GraphicsContext, HDR, Width, Height);
 
-        DebugPass->Copy(GraphicsContext, HDR, DebugPass->TextureForCopy, Width, Height);
-
-        GraphicsContext->AddResourceBarrier(DebugPass->TextureForCopy, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        GraphicsContext->AddResourceBarrier(LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
         GraphicsContext->ExecuteResourceBarriers();
-        GraphicsContext->CopyResource(BackBuffer.GetResource(), DebugPass->TextureForCopy.GetResource());
+        GraphicsContext->CopyResource(BackBuffer.GetResource(), LDR.GetResource());
 
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
         GraphicsContext->ExecuteResourceBarriers();

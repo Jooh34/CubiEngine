@@ -1,0 +1,50 @@
+#include "Renderer/PostProcess.h"
+#include "Graphics/GraphicsDevice.h"
+#include "ShaderInterlop/RenderResources.hlsli"
+
+FPostProcess::FPostProcess(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
+{
+    FComputePipelineStateCreationDesc TonemappingPipelineDesc = FComputePipelineStateCreationDesc
+    {
+        .CsShaderPath = L"Shaders/PostProcess/Tonemapping.hlsl",
+        .PipelineName = L"Tonemapping Pipeline"
+    };
+
+    TonemappingPipelineState = GraphicsDevice->CreatePipelineState(TonemappingPipelineDesc);
+
+
+    FTextureCreationDesc TextureDesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = Width,
+        .Height = Height,
+        .Format = DXGI_FORMAT_R10G10B10A2_UNORM,
+        .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+        .Name = L"LDR Texture",
+    };
+
+    LDRTexture = GraphicsDevice->CreateTexture(TextureDesc);
+}
+
+void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext,
+    FTexture& HDRTexture, uint32_t Width, uint32_t Height)
+{
+    //GraphicsContext->AddResourceBarrier(SrcTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    GraphicsContext->AddResourceBarrier(LDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->ExecuteResourceBarriers();
+
+    interlop::TonemappingRenderResources RenderResources = {
+        .srcTextureIndex = HDRTexture.SrvIndex,
+        .dstTextureIndex = LDRTexture.UavIndex,
+        .width = Width,
+        .height = Height,
+    };
+
+    GraphicsContext->SetComputePipelineState(TonemappingPipelineState);
+    GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
+
+    // shader (8,8,1)
+    GraphicsContext->Dispatch(
+        max((uint32_t)std::ceil(Width / 8.0f), 1u),
+        max((uint32_t)std::ceil(Height / 8.0f), 1u),
+    1);
+}

@@ -57,6 +57,8 @@ set(SRC_FILES
     "Include/Renderer/DeferredGPass.h"
     "Source/Renderer/DebugPass.cpp"
     "Include/Renderer/DebugPass.h"
+    "Source/Renderer/PostProcess.cpp"
+    "Include/Renderer/PostProcess.h"
 )
 
 add_executable(CubiEngine ${SRC_FILES} "Main.cpp")
