@@ -1,7 +1,7 @@
 // clang-format off
 #pragma once
 
-static const float MIN_FLOAT_VALUE = 0.00001f;
+static const float MIN_FLOAT_VALUE = 1.0e-5;
 static const float EPSILON = 1.0e-4;
 
 static const float PI = 3.14159265359;

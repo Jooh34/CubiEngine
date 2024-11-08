@@ -70,7 +70,11 @@ namespace interlop
         uint GBufferAIndex;
         uint GBufferBIndex;
         uint GBufferCIndex;
-        
+        uint depthTextureIndex;
         uint outputTextureIndex;
+
+        uint width;
+        uint height;
+        uint sceneBufferIndex;
     };
 }

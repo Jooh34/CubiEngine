@@ -30,7 +30,7 @@ void FRenderer::Update(float DeltaTime, FInput* Input)
     Scene->Update(DeltaTime, Input);
 }
 
-void FRenderer::BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer)
+void FRenderer::BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer, FTexture& DepthTexture)
 {
     GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
     if (DeferredGPass)
@@ -45,6 +45,7 @@ void FRenderer::BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuff
 
     float RenderTargetClearValue[4] = { 0,0,0,1 };
     GraphicsContext->ClearRenderTargetView(BackBuffer, RenderTargetClearValue);
+    GraphicsContext->ClearDepthStencilView(DepthTexture);
 
     GraphicsContext->SetGraphicsRootSignature();
     GraphicsContext->SetComputeRootSignature();
@@ -58,7 +59,7 @@ void FRenderer::Render()
     FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
 
     // Resource Transition + BackBuffer Clear
-    BeginFrame(GraphicsContext, BackBuffer);
+    BeginFrame(GraphicsContext, BackBuffer, DepthTexture);
     
     //if (UnlitPass)
     //{
@@ -86,7 +87,7 @@ void FRenderer::Render()
     // ----- Deferred Lighting Pass -----
     if (DeferredGPass)
     {
-        DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext, Width, Height);
+        DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext, DepthTexture, Width, Height);
     }
     // ----- Deferred Lighting Pass -----
 

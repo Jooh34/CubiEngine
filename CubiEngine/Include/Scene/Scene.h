@@ -22,6 +22,8 @@ public:
     void RenderModels(FGraphicsContext* const GraphicsContext,
         interlop::DeferredGPassRenderResources& DeferredGRenderResources);
 
+    FBuffer& GetSceneBuffer() { return SceneBuffer; }
+
 private:
     std::unordered_map<std::wstring, std::unique_ptr<FModel>> Models{};
     FGraphicsDevice* Device;

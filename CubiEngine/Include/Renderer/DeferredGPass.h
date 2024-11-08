@@ -20,7 +20,7 @@ public:
     void Render(FScene* const Scene, FGraphicsContext* const GraphicsContext,
         FTexture& DepthBuffer, uint32_t Width, uint32_t Height);
 
-    void RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext,
+    void RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext, FTexture& DepthTexture,
         uint32_t Width, uint32_t Height);
 
     FGBuffer GBuffer;

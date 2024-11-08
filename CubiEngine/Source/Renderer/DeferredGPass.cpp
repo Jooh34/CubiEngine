@@ -89,24 +89,29 @@ void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const Graphic
         });
 
     GraphicsContext->SetPrimitiveTopologyLayout(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    GraphicsContext->ClearRenderTargetView(GBuffer.GBufferA, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-    GraphicsContext->ClearRenderTargetView(GBuffer.GBufferB, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-    GraphicsContext->ClearRenderTargetView(GBuffer.GBufferC, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-    GraphicsContext->ClearDepthStencilView(DepthBuffer);
+    
+    // No need to clear GBuffer
+    //GraphicsContext->ClearRenderTargetView(GBuffer.GBufferA, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+    //GraphicsContext->ClearRenderTargetView(GBuffer.GBufferB, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+    //GraphicsContext->ClearRenderTargetView(GBuffer.GBufferC, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+    GraphicsContext->ClearRenderTargetView(HDRTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
 
     interlop::DeferredGPassRenderResources RenderResources{};
 
     Scene->RenderModels(GraphicsContext, RenderResources);
 }
 
-void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext, uint32_t Width, uint32_t Height)
+void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext, FTexture& DepthTexture, uint32_t Width, uint32_t Height)
 {
     interlop::PBRRenderResources RenderResources = {
         .GBufferAIndex = GBuffer.GBufferA.SrvIndex,
         .GBufferBIndex = GBuffer.GBufferB.SrvIndex,
         .GBufferCIndex = GBuffer.GBufferC.SrvIndex,
+        .depthTextureIndex = DepthTexture.SrvIndex,
         .outputTextureIndex = HDRTexture.UavIndex,
+        .width = Width,
+        .height = Height,
+        .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
     };
 
     // Resource Barrier
