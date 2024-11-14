@@ -24,7 +24,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     //};
     AddModel(Desc);
 
-    float LightPosition[4] = { 1,1,1,0 };
+    float LightPosition[4] = { 1,-1,1,0 };
     float LightColor[4] = { 1,1,1,1 };
     AddLight(LightPosition, LightColor);
 }

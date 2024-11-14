@@ -33,7 +33,6 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     // temporal constant value for directional light
     const float3 L = normalize(-lightBuffer.viewSpaceLightPosition[0].xyz);
-    //const float3 L = float3(1,1,1);
     const float3 V = normalize(-viewSpaceCoordsFromDepthBuffer(depth, uv, sceneBuffer.inverseProjectionMatrix));
     const float3 H = normalize(V+L);
     const float3 N = normal.xyz;
@@ -45,10 +44,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     context.NoH = max(dot(N,H), 0.f);
 
     float3 color = float3(0,0,0);
-    //color+=V;
-    color += diffuseLambert(albedo.xyz);
-    //color += pow(context.NoH, 100) * 1;
-    color += specularGGX(albedo.xyz, metalRoughness.y, metalRoughness.x, context) * 0.001f;
+    color += cookTorrence(albedo.xyz, metalRoughness.y, metalRoughness.x, context) * 10.f;
 
     outputTexture[dispatchThreadID.xy] = float4(color, 1.0f);
 }

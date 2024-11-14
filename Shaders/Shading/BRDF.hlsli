@@ -18,10 +18,20 @@ float3 diffuseLambert(float3 diffuseColor)
     return diffuseColor * ( 1 / PI );
 }
 
-float3 F_Schlick(const float VoH, const float3 f0)
+// [Schlick 1994, "An Inexpensive BRDF Model for Physically-Based Rendering"]
+float3 F_Schlick( float3 SpecularColor, const float VoH )
 {
-    return f0 + (1.0f - f0) * pow(clamp(1.0f - VoH, 0.0f, 1.0f), 5.0f);
+	float Fc = pow( 1 - VoH, 5 );					// 1 sub, 3 mul
+	//return Fc + (1 - Fc) * SpecularColor;		// 1 add, 3 mad
+	
+	// Anything less than 2% is physically impossible and is instead considered to be shadowing
+	return saturate( 50.0 * SpecularColor.g ) * Fc + (1 - Fc) * SpecularColor;
 }
+
+// float3 F_Schlick(const float VoH, const float3 f0)
+// {
+//     return f0 + (1.0f - f0) * pow(clamp(1.0f - VoH, 0.0f, 1.0f), 5.0f);
+// }
 
 float D_GGX(float a2, float NoH)
 {
@@ -44,7 +54,7 @@ float3 cookTorrence(float3 albedo, float roughness, float metalic, BxDFContext c
     float3 F0 = ComputeF0(0.04f, albedo, metalic);
     float a2 = pow(roughness, 4);
 
-    float3 F = F_Schlick(context.VoH, F0);
+    float3 F = F_Schlick(F0, context.VoH);
     float D = D_GGX(a2, context.NoH);
     // float D = 1;
     float Vis = Vis_SmithJointApprox(a2, context.NoV, context.NoL);
@@ -56,17 +66,4 @@ float3 cookTorrence(float3 albedo, float roughness, float metalic, BxDFContext c
 
     // return (D * Vis) * F / max(4.f * context.NoV * context.NoL, EPSILON);
     return context.NoL * (diffuseContrib + specContrib);
-}
-float3 specularGGX(float3 albedo, float roughness, float metalic, BxDFContext context)
-{
-    float3 F0 = ComputeF0(0.04f, albedo, metalic);
-    float a2 = pow(roughness, 4);
-
-    float3 F = F_Schlick(context.VoH, F0);
-    // float D = D_GGX(a2, context.NoH);
-    float D = 1;
-    // float Vis = Vis_SmithJointApprox(a2, context.NoV, context.NoL);
-    float Vis = 1;
-
-    return (D * Vis) * F / max(4.f * context.NoV * context.NoL, EPSILON);
 }
