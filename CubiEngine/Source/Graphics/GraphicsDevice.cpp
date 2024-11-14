@@ -480,6 +480,7 @@ CREATE_BUFFER_TEMPLATE_FUNC(XMFLOAT2)
 CREATE_BUFFER_TEMPLATE_FUNC(uint16_t)
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::TransformBuffer)
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::SceneBuffer)
+CREATE_BUFFER_TEMPLATE_FUNC(interlop::LightBuffer)
 
 void FGraphicsDevice::CreateBackBufferRTVs()
 {

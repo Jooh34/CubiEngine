@@ -112,6 +112,7 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .width = Width,
         .height = Height,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
+        .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
     };
 
     // Resource Barrier

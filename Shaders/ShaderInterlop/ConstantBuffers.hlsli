@@ -46,4 +46,15 @@ namespace interlop
         float4x4 modelMatrix;
         float4x4 inverseModelMatrix;
     };
+
+    static const uint MAX_LIGHTS = 5;
+
+    ConstantBufferStruct LightBuffer
+    {
+        float4 lightPosition[MAX_LIGHTS];
+        float4 lightColor[MAX_LIGHTS];
+        float4 viewSpaceLightPosition[MAX_LIGHTS];
+
+        uint numLight;
+    };
 } // namespace interlop

@@ -3,6 +3,7 @@
 #include "Scene/Model.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Scene/Camera.h"
+#include "Scene/Light.h"
 
 class FGraphicsContext;
 class FCamera;
@@ -16,6 +17,7 @@ public:
     
     void Update(float DeltaTime, FInput* Input);
     void AddModel(const FModelCreationDesc& Desc);
+    void AddLight(float Position[4], float Color[4]) { Light.AddLight(Position, Color); }
 
     void RenderModels(FGraphicsContext* const GraphicsContext,
         interlop::UnlitPassRenderResources& UnlitRenderResources);
@@ -23,11 +25,14 @@ public:
         interlop::DeferredGPassRenderResources& DeferredGRenderResources);
 
     FBuffer& GetSceneBuffer() { return SceneBuffer; }
+    FBuffer& GetLightBuffer() { return LightBuffer; }
 
 private:
     std::unordered_map<std::wstring, std::unique_ptr<FModel>> Models{};
     FGraphicsDevice* Device;
 
     FCamera Camera;
+    FLight Light;
     FBuffer SceneBuffer{};
+    FBuffer LightBuffer{};
 };

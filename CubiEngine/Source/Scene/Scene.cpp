@@ -9,6 +9,11 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
        .Name = L"Scene Buffer",
     });
 
+    LightBuffer = Device->CreateBuffer<interlop::LightBuffer>(FBufferCreationDesc{
+        .Usage = EBufferUsage::ConstantBuffer,
+        .Name = L"Light Buffer",
+    });
+
     FModelCreationDesc Desc{
         .ModelPath = "Models/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
         .ModelName = L"MetalRoughSpheres",
@@ -18,6 +23,10 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     //    .ModelName = L"Sponza",
     //};
     AddModel(Desc);
+
+    float LightPosition[4] = { 1,1,1,0 };
+    float LightColor[4] = { 1,1,1,1 };
+    AddLight(LightPosition, LightColor);
 }
 
 FScene::~FScene()
@@ -37,6 +46,9 @@ void FScene::Update(float DeltaTime, FInput* Input)
     };
 
     SceneBuffer.Update(&SceneBufferData);
+    
+    const interlop::LightBuffer LightBufferData = Light.GetLightBuffer(Camera.GetViewMatrix());
+    LightBuffer.Update(&LightBufferData);
 }
 
 void FScene::AddModel(const FModelCreationDesc& Desc)

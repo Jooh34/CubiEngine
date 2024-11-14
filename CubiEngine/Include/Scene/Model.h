@@ -32,6 +32,7 @@ struct FMesh
     FBuffer PositionBuffer{};
     FBuffer TextureCoordsBuffer{};
     FBuffer NormalBuffer{};
+    FBuffer TangentBuffer{};
 
     FBuffer IndexBuffer{};
 

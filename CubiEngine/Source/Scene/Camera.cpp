@@ -52,8 +52,8 @@ void FCamera::Update(float DeltaTime, FInput* Input)
     float Speed = MovementSpeed * DeltaTime;
     MoveVector = XMVectorScale(XMVector3Normalize(MoveVector), Speed);
     CamPosition = XMVectorAdd(CamPosition, MoveVector);
-
-    Pitch += PitchVector;
+    
+    Pitch = std::clamp(Pitch + PitchVector, (float)-M_PI * 89/180.f, (float)M_PI * 89/180.f);
     Yaw += YawVector;
 
     UpdateMatrix();

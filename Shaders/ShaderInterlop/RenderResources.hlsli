@@ -84,5 +84,6 @@ namespace interlop
         uint width;
         uint height;
         uint sceneBufferIndex;
+        uint lightBufferIndex;
     };
 }

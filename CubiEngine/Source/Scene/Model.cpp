@@ -310,6 +310,7 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
         std::vector<XMFLOAT3> Positions{};
         std::vector<XMFLOAT2> TextureCoords{};
         std::vector<XMFLOAT3> Normals{};
+        std::vector<XMFLOAT3> Tangents{};
         std::vector<uint16_t> Indices{};
 
         const tinygltf::Model& model = GLTFModel;
@@ -403,6 +404,65 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
                 Indices[i] = (reinterpret_cast<uint16_t const*>(indices + (i * indexStride))[0]);
             }
         }
+        
+        // Calculate tangents for each vertex
+        Tangents.resize(Positions.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
+
+        for (size_t i = 0; i < Indices.size(); i += 3)
+        {
+            uint16_t index0 = Indices[i];
+            uint16_t index1 = Indices[i + 1];
+            uint16_t index2 = Indices[i + 2];
+
+            const XMFLOAT3& pos0 = Positions[index0];
+            const XMFLOAT3& pos1 = Positions[index1];
+            const XMFLOAT3& pos2 = Positions[index2];
+
+            const XMFLOAT2& uv0 = TextureCoords[index0];
+            const XMFLOAT2& uv1 = TextureCoords[index1];
+            const XMFLOAT2& uv2 = TextureCoords[index2];
+
+            // Calculate edges
+            XMFLOAT3 edge1 = XMFLOAT3(pos1.x - pos0.x, pos1.y - pos0.y, pos1.z - pos0.z);
+            XMFLOAT3 edge2 = XMFLOAT3(pos2.x - pos0.x, pos2.y - pos0.y, pos2.z - pos0.z);
+
+            float deltaU1 = uv1.x - uv0.x;
+            float deltaV1 = uv1.y - uv0.y;
+            float deltaU2 = uv2.x - uv0.x;
+            float deltaV2 = uv2.y - uv0.y;
+
+            float f = 1.0f / (deltaU1 * deltaV2 - deltaU2 * deltaV1);
+
+            XMFLOAT3 tangent = {
+                f * (deltaV2 * edge1.x - deltaV1 * edge2.x),
+                f * (deltaV2 * edge1.y - deltaV1 * edge2.y),
+                f * (deltaV2 * edge1.z - deltaV1 * edge2.z)
+            };
+
+            // Accumulate the tangent
+            Tangents[index0].x += tangent.x;
+            Tangents[index0].y += tangent.y;
+            Tangents[index0].z += tangent.z;
+
+            Tangents[index1].x += tangent.x;
+            Tangents[index1].y += tangent.y;
+            Tangents[index1].z += tangent.z;
+
+            Tangents[index2].x += tangent.x;
+            Tangents[index2].y += tangent.y;
+            Tangents[index2].z += tangent.z;
+        }
+        // Normalize tangents
+        for (auto& tangent : Tangents)
+        {
+            float length = std::sqrt(tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z);
+            if (length > 0.0f)
+            {
+                tangent.x /= length;
+                tangent.y /= length;
+                tangent.z /= length;
+            }
+        }
 
         Mesh.PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
             FBufferCreationDesc{
@@ -424,6 +484,13 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
                 .Name = MeshName + L" normal buffer",
             },
             Normals);
+        
+        Mesh.TangentBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>( // Add tangent buffer creation
+            FBufferCreationDesc{
+                .Usage = EBufferUsage::StructuredBuffer,
+                .Name = MeshName + L" tangent buffer",
+            },
+            Tangents);
 
         Mesh.IndexBuffer = GraphicsDevice->CreateBuffer<uint16_t>(
             FBufferCreationDesc{
@@ -496,7 +563,7 @@ void FModel::Render(const FGraphicsContext* const GraphicsContext,
 
         DeferredGPassRenderResources.positionBufferIndex = Mesh.PositionBuffer.SrvIndex;
         DeferredGPassRenderResources.textureCoordBufferIndex = Mesh.TextureCoordsBuffer.SrvIndex;
-        DeferredGPassRenderResources.normalBufferIndex = Mesh.TextureCoordsBuffer.SrvIndex;
+        DeferredGPassRenderResources.normalBufferIndex = Mesh.NormalBuffer.SrvIndex;
         DeferredGPassRenderResources.transformBufferIndex = Transform.TransformBuffer.CbvIndex;
 
         GraphicsContext->SetGraphicsRoot32BitConstants(&DeferredGPassRenderResources);

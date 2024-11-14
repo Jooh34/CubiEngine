@@ -47,6 +47,7 @@ using Dx::XMMatrixRotationRollPitchYaw;
 using Dx::XMMatrixInverse;
 using Dx::XMVectorScale;
 using Dx::XMVectorSubtract;
+using Dx::XMLoadFloat4;
 
 #ifdef _DEBUG
 constexpr bool DEBUG_MODE = true;
