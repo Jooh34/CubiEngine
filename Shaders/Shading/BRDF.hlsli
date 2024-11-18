@@ -18,6 +18,7 @@ float3 diffuseLambert(float3 diffuseColor)
     return diffuseColor * ( 1 / PI );
 }
 
+// From UnrealnEngine
 // [Schlick 1994, "An Inexpensive BRDF Model for Physically-Based Rendering"]
 float3 F_Schlick( float3 SpecularColor, const float VoH )
 {
@@ -28,17 +29,21 @@ float3 F_Schlick( float3 SpecularColor, const float VoH )
 	return saturate( 50.0 * SpecularColor.g ) * Fc + (1 - Fc) * SpecularColor;
 }
 
-// float3 F_Schlick(const float VoH, const float3 f0)
-// {
-//     return f0 + (1.0f - f0) * pow(clamp(1.0f - VoH, 0.0f, 1.0f), 5.0f);
-// }
-
+// From UnrealEngine
 float D_GGX(float a2, float NoH)
 {
 	float d = ( NoH * a2 - NoH ) * NoH + 1;	// 2 mad
 	return a2 / ( PI*d*d );					// 4 mul, 1 rcp
 }
 
+float G_GeometricAttenuation(BxDFContext context)
+{
+    float c1 = 2 * context.NoH * context.NoV / (context.VoH+EPSILON);
+    float c2 = 2 * context.NoH * context.NoL / (context.VoH+EPSILON);
+    return min(min(1.f, c1),c2);
+}
+
+// from UnrealEngine
 // Appoximation of joint Smith term for GGX
 // [Heitz 2014, "Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs"]
 float Vis_SmithJointApprox( float a2, float NoV, float NoL )
@@ -56,14 +61,11 @@ float3 cookTorrence(float3 albedo, float roughness, float metalic, BxDFContext c
 
     float3 F = F_Schlick(F0, context.VoH);
     float D = D_GGX(a2, context.NoH);
-    // float D = 1;
-    float Vis = Vis_SmithJointApprox(a2, context.NoV, context.NoL);
-    // float Vis = 1;
+    float G = G_GeometricAttenuation(context);
     
     // Calculation of analytical lighting contribution
     float3 diffuseContrib = (1.0 - F) * diffuseLambert(albedo);
-    float3 specContrib = F * Vis * D;
+    float3 specContrib = F * G * D / (4 * context.NoL * context.NoV);
 
-    // return (D * Vis) * F / max(4.f * context.NoV * context.NoL, EPSILON);
     return context.NoL * (diffuseContrib + specContrib);
 }
