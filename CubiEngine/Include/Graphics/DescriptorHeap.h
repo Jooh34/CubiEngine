@@ -24,9 +24,13 @@ public:
     FDescriptorHandle GetDescriptorHandleFromIndex(const uint32_t Index) const;
     uint32_t GetDescriptorIndex(const FDescriptorHandle& InDescriptorHandle) const
     {
-        return static_cast<uint32_t> (
+        uint32_t i = static_cast<uint32_t> (
             (InDescriptorHandle.GpuDescriptorHandle.ptr - DescriptorHandleFromHeapStart.GpuDescriptorHandle.ptr) /
             DescriptorSize);
+
+        assert(i < NumDescriptor);
+
+        return i;
     }
 
     uint32_t GetCurrentDescriptorIndex() const { return GetDescriptorIndex(CurrentDescriptorHandle); }
@@ -38,6 +42,8 @@ public:
     ID3D12DescriptorHeap* const GetDescriptorHeap() const { return DescriptorHeap.Get(); }
 
 private:
+    uint32_t NumDescriptor;
+
     wrl::ComPtr<ID3D12DescriptorHeap> DescriptorHeap{};
     uint32_t DescriptorSize{};
 

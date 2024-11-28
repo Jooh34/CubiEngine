@@ -23,6 +23,9 @@ public:
     
     ~FGraphicsDevice();
 
+    void ResizeSwapchainResources(uint32_t InWidth, uint32_t InHeight);
+    void OnWindowResized(uint32_t InWidth, uint32_t InHeight);
+
     FSampler CreateSampler(const FSamplerCreationDesc& Desc) const;
     FTexture CreateTexture(const FTextureCreationDesc& TextureCreationDesc, const void* Data = nullptr) const;
     FPipelineState CreatePipelineState(const FGraphicsPipelineStateCreationDesc Desc) const;
@@ -33,6 +36,7 @@ public:
     void BeginFrame();
     void Present();
     void EndFrame();
+    void FlushAllQueue();
 
     static constexpr uint32_t FRAMES_IN_FLIGHT = 3u;
 
@@ -50,6 +54,8 @@ public:
     FBuffer CreateBuffer(const FBufferCreationDesc& BufferCreationDesc, const std::span<const T> Data = {}) const;
 
 private:
+    bool bInitialized = false;
+
     void InitDeviceResources();
     void InitSwapchainResources(const uint32_t Width, const uint32_t Height);
     void InitD3D12Core();

@@ -11,6 +11,9 @@ class FDebugPass
 {
 public:
     FDebugPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height);
+    void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
+    void OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
+
     void Copy(FGraphicsContext* const GraphicsContext, FTexture& SrcTexture, FTexture& DstTexture, uint32_t Width, uint32_t Height);
 
     FPipelineState CopyPipelineState;

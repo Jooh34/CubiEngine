@@ -21,46 +21,9 @@ FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Wid
         .RtvCount = 3,
         .PipelineName = L"Deferred GPass Pipeline",
     };
-
-    FTextureCreationDesc GBufferADesc{
-        .Usage = ETextureUsage::RenderTarget,
-        .Width = Width,
-        .Height = Height,
-        .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
-        .Name = L"GBuffer A",
-    };
-    FTextureCreationDesc GBufferBDesc{
-        .Usage = ETextureUsage::RenderTarget,
-        .Width = Width,
-        .Height = Height,
-        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
-        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
-        .Name = L"GBuffer B",
-    };
-    FTextureCreationDesc GBufferCDesc{
-        .Usage = ETextureUsage::RenderTarget,
-        .Width = Width,
-        .Height = Height,
-        .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
-        .Name = L"GBuffer C",
-    };
-    FTextureCreationDesc HDRTextureDesc{
-        .Usage = ETextureUsage::RenderTarget,
-        .Width = Width,
-        .Height = Height,
-        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
-        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
-        .Name = L"HDR",
-    };
-
-    GeometryPassPipelineState = Device->CreatePipelineState(Desc);
-    GBuffer.GBufferA = Device->CreateTexture(GBufferADesc);
-    GBuffer.GBufferB = Device->CreateTexture(GBufferBDesc);
-    GBuffer.GBufferC = Device->CreateTexture(GBufferCDesc);
-    HDRTexture = Device->CreateTexture(HDRTextureDesc);
     
+    GeometryPassPipelineState = Device->CreatePipelineState(Desc);
+
     FComputePipelineStateCreationDesc LightPassPipelineDesc = FComputePipelineStateCreationDesc
     {
         .CsShaderPath = L"Shaders/RenderPass/DeferredLightingPBR.hlsl",
@@ -68,6 +31,55 @@ FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Wid
     };
 
     LightPassPipelineState = Device->CreatePipelineState(LightPassPipelineDesc);
+
+    InitSizeDependantResource(Device, Width, Height);
+}
+
+void FDeferredGPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+{
+    // TODO : re-use RTV descriptor handle
+    FTextureCreationDesc GBufferADesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+        .Name = L"GBuffer A",
+    };
+    FTextureCreationDesc GBufferBDesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+        .Name = L"GBuffer B",
+    };
+    FTextureCreationDesc GBufferCDesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+        .Name = L"GBuffer C",
+    };
+    FTextureCreationDesc HDRTextureDesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+        .Name = L"HDR",
+    };
+
+    GBuffer.GBufferA = Device->CreateTexture(GBufferADesc);
+    GBuffer.GBufferB = Device->CreateTexture(GBufferBDesc);
+    GBuffer.GBufferC = Device->CreateTexture(GBufferCDesc);
+    HDRTexture = Device->CreateTexture(HDRTextureDesc);
+}
+
+void FDeferredGPass::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+{
+    InitSizeDependantResource(Device, InWidth, InHeight);
 }
 
 void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsContext, FTexture& DepthBuffer, uint32_t Width, uint32_t Height)
@@ -91,9 +103,9 @@ void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const Graphic
     GraphicsContext->SetPrimitiveTopologyLayout(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     
     // No need to clear GBuffer
-    //GraphicsContext->ClearRenderTargetView(GBuffer.GBufferA, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-    //GraphicsContext->ClearRenderTargetView(GBuffer.GBufferB, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-    //GraphicsContext->ClearRenderTargetView(GBuffer.GBufferC, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+    GraphicsContext->ClearRenderTargetView(GBuffer.GBufferA, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+    GraphicsContext->ClearRenderTargetView(GBuffer.GBufferB, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+    GraphicsContext->ClearRenderTargetView(GBuffer.GBufferC, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
     GraphicsContext->ClearRenderTargetView(HDRTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
 
     interlop::DeferredGPassRenderResources RenderResources{};

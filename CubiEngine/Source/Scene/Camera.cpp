@@ -11,14 +11,16 @@ FCamera::FCamera(uint32_t Width, uint32_t Height)
 
     FovY = Dx::XM_PIDIV4;
     AspectRatio = static_cast<float>(Width) / Height;
-    NearZ = 0.1f;
-    FarZ = 3000.f;
+    NearZ = 1.f;
+    FarZ = 10000.f;
 
     UpdateMatrix();
 }
 
-void FCamera::Update(float DeltaTime, FInput* Input)
+void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height)
 {
+    AspectRatio = static_cast<float>(Width) / Height;
+
     XMVECTOR MoveVector = XMVECTOR{ 0.f, 0.f, 0.f, 0.f };
 
     float PitchVector = Input->GetDY() * RotationSpeed;
@@ -28,23 +30,23 @@ void FCamera::Update(float DeltaTime, FInput* Input)
     {
         MoveVector = XMVectorAdd(MoveVector, CamFront);
     }
-    else if (Input->GetKeyState(SDL_SCANCODE_S))
+    if (Input->GetKeyState(SDL_SCANCODE_S))
     {
         MoveVector = XMVectorSubtract(MoveVector, CamFront);
     }
-    else if (Input->GetKeyState(SDL_SCANCODE_D))
+    if (Input->GetKeyState(SDL_SCANCODE_D))
     {
         MoveVector = XMVectorAdd(MoveVector, CamRight);
     }
-    else if (Input->GetKeyState(SDL_SCANCODE_A))
+    if (Input->GetKeyState(SDL_SCANCODE_A))
     {
         MoveVector = XMVectorSubtract(MoveVector, CamRight);
     }
-    else if (Input->GetKeyState(SDL_SCANCODE_Q))
+    if (Input->GetKeyState(SDL_SCANCODE_Q))
     {
         MoveVector = XMVectorAdd(MoveVector, WorldUp);
     }
-    else if (Input->GetKeyState(SDL_SCANCODE_E))
+    if (Input->GetKeyState(SDL_SCANCODE_E))
     {
         MoveVector = XMVectorSubtract(MoveVector,WorldUp);
     }

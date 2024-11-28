@@ -11,18 +11,27 @@ FDebugPass::FDebugPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, ui
     };
 
     CopyPipelineState = GraphicsDevice->CreatePipelineState(PipelineDesc);
+    
+    InitSizeDependantResource(GraphicsDevice, Width, Height);
+}
 
-
+void FDebugPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+{
     FTextureCreationDesc TextureDesc{
         .Usage = ETextureUsage::RenderTarget,
-        .Width = Width,
-        .Height = Height,
+        .Width = InWidth,
+        .Height = InHeight,
         .Format = DXGI_FORMAT_R10G10B10A2_UNORM,
         .InitialState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
         .Name = L"Copy Texture",
     };
 
-    TextureForCopy = GraphicsDevice->CreateTexture(TextureDesc);
+    TextureForCopy = Device->CreateTexture(TextureDesc);
+}
+
+void FDebugPass::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+{
+    InitSizeDependantResource(Device, InWidth, InHeight);
 }
 
 void FDebugPass::Copy(FGraphicsContext* const GraphicsContext, FTexture& SrcTexture, FTexture& DstTexture, uint32_t Width, uint32_t Height)

@@ -16,6 +16,10 @@ FGraphicsDevice::~FGraphicsDevice()
 {
     DirectCommandQueue->Flush(); // flush GPU works
 }
+void FGraphicsDevice::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
+{
+    ResizeSwapchainResources(InWidth, InHeight);
+}
 
 FSampler FGraphicsDevice::CreateSampler(const FSamplerCreationDesc& Desc) const
 {
@@ -235,7 +239,7 @@ void FGraphicsDevice::InitSwapchainResources(const uint32_t Width, const uint32_
         .Scaling = DXGI_SCALING_STRETCH,
         .SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
         .AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
-        .Flags = 0u,
+        .Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH,
     };
 
     wrl::ComPtr<IDXGISwapChain1> swapChain1;
@@ -249,6 +253,35 @@ void FGraphicsDevice::InitSwapchainResources(const uint32_t Width, const uint32_
 
     CurrentFrameIndex = SwapChain->GetCurrentBackBufferIndex();
 
+    CreateBackBufferRTVs();
+}
+
+void FGraphicsDevice::ResizeSwapchainResources(uint32_t InWidth, uint32_t InHeight)
+{
+    // Wait all GPU works to finished
+    FlushAllQueue();
+
+    for (uint32_t i = 0; i < FRAMES_IN_FLIGHT; i++)
+    {
+        BackBuffers[i].Allocation.Reset();
+        BackBuffers[i] = FTexture(); // Release
+    }
+    
+    // Resize the swap chain buffers
+    DXGI_SWAP_CHAIN_DESC swapChainDesc;
+    SwapChain->GetDesc(&swapChainDesc);
+
+    ThrowIfFailed(
+        SwapChain->ResizeBuffers(
+            FRAMES_IN_FLIGHT,
+            InWidth,
+            InHeight,
+            DXGI_FORMAT_R10G10B10A2_UNORM,
+            DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
+        )
+    );
+
+    CurrentFrameIndex = SwapChain->GetCurrentBackBufferIndex();
     CreateBackBufferRTVs();
 }
 
@@ -485,13 +518,14 @@ CREATE_BUFFER_TEMPLATE_FUNC(interlop::LightBuffer)
 void FGraphicsDevice::CreateBackBufferRTVs()
 {
     FDescriptorHandle RtvHandle = RtvDescriptorHeap->GetDescriptorHandleFromStart();
+    //FDescriptorHandle RtvHandle = RtvDescriptorHeap->GetCurrentDescriptorHandle();
 
     // Create Backbuffer render target views.
     for (const uint32_t i : std::views::iota(0u, FRAMES_IN_FLIGHT))
     {
         wrl::ComPtr<ID3D12Resource> BackBuffer{};
         ThrowIfFailed(SwapChain->GetBuffer(i, IID_PPV_ARGS(&BackBuffer)));
-
+        
         Device->CreateRenderTargetView(BackBuffer.Get(), nullptr, RtvHandle.CpuDescriptorHandle);
 
         BackBuffers[i].Allocation.Resource = BackBuffer;
@@ -500,6 +534,12 @@ void FGraphicsDevice::CreateBackBufferRTVs()
         BackBuffers[i].ResourceState = D3D12_RESOURCE_STATE_PRESENT;
 
         RtvDescriptorHeap->OffsetDescriptor(RtvHandle);
+    }
+
+    if (!bInitialized)
+    {
+        RtvDescriptorHeap->OffsetCurrentHandle(FRAMES_IN_FLIGHT);
+        bInitialized = true;
     }
 }
 
@@ -520,5 +560,11 @@ void FGraphicsDevice::EndFrame()
     CurrentFrameIndex = SwapChain->GetCurrentBackBufferIndex();
 
     DirectCommandQueue->WaitForFenceValue(FenceValues[CurrentFrameIndex].DirectQueueFenceValue);
+}
+
+void FGraphicsDevice::FlushAllQueue()
+{
+    DirectCommandQueue->WaitForFenceValue(DirectCommandQueue->Signal());
+    CopyCommandQueue->WaitForFenceValue(CopyCommandQueue->Signal());
 }
 

@@ -15,6 +15,8 @@ FDescriptorHeap::FDescriptorHeap(ID3D12Device* const device, const D3D12_DESCRIP
         .NodeMask = 0u,
     };
 
+    NumDescriptor = descriptorCount;
+
     ThrowIfFailed(device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&DescriptorHeap)));
     DescriptorHeap->SetName(descriptorHeapName.data());
 

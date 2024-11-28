@@ -56,7 +56,10 @@ constexpr bool DEBUG_MODE = false;
 #endif
 
 constexpr uint32_t GNumCbvSrvUavDescriptorHeap = 10000;
-constexpr uint32_t GNumRtvDescriptorHeap = 50;
-constexpr uint32_t GNumDsvDescriptorHeap = 50;
+constexpr uint32_t GNumRtvDescriptorHeap = 500;
+constexpr uint32_t GNumDsvDescriptorHeap = 500;
 constexpr uint32_t GNumSamplerDescriptorHeap = 1024;
+
+constexpr uint32_t InitialWidth = 1200;
+constexpr uint32_t InitialHeight = 900;
 

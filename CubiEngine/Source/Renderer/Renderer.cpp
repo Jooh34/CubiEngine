@@ -28,7 +28,7 @@ FRenderer::~FRenderer()
 
 void FRenderer::Update(float DeltaTime, FInput* Input)
 {
-    Scene->Update(DeltaTime, Input);
+    Scene->Update(DeltaTime, Input, Width, Height);
 }
 
 void FRenderer::BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer, FTexture& DepthTexture)
@@ -116,4 +116,27 @@ void FRenderer::Render()
     GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
     GraphicsDevice->Present();
     GraphicsDevice->EndFrame();
+}
+
+void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
+{
+    GraphicsDevice->OnWindowResized(InWidth, InHeight);
+
+    Width = InWidth;
+    Height = InHeight;
+
+    FTextureCreationDesc DepthTextureDesc = {
+        .Usage = ETextureUsage::DepthStencil,
+        .Width = Width,
+        .Height = Height,
+        .Format = DXGI_FORMAT_D32_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_DEPTH_WRITE,
+        .Name = L"Depth Texture",
+    };
+
+    DepthTexture = GraphicsDevice->CreateTexture(DepthTextureDesc);
+    
+    DeferredGPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+    DebugPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+    PostProcess->OnWindowResized(GraphicsDevice, InWidth, InHeight);
 }

@@ -11,18 +11,27 @@ FPostProcess::FPostProcess(FGraphicsDevice* const GraphicsDevice, uint32_t Width
     };
 
     TonemappingPipelineState = GraphicsDevice->CreatePipelineState(TonemappingPipelineDesc);
+    
+    InitSizeDependantResource(GraphicsDevice, Width, Height);
+}
 
-
+void FPostProcess::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+{
     FTextureCreationDesc TextureDesc{
         .Usage = ETextureUsage::RenderTarget,
-        .Width = Width,
-        .Height = Height,
+        .Width = InWidth,
+        .Height = InHeight,
         .Format = DXGI_FORMAT_R10G10B10A2_UNORM,
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"LDR Texture",
     };
 
-    LDRTexture = GraphicsDevice->CreateTexture(TextureDesc);
+    LDRTexture = Device->CreateTexture(TextureDesc);
+}
+
+void FPostProcess::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+{
+    InitSizeDependantResource(Device, InWidth, InHeight);
 }
 
 void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext,

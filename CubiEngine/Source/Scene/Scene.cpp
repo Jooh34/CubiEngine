@@ -18,10 +18,10 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         .ModelPath = "Models/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
         .ModelName = L"MetalRoughSpheres",
     };
-    //FModelCreationDesc Desc{
-    //    .ModelPath = "Models/Sponza/sponza.glb",
-    //    .ModelName = L"Sponza",
-    //};
+    /*FModelCreationDesc Desc{
+        .ModelPath = "Models/Sponza/sponza.glb",
+        .ModelName = L"Sponza",
+    };*/
     AddModel(Desc);
 
     float LightPosition[4] = { 1,-1,1,0 };
@@ -33,9 +33,9 @@ FScene::~FScene()
 {
 }
 
-void FScene::Update(float DeltaTime, FInput* Input)
+void FScene::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height)
 {
-    Camera.Update(DeltaTime, Input);
+    Camera.Update(DeltaTime, Input, Width, Height);
 
     const interlop::SceneBuffer SceneBufferData = {
         .viewProjectionMatrix = Camera.GetViewProjMatrix(),

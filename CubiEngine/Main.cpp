@@ -4,7 +4,7 @@ int main(int argc, char* argv[])
 {
     Application App("CubiEngine");
 
-    if (!App.Init(800, 600)) {
+    if (!App.Init(InitialWidth, InitialHeight)) {
         return -1;
     }
 

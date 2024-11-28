@@ -7,7 +7,7 @@ class FCamera
 public:
     FCamera(uint32_t Width, uint32_t Height);
     
-    void Update(float DeltaTime, FInput* Input);
+    void Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height);
     void UpdateMatrix();
 
     XMMATRIX GetViewMatrix() const { return ViewMatrix; }

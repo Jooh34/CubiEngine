@@ -17,11 +17,15 @@ class FDeferredGPass
 {
 public:
     FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height);
+    void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
+    void OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
+
     void Render(FScene* const Scene, FGraphicsContext* const GraphicsContext,
         FTexture& DepthBuffer, uint32_t Width, uint32_t Height);
 
     void RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext, FTexture& DepthTexture,
         uint32_t Width, uint32_t Height);
+
 
     FGBuffer GBuffer;
     FTexture HDRTexture;

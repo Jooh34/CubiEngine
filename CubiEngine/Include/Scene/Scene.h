@@ -15,7 +15,7 @@ public:
     FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height);
     ~FScene();
     
-    void Update(float DeltaTime, FInput* Input);
+    void Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height);
     void AddModel(const FModelCreationDesc& Desc);
     void AddLight(float Position[4], float Color[4]) { Light.AddLight(Position, Color); }
 

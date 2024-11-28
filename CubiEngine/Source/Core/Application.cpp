@@ -32,7 +32,7 @@ bool Application::Init(uint32_t Width, uint32_t Height)
     }
 
     // Create the window
-    Window = SDL_CreateWindow(WindowTitle.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, Width, Height, SDL_WINDOW_SHOWN);
+    Window = SDL_CreateWindow(WindowTitle.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, Width, Height, SDL_WINDOW_RESIZABLE);
     if (!Window) {
         std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
         SDL_Quit();
@@ -111,6 +111,8 @@ void Application::HandleEvents()
             uint32_t Width = Event.window.data1;
             uint32_t Height = Event.window.data2;
             // TODO : Window Resize
+
+            D3DRenderer->OnWindowResized(Width, Height);
         }
         Input.ProcessEvent(Event);
     }
