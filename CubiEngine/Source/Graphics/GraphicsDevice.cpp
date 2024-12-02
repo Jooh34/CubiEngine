@@ -2,6 +2,7 @@
 #include "Graphics/PipelineState.h"
 #include "Graphics/MemoryAllocator.h"
 #include "Graphics/CopyContext.h"
+#include "Core/FileSystem.h"
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 
 FGraphicsDevice::FGraphicsDevice(const uint32_t Width, const uint32_t Height,
@@ -15,6 +16,8 @@ FGraphicsDevice::FGraphicsDevice(const uint32_t Width, const uint32_t Height,
 FGraphicsDevice::~FGraphicsDevice()
 {
     DirectCommandQueue->Flush(); // flush GPU works
+    CopyCommandQueue->Flush();
+    ComputeCommandQueue->Flush();
 }
 void FGraphicsDevice::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
 {
@@ -35,8 +38,10 @@ FSampler FGraphicsDevice::CreateSampler(const FSamplerCreationDesc& Desc) const
     return Sampler;
 }
 
-FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreationDesc, const void* Data) const
+FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCreationDesc, const void* Data) const
 {
+    FTextureCreationDesc TextureCreationDesc = InTextureCreationDesc;
+
     DXGI_FORMAT format = TextureCreationDesc.Format;
     DXGI_FORMAT dsFormat{};
 
@@ -52,23 +57,31 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreat
         FatalError("Currently, the renderer does not support depth format of the type D24_S8_UINT. Please use one of the X32 types.");
     }
 
-    uint32_t Width, Height;
+    int32_t Width, Height;
     void* TextureData{ (void*)Data };
+
+    float* HdrTextureData{ nullptr };
 
     if (TextureCreationDesc.Usage == ETextureUsage::TextureFromData)
     {
         Width = TextureCreationDesc.Width;
         Height = TextureCreationDesc.Height;
     }
-    else if (TextureCreationDesc.Usage == ETextureUsage::DepthStencil)
+    else if (TextureCreationDesc.Usage == ETextureUsage::HDRTextureFromPath)
     {
-        Width = TextureCreationDesc.Width;
-        Height = TextureCreationDesc.Height;
-    }
-    else if (TextureCreationDesc.Usage == ETextureUsage::RenderTarget)
-    {
-        Width = TextureCreationDesc.Width;
-        Height = TextureCreationDesc.Height;
+        int ComponentCount = 4;
+        std::string FullPath = FFileSystem::GetFullPath(wStringToString(TextureCreationDesc.Path));
+        HdrTextureData =
+            stbi_loadf(FullPath.c_str(), &Width, &Height, nullptr, ComponentCount);
+
+        if (!HdrTextureData)
+        {
+            FatalError(
+                std::format("Failed to load texture from path : {}.", wStringToString(TextureCreationDesc.Path)));
+        }
+
+        TextureCreationDesc.Width = Width;
+        TextureCreationDesc.Height = Height;
     }
     // TODO: handle another usage
     
@@ -77,11 +90,12 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreat
     // GPU only memory
     D3D12_RESOURCE_STATES ResourceState;
     Texture.Allocation = MemoryAllocator->CreateTextureResourceAllocation(TextureCreationDesc, ResourceState);
-    Texture.Width = Width;
-    Texture.Height = Height;
+    Texture.Width = TextureCreationDesc.Width;
+    Texture.Height = TextureCreationDesc.Height;
     Texture.ResourceState = ResourceState;
+    Texture.Usage = TextureCreationDesc.Usage;
     
-    if (TextureData) // Upload Texture Buffer
+    if (TextureData || HdrTextureData) // Upload Texture Buffer
     {
         // Create upload buffer.
         const FBufferCreationDesc UploadBufferCreationDesc = {
@@ -99,6 +113,11 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreat
 
         if (TextureCreationDesc.Usage == ETextureUsage::HDRTextureFromPath)
         {
+            TextureSubresourceData = {
+                .pData = HdrTextureData,
+                .RowPitch = Width * TextureCreationDesc.BytesPerPixel,
+                .SlicePitch = Width * Height * TextureCreationDesc.BytesPerPixel,
+            };
         }
         else // TexureUsage:: TextureFromPath or TextureFromData (non HDR).
         {
@@ -141,7 +160,17 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreat
         }
         else if (TextureCreationDesc.DepthOrArraySize == 6u)
         {
-            // TODO
+            SrvCreationDesc = {
+                .SrvDesc = {
+                    .Format = format,
+                    .ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE,
+                    .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+                    .Texture2D = {
+                        .MostDetailedMip = 0u,
+                        .MipLevels = 1, // Todo:Mipmap
+                    }
+                }
+            };
         }
 
         Texture.SrvIndex = CreateSrv(SrvCreationDesc, Texture.Allocation.Resource.Get());
@@ -182,18 +211,39 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& TextureCreat
         }
 
         // Create UAV
-        if (TextureCreationDesc.Usage == ETextureUsage::RenderTarget)
+        if (TextureCreationDesc.Usage == ETextureUsage::RenderTarget
+            || TextureCreationDesc.Usage == ETextureUsage::CubeMap)
         {
-            const FUavCreationDesc UavCreationDesc = {
-                .UavDesc =
-                    {
-                        .Format = format,
-                        .ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D,
-                        .Texture2D{.MipSlice = 0u, .PlaneSlice = 0u},
-                    },
-            };
+            if (TextureCreationDesc.DepthOrArraySize > 1u)
+            {
+                // TODO: mips
+                const FUavCreationDesc UavCreationDesc = {
+                    .UavDesc =
+                        {
+                            .Format = format,
+                            .ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY,
+                            .Texture2DArray{
+                                .MipSlice = 0u,
+                                .FirstArraySlice = 0u,
+                                .ArraySize = TextureCreationDesc.DepthOrArraySize
+                            },
+                        },
+                };
+                Texture.UavIndex = CreateUav(UavCreationDesc, Texture.Allocation.Resource.Get());
+            }
+            else
+            {
+                const FUavCreationDesc UavCreationDesc = {
+                    .UavDesc =
+                        {
+                            .Format = format,
+                            .ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D,
+                            .Texture2D{.MipSlice = 0u, .PlaneSlice = 0u},
+                        },
+                };
+                Texture.UavIndex = CreateUav(UavCreationDesc, Texture.Allocation.Resource.Get());
+            }
 
-            Texture.UavIndex = CreateUav(UavCreationDesc, Texture.Allocation.Resource.Get());
         }
     }
 
@@ -211,6 +261,20 @@ FPipelineState FGraphicsDevice::CreatePipelineState(const FComputePipelineStateC
 {
     FPipelineState PipelineState(Device.Get(), Desc);
     return PipelineState;
+}
+
+void FGraphicsDevice::ExecuteAndFlushComputeContext(std::unique_ptr<FComputeContext>&& ComputeContext)
+{
+    // Execute compute context and push to the queue.
+    ComputeCommandQueue->ExecuteContext(ComputeContext.get());
+    ComputeCommandQueue->Flush();
+}
+
+std::unique_ptr<FComputeContext> FGraphicsDevice::GetComputeContext()
+{
+    // Create a compute context.
+    std::unique_ptr<FComputeContext> Context = std::make_unique<FComputeContext>(this);
+    return Context;
 }
 
 void FGraphicsDevice::InitDeviceResources()
@@ -328,6 +392,9 @@ void FGraphicsDevice::InitCommandQueues()
 
     CopyCommandQueue =
         std::make_unique<FCommandQueue>(Device.Get(), D3D12_COMMAND_LIST_TYPE_COPY, L"Copy Command Queue");
+
+    ComputeCommandQueue =
+        std::make_unique<FCommandQueue>(Device.Get(), D3D12_COMMAND_LIST_TYPE_COMPUTE, L"Compute Command Queue");
 }
 
 void FGraphicsDevice::InitDescriptorHeaps()

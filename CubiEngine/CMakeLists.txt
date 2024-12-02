@@ -44,6 +44,8 @@ set(SRC_FILES
     "Include/Graphics/Context.h"
     "Source/Graphics/GraphicsContext.cpp"
     "Include/Graphics/GraphicsContext.h"
+    "Source/Graphics/ComputeContext.cpp"
+    "Include/Graphics/ComputeContext.h"
     "Source/Graphics/CopyContext.cpp"
     "Include/Graphics/CopyContext.h"
     "Source/Graphics/ShaderCompiler.cpp"
@@ -61,6 +63,8 @@ set(SRC_FILES
     "Include/Renderer/DebugPass.h"
     "Source/Renderer/PostProcess.cpp"
     "Include/Renderer/PostProcess.h"
+    "Source/Renderer/CubeMap.cpp"
+    "Include/Renderer/CubeMap.h"
 )
 
 add_executable(CubiEngine ${SRC_FILES} "Main.cpp")

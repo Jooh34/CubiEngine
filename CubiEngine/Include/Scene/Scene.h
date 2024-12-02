@@ -4,6 +4,7 @@
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Scene/Camera.h"
 #include "Scene/Light.h"
+#include "Renderer/CubeMap.h"
 
 class FGraphicsContext;
 class FCamera;
@@ -26,6 +27,7 @@ public:
 
     FBuffer& GetSceneBuffer() { return SceneBuffer; }
     FBuffer& GetLightBuffer() { return LightBuffer; }
+    std::optional<FCubeMap>& GetEnviromentMap() { return EnviromentMap; }
 
 private:
     std::unordered_map<std::wstring, std::unique_ptr<FModel>> Models{};
@@ -35,4 +37,5 @@ private:
     FLight Light;
     FBuffer SceneBuffer{};
     FBuffer LightBuffer{};
+    std::optional<FCubeMap> EnviromentMap{};
 };

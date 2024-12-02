@@ -86,4 +86,18 @@ namespace interlop
         uint sceneBufferIndex;
         uint lightBufferIndex;
     };
+
+    struct ConvertEquirectToCubeMapRenderResource
+    {
+        uint textureIndex;
+        uint outputCubeMapTextureIndex;
+    };
+
+    struct DebugVisualizeCubeMapRenderResources
+    {
+        uint srcTextureIndex;
+        uint dstTextureIndex;
+        uint width;
+        uint height;
+    };
 }

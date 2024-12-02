@@ -103,6 +103,10 @@ void FRenderer::Render()
         
         PostProcess->Tonemapping(GraphicsContext, HDR, Width, Height);
 
+        // ----- Vis Debug -----
+        PostProcess->DebugVisualize(GraphicsContext, Scene->GetEnviromentMap()->CubeMapTexture, Width, Height);
+        // ----- Vis Debug -----
+
         GraphicsContext->AddResourceBarrier(LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
         GraphicsContext->ExecuteResourceBarriers();

@@ -83,7 +83,7 @@ struct FTextureCreationDesc
     uint32_t DepthOrArraySize{ 1u };
     uint32_t BytesPerPixel{ 4u };
     std::wstring_view Name{};
-    std::string Path{};
+    std::wstring Path{};
 };
 
 struct FTexture
@@ -92,6 +92,7 @@ struct FTexture
     uint32_t Width{};
     uint32_t Height{};
     FAllocation Allocation{};
+    ETextureUsage Usage{};
     
     uint32_t SrvIndex{ INVALID_INDEX_U32 };
     uint32_t UavIndex{ INVALID_INDEX_U32 };

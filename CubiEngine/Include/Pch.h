@@ -63,3 +63,5 @@ constexpr uint32_t GNumSamplerDescriptorHeap = 1024;
 constexpr uint32_t InitialWidth = 1200;
 constexpr uint32_t InitialHeight = 900;
 
+constexpr uint32_t GCubeMapTextureDimension = 1024u;
+

@@ -4,6 +4,7 @@
 #include "Graphics/CommandQueue.h"
 #include "Graphics/Resource.h"
 #include "Graphics/GraphicsContext.h"
+#include "Graphics/ComputeContext.h"
 
 class FMemoryAllocator;
 class FCopyContext;
@@ -27,7 +28,7 @@ public:
     void OnWindowResized(uint32_t InWidth, uint32_t InHeight);
 
     FSampler CreateSampler(const FSamplerCreationDesc& Desc) const;
-    FTexture CreateTexture(const FTextureCreationDesc& TextureCreationDesc, const void* Data = nullptr) const;
+    FTexture CreateTexture(const FTextureCreationDesc& InTextureCreationDesc, const void* Data = nullptr) const;
     FPipelineState CreatePipelineState(const FGraphicsPipelineStateCreationDesc Desc) const;
     FPipelineState CreatePipelineState(const FComputePipelineStateCreationDesc Desc) const;
 
@@ -49,9 +50,13 @@ public:
     
     FGraphicsContext* GetCurrentGraphicsContext() const { return PerFrameGraphicsContexts[CurrentFrameIndex].get(); }
     FTexture& GetCurrentBackBuffer() { return BackBuffers[CurrentFrameIndex]; }
+    
+    void ExecuteAndFlushComputeContext(std::unique_ptr<FComputeContext>&& ComputeContext);
 
     template <typename T>
     FBuffer CreateBuffer(const FBufferCreationDesc& BufferCreationDesc, const std::span<const T> Data = {}) const;
+    
+    std::unique_ptr<FComputeContext> GetComputeContext();
 
 private:
     bool bInitialized = false;
@@ -94,6 +99,7 @@ private:
     std::unique_ptr<FDescriptorHeap> SamplerDescriptorHeap;
 
     std::unique_ptr<FCommandQueue> DirectCommandQueue{};
+    std::unique_ptr<FCommandQueue> ComputeCommandQueue{};
     std::unique_ptr<FCommandQueue> CopyCommandQueue{};
     std::unique_ptr<FMemoryAllocator> MemoryAllocator{};
 

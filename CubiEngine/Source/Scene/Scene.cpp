@@ -27,6 +27,12 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     float LightPosition[4] = { 1,-1,1,0 };
     float LightColor[4] = { 1,1,1,1 };
     AddLight(LightPosition, LightColor);
+
+    // set environment map
+    EnviromentMap = FCubeMap(Device, FCubeMapCreationDesc{
+        .EquirectangularTexturePath = L"Assets/Textures/Environment.hdr",
+        .Name = L"Environment Map"
+    });
 }
 
 FScene::~FScene()

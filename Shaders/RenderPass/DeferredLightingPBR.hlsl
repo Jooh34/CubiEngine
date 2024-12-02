@@ -44,7 +44,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     context.NoH = max(dot(N,H), 0.f);
 
     float3 color = float3(0,0,0);
-    color += cookTorrence(albedo.xyz, metalRoughness.y, metalRoughness.x, context) * 10.f;
+    color += cookTorrence(albedo.xyz, metalRoughness.y, metalRoughness.x, context) * 10.f; // TODO : light color, attenuation
 
     outputTexture[dispatchThreadID.xy] = float4(color, 1.0f);
 }
