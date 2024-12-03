@@ -100,4 +100,13 @@ namespace interlop
         uint width;
         uint height;
     };
+
+    struct GenerateMipmapResource
+    {
+        uint srcMipSrvIndex;
+        uint srcMipLevel;
+        float2 dstTexelSize;
+
+        uint dstMipIndex;
+    };
 }

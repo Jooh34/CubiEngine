@@ -52,6 +52,8 @@ set(SRC_FILES
     "Include/Graphics/ShaderCompiler.h"
     "Source/Graphics/MemoryAllocator.cpp"
     "Include/Graphics/MemoryAllocator.h"
+    "Source/Graphics/MipmapGenerator.cpp"
+    "Include/Graphics/MipmapGenerator.h"
 
     "Source/Renderer/Renderer.cpp"
     "Include/Renderer/Renderer.h"

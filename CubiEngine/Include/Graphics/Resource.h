@@ -99,7 +99,12 @@ struct FTexture
     uint32_t DsvIndex{ INVALID_INDEX_U32 };
     uint32_t RtvIndex{ INVALID_INDEX_U32 };
 
+    std::vector<uint32_t> MipUavIndex{};
+
     D3D12_RESOURCE_STATES ResourceState;
+
+    static DXGI_FORMAT ConvertToLinearFormat(const DXGI_FORMAT Format);
+    bool IsPowerOfTwo();
 };
 
 struct FCbvCreationDesc

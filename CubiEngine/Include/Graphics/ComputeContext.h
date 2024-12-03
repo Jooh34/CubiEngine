@@ -11,6 +11,7 @@ class FComputeContext : public FContext
 public:
     FComputeContext(FGraphicsDevice* const Device);
     void SetDescriptorHeaps() const;
+    void Reset() override;
 
     void SetComputeRootSignatureAndPipeline(const FPipelineState& PipelineState) const;
     void Set32BitComputeConstants(const void* RenderResources) const;

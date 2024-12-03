@@ -45,8 +45,8 @@ void FCommandQueue::ExecuteContext(FContext* Context)
 {
     std::vector<ID3D12CommandList*> CommandLists{};
 
-    CommandLists.emplace_back(Context->GetCommandList());
     ThrowIfFailed(Context->GetCommandList()->Close());
+    CommandLists.emplace_back(Context->GetCommandList());
 
     CommandQueue->ExecuteCommandLists(CommandLists.size(), CommandLists.data());
 }

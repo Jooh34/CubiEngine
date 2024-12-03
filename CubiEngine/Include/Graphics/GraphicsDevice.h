@@ -5,6 +5,7 @@
 #include "Graphics/Resource.h"
 #include "Graphics/GraphicsContext.h"
 #include "Graphics/ComputeContext.h"
+#include "Graphics/MipmapGenerator.h"
 
 class FMemoryAllocator;
 class FCopyContext;
@@ -92,6 +93,7 @@ private:
 
     std::array<std::unique_ptr<FGraphicsContext>, FRAMES_IN_FLIGHT> PerFrameGraphicsContexts{};
     std::unique_ptr<FCopyContext> CopyContext;
+    std::queue<std::unique_ptr<FComputeContext>> ComputeContextQueue;
 
     std::unique_ptr<FDescriptorHeap> CbvSrvUavDescriptorHeap;
     std::unique_ptr<FDescriptorHeap> RtvDescriptorHeap;
@@ -104,4 +106,6 @@ private:
     std::unique_ptr<FMemoryAllocator> MemoryAllocator{};
 
     mutable std::recursive_mutex ResourceMutex;
+
+    std::unique_ptr<FMipmapGenerator> MipmapGenerator{};
 };

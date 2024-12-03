@@ -11,6 +11,8 @@ FGraphicsDevice::FGraphicsDevice(const uint32_t Width, const uint32_t Height,
 {
     InitDeviceResources();
     InitSwapchainResources(Width, Height);
+
+    MipmapGenerator = std::make_unique<FMipmapGenerator>(this);
 }
 
 FGraphicsDevice::~FGraphicsDevice()
@@ -153,7 +155,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
                     .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
                     .Texture2D = {
                         .MostDetailedMip = 0u,
-                        .MipLevels = 1, // Todo:Mipmap
+                        .MipLevels = TextureCreationDesc.MipLevels, // Todo:Mipmap
                     }
                 }
             };
@@ -167,7 +169,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
                     .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
                     .Texture2D = {
                         .MostDetailedMip = 0u,
-                        .MipLevels = 1, // Todo:Mipmap
+                        .MipLevels = TextureCreationDesc.MipLevels, // Todo:Mipmap
                     }
                 }
             };
@@ -211,43 +213,62 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
         }
 
         // Create UAV
-        if (TextureCreationDesc.Usage == ETextureUsage::RenderTarget
-            || TextureCreationDesc.Usage == ETextureUsage::CubeMap)
+        if (TextureCreationDesc.Usage != ETextureUsage::DepthStencil)
         {
             if (TextureCreationDesc.DepthOrArraySize > 1u)
             {
-                // TODO: mips
-                const FUavCreationDesc UavCreationDesc = {
-                    .UavDesc =
-                        {
-                            .Format = format,
-                            .ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY,
-                            .Texture2DArray{
-                                .MipSlice = 0u,
-                                .FirstArraySlice = 0u,
-                                .ArraySize = TextureCreationDesc.DepthOrArraySize
+                for (uint32_t i = 0; i < TextureCreationDesc.MipLevels; i++)
+                {
+                    // TODO: mips
+                    const FUavCreationDesc UavCreationDesc = {
+                        .UavDesc =
+                            {
+                                .Format = FTexture::ConvertToLinearFormat(format),
+                                .ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY,
+                                .Texture2DArray{
+                                    .MipSlice = i,
+                                    .FirstArraySlice = 0u,
+                                    .ArraySize = TextureCreationDesc.DepthOrArraySize
+                                },
                             },
-                        },
-                };
-                Texture.UavIndex = CreateUav(UavCreationDesc, Texture.Allocation.Resource.Get());
+                    };
+                    
+                    uint32_t UavIndex = CreateUav(UavCreationDesc, Texture.Allocation.Resource.Get());
+                    if (i == 0)
+                    {
+                        Texture.UavIndex = UavIndex;
+                    }
+                    Texture.MipUavIndex.push_back(UavIndex);
+                }
             }
             else
             {
-                const FUavCreationDesc UavCreationDesc = {
-                    .UavDesc =
-                        {
-                            .Format = format,
-                            .ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D,
-                            .Texture2D{.MipSlice = 0u, .PlaneSlice = 0u},
-                        },
-                };
-                Texture.UavIndex = CreateUav(UavCreationDesc, Texture.Allocation.Resource.Get());
+                for (uint32_t i = 0; i < TextureCreationDesc.MipLevels; i++)
+                {
+                    const FUavCreationDesc UavCreationDesc = {
+                        .UavDesc =
+                            {
+                                .Format = FTexture::ConvertToLinearFormat(format),
+                                .ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D,
+                                .Texture2D = {.MipSlice = i, .PlaneSlice = 0u},
+                            },
+                    };
+                    uint32_t UavIndex = CreateUav(UavCreationDesc, Texture.Allocation.Resource.Get());
+
+                    if (i == 0)
+                    {
+                        Texture.UavIndex = UavIndex;
+                    }
+                    Texture.MipUavIndex.push_back(UavIndex);
+                }
             }
 
         }
     }
 
     // Todo: mipmap generation
+    MipmapGenerator->GenerateMipmap(Texture);
+
     return Texture;
 }
 
@@ -268,13 +289,23 @@ void FGraphicsDevice::ExecuteAndFlushComputeContext(std::unique_ptr<FComputeCont
     // Execute compute context and push to the queue.
     ComputeCommandQueue->ExecuteContext(ComputeContext.get());
     ComputeCommandQueue->Flush();
+
+    ComputeContextQueue.emplace(std::move(ComputeContext));
 }
 
 std::unique_ptr<FComputeContext> FGraphicsDevice::GetComputeContext()
 {
-    // Create a compute context.
-    std::unique_ptr<FComputeContext> Context = std::make_unique<FComputeContext>(this);
-    return Context;
+    if (ComputeContextQueue.empty())
+    {
+        std::unique_ptr<FComputeContext> Context = std::make_unique<FComputeContext>(this);
+        return Context;
+    }
+    else
+    {
+        std::unique_ptr<FComputeContext> Ret = std::move(ComputeContextQueue.front());
+        ComputeContextQueue.pop();
+        return Ret;
+    }
 }
 
 void FGraphicsDevice::InitDeviceResources()

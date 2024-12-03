@@ -35,7 +35,7 @@ void FGraphicsContext::SetDescriptorHeaps() const
     CommandList->SetDescriptorHeaps(static_cast<UINT>(descriptorHeaps.size()), descriptorHeaps.data());
 }
 
-void FGraphicsContext::Reset() const
+void FGraphicsContext::Reset()
 {
     FContext::Reset();
 

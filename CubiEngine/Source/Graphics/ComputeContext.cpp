@@ -32,6 +32,13 @@ void FComputeContext::SetDescriptorHeaps() const
     CommandList->SetDescriptorHeaps(static_cast<UINT>(descriptorHeaps.size()), descriptorHeaps.data());
 }
 
+void FComputeContext::Reset()
+{
+    FContext::Reset();
+
+    SetDescriptorHeaps();
+}
+
 void FComputeContext::SetComputeRootSignatureAndPipeline(const FPipelineState& PipelineState) const
 {
     CommandList->SetComputeRootSignature(FPipelineState::StaticRootSignature.Get());

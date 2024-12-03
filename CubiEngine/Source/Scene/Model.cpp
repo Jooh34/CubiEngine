@@ -158,8 +158,9 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
             }
 
             // determine max mip levels possible.
-
-            Desc.MipLevels = static_cast<uint32_t>(std::floor(std::log2(max(Width, Height))) + 1);
+        
+            uint32_t MaxMipLevel = static_cast<uint32_t>(std::floor(std::log2(max(Width, Height))) + 1);
+            Desc.MipLevels = max(MaxMipLevel - 5, 1);
 
             Desc.Width = static_cast<uint32_t>(Width);
             Desc.Height = static_cast<uint32_t>(Height);
@@ -172,7 +173,8 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
 
     Materials.resize(GLTFModel.materials.size());
     size_t index = 0;
-
+    
+    uint32_t MipLevels = 6u;
     for (const tinygltf::Material& material : GLTFModel.materials)
     {
         FPBRMaterial PbrMaterial{};
@@ -187,7 +189,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                 PbrMaterial.AlbedoTexture =
                     CreateTexture(albedoImage, FTextureCreationDesc{
                                                    .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-                                                   .MipLevels = 1u, // Todo:Mips
+                                                   .MipLevels = MipLevels,
                                                    .Name = ModelName + L" albedo texture",
                         });
                 PbrMaterial.AlbedoSampler = Samplers[albedoTexture.sampler];
@@ -206,7 +208,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                     CreateTexture(metalRoughnessImage, FTextureCreationDesc{
                                                            .Usage = ETextureUsage::TextureFromData,
                                                            .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-                                                           .MipLevels = 1u,
+                                                           .MipLevels = MipLevels,
                                                            .Name = ModelName + L" metal roughness texture",
                     });
                 PbrMaterial.MetalRoughnessSampler = Samplers[metalRoughnessTexture.sampler];
@@ -223,7 +225,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                     CreateTexture(normalImage, FTextureCreationDesc{
                                                .Usage = ETextureUsage::TextureFromData,
                                                .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-                                               .MipLevels = 1u,
+                                               .MipLevels = MipLevels,
                                                .Name = ModelName + L" normal texture",
                     });
 
@@ -240,7 +242,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                 PbrMaterial.AOTexture = CreateTexture(aoImage, FTextureCreationDesc{
                                                                .Usage = ETextureUsage::TextureFromData,
                                                                .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-                                                               .MipLevels = 1u,
+                                                               .MipLevels = MipLevels,
                                                                .Name = ModelName + L" occlusion texture",
                 });
                 PbrMaterial.AOSampler = Samplers[aoTexture.sampler];
@@ -256,7 +258,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                 PbrMaterial.EmissiveTexture = CreateTexture(emissiveImage, FTextureCreationDesc{
                                                      .Usage = ETextureUsage::TextureFromData,
                                                      .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-                                                     .MipLevels = 1u,
+                                                     .MipLevels = MipLevels,
                                                      .Name = ModelName + L" emissive texture",
                         });
                 PbrMaterial.EmissiveSampler = Samplers[emissiveTexture.sampler];

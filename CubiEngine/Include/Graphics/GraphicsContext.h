@@ -11,7 +11,7 @@ class FGraphicsContext : public FContext
 public:
     FGraphicsContext(FGraphicsDevice* const Device);
     void SetDescriptorHeaps() const;
-    void Reset() const;
+    void Reset();
 
     void ClearRenderTargetView(const FTexture& InRenderTarget, std::span<const float, 4> Color);
     void ClearDepthStencilView(const FTexture& Texture);

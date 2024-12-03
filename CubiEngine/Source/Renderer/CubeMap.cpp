@@ -5,10 +5,12 @@
 
 FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc)
 {
+    uint32_t MipLevels = 6u;
+
     const FTexture EquirectangularTexture = Device->CreateTexture(FTextureCreationDesc{
         .Usage = ETextureUsage::HDRTextureFromPath,
         .Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
-        .MipLevels = 1,
+        .MipLevels = MipLevels,
         .DepthOrArraySize = 1u,
         .BytesPerPixel = 16u,
         .Name = Desc.Name,
@@ -20,7 +22,7 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc)
         .Width = GCubeMapTextureDimension,
         .Height = GCubeMapTextureDimension,
         .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
-        .MipLevels = 1u,
+        .MipLevels = MipLevels,
         .DepthOrArraySize = 6u,
         .Name = Desc.Name + std::wstring(L"CubeMap"),
     });
