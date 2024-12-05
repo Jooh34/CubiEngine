@@ -78,3 +78,19 @@ bool FTexture::IsPowerOfTwo()
     bool b = (Height > 0) && (Height & (Height - 1)) == 0;
     return a && b;
 }
+
+bool FTexture::IsSRGB(DXGI_FORMAT Format)
+{
+    if (Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
+        || Format == DXGI_FORMAT_BC1_UNORM_SRGB
+        || Format == DXGI_FORMAT_BC2_UNORM_SRGB
+        || Format == DXGI_FORMAT_BC3_UNORM_SRGB
+        || Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
+        || Format == DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
+        || Format == DXGI_FORMAT_BC7_UNORM_SRGB
+        )
+    {
+        return true;
+    }
+    return false;
+}

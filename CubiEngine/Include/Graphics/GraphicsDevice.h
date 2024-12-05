@@ -59,6 +59,8 @@ public:
     
     std::unique_ptr<FComputeContext> GetComputeContext();
 
+    void GenerateMipmap(FTexture& Texture);
+
 private:
     bool bInitialized = false;
 

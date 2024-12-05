@@ -13,15 +13,23 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         .Usage = EBufferUsage::ConstantBuffer,
         .Name = L"Light Buffer",
     });
-
-    FModelCreationDesc Desc{
-        .ModelPath = "Models/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
-        .ModelName = L"MetalRoughSpheres",
-    };
-    /*FModelCreationDesc Desc{
-        .ModelPath = "Models/Sponza/sponza.glb",
-        .ModelName = L"Sponza",
-    };*/
+    
+    int Scene = 0;
+    FModelCreationDesc Desc;
+    if (Scene == 0)
+    {
+        Desc = {
+            .ModelPath = "Models/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
+            .ModelName = L"MetalRoughSpheres",
+        };
+    }
+    else if (Scene == 1)
+    {
+        Desc = {
+            .ModelPath = "Models/Sponza/sponza.glb",
+            .ModelName = L"Sponza",
+        };
+    }
     AddModel(Desc);
 
     float LightPosition[4] = { 1,-1,1,0 };

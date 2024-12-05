@@ -82,7 +82,7 @@ struct FTextureCreationDesc
     uint32_t MipLevels{ 1u };
     uint32_t DepthOrArraySize{ 1u };
     uint32_t BytesPerPixel{ 4u };
-    std::wstring_view Name{};
+    std::wstring Name{};
     std::wstring Path{};
 };
 
@@ -103,8 +103,11 @@ struct FTexture
 
     D3D12_RESOURCE_STATES ResourceState;
 
+    std::wstring DebugName{};
+
     static DXGI_FORMAT ConvertToLinearFormat(const DXGI_FORMAT Format);
     bool IsPowerOfTwo();
+    static bool IsSRGB(DXGI_FORMAT Format);
 };
 
 struct FCbvCreationDesc

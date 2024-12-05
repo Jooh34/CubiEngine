@@ -39,18 +39,22 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc)
     ComputeContext->AddResourceBarrier(CubeMapTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     ComputeContext->ExecuteResourceBarriers();
     ComputeContext->SetComputeRootSignatureAndPipeline(ConvertEquirectToCubeMapPipelineState);
+    
+    // Process for all Mips
+    for (uint32_t i = 0; i < MipLevels; i++)
+    {
+         const interlop::ConvertEquirectToCubeMapRenderResource RenderResources = {
+            .textureIndex = EquirectangularTexture.SrvIndex,
+            .outputCubeMapTextureIndex = CubeMapTexture.MipUavIndex[i],
+         };
 
-    const interlop::ConvertEquirectToCubeMapRenderResource RenderResources = {
-        .textureIndex = EquirectangularTexture.SrvIndex,
-        .outputCubeMapTextureIndex = CubeMapTexture.UavIndex,
-    };
+        ComputeContext->Set32BitComputeConstants(&RenderResources);
 
-    ComputeContext->Set32BitComputeConstants(&RenderResources);
+        const uint32_t numGroups = max(1u, GCubeMapTextureDimension / 8u);
 
-    const uint32_t numGroups = max(1u, GCubeMapTextureDimension / 8u);
-
-    ComputeContext->Dispatch(numGroups, numGroups, 6u);
-
+        ComputeContext->Dispatch(numGroups, numGroups, 6u);
+    }
+   
     ComputeContext->AddResourceBarrier(CubeMapTexture, D3D12_RESOURCE_STATE_COMMON);
     ComputeContext->ExecuteResourceBarriers();
 

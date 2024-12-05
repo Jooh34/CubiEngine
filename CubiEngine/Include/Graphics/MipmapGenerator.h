@@ -14,5 +14,6 @@ public:
 
 private:
     FGraphicsDevice* Device;
-    FPipelineState PipelineState;
+    FPipelineState GenerateMipmapPipelineState;
+    FPipelineState GenerateCubemapMipmapPipelineState;
 };

@@ -108,5 +108,6 @@ namespace interlop
         float2 dstTexelSize;
 
         uint dstMipIndex;
+        uint isSRGB;
     };
 }
