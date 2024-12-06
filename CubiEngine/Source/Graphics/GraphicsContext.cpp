@@ -125,6 +125,12 @@ void FGraphicsContext::DrawIndexedInstanced(const uint32_t IndicesCount, const u
     CommandList->DrawIndexedInstanced(IndicesCount, InstanceCount, 0u, 0u, 0u);
 }
 
+void FGraphicsContext::DrawInstanced(uint32_t VertexCountPerInstance, 
+    uint32_t InstanceCount, uint32_t StartVertexLocation, uint32_t StartInstanceLocation) const
+{
+    CommandList->DrawInstanced(VertexCountPerInstance, InstanceCount, StartVertexLocation, StartInstanceLocation);
+}
+
 void FGraphicsContext::SetGraphicsRootSignature() const
 {
     CommandList->SetGraphicsRootSignature(FPipelineState::StaticRootSignature.Get());

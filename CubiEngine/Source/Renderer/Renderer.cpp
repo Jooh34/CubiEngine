@@ -67,6 +67,9 @@ void FRenderer::Render()
     if (DeferredGPass)
     {
         DeferredGPass->Render(Scene.get(), GraphicsContext, DepthTexture, Width, Height);
+
+        // Render Skybox
+        Scene->RenderEnvironmentMap(GraphicsContext, DeferredGPass->HDRTexture, DepthTexture);
     }
     // ----- Deferred GPass ----
     

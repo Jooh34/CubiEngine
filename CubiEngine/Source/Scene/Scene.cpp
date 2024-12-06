@@ -91,3 +91,17 @@ void FScene::RenderModels(FGraphicsContext* const GraphicsContext,
         Model->Render(GraphicsContext, DeferredGRenderResources);
     }
 }
+
+void FScene::RenderEnvironmentMap(FGraphicsContext* const GraphicsContext,
+    const FTexture& Target, const FTexture& DepthBuffer)
+{
+    interlop::ScreenSpaceCubeMapRenderResources RenderResource = {
+        .sceneBufferIndex = SceneBuffer.CbvIndex,
+        .cubenmapTextureIndex = EnviromentMap->CubeMapTexture.SrvIndex,
+    };
+
+    if (EnviromentMap.has_value())
+    {
+        EnviromentMap->Render(GraphicsContext, RenderResource, Target, DepthBuffer);
+    }
+}

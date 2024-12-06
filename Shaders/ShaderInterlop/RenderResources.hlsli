@@ -110,4 +110,10 @@ namespace interlop
         uint dstMipIndex;
         uint isSRGB;
     };
+
+    struct ScreenSpaceCubeMapRenderResources
+    {
+        uint sceneBufferIndex;
+        uint cubenmapTextureIndex;
+    };
 }

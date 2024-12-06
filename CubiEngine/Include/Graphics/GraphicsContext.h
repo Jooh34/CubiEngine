@@ -27,6 +27,10 @@ public:
 
     void SetIndexBuffer(const FBuffer& Buffer) const;
     void DrawIndexedInstanced(const uint32_t IndicesCount, const uint32_t InstanceCount = 1u) const;
+    void DrawInstanced(uint32_t VertexCountPerInstance,
+        uint32_t InstanceCount,
+        uint32_t StartVertexLocation,
+        uint32_t StartInstanceLocation) const;
 
     void SetGraphicsRootSignature() const;
     void SetGraphicsRoot32BitConstants(const void* RenderResources)  const;

@@ -30,6 +30,9 @@ struct FGraphicsPipelineStateCreationDesc
     FrontFaceWindingOrder FrontFaceWindingOrder{FrontFaceWindingOrder::ClockWise};
     D3D12_CULL_MODE CullMode{D3D12_CULL_MODE_BACK};
     std::wstring_view PipelineName{};
+
+    // advanced
+    D3D12_DEPTH_WRITE_MASK DepthWriteMask{ D3D12_DEPTH_WRITE_MASK_ALL };
 };
 
 struct FComputePipelineStateCreationDesc

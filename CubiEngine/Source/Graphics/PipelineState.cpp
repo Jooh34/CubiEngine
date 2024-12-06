@@ -30,7 +30,7 @@ FPipelineState::FPipelineState(ID3D12Device5* const device,
     // Setup depth stencil state.
     const D3D12_DEPTH_STENCIL_DESC depthStencilDesc = {
         .DepthEnable = pipelineStateCreationDesc.DepthFormat == DXGI_FORMAT_UNKNOWN ? FALSE : TRUE,
-        .DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL,
+        .DepthWriteMask = pipelineStateCreationDesc.DepthWriteMask,
         .DepthFunc = pipelineStateCreationDesc.DepthComparisonFunc,
         .StencilEnable = FALSE,
         .StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK,

@@ -28,6 +28,8 @@ public:
     FBuffer& GetSceneBuffer() { return SceneBuffer; }
     FBuffer& GetLightBuffer() { return LightBuffer; }
     std::optional<FCubeMap>& GetEnviromentMap() { return EnviromentMap; }
+    void RenderEnvironmentMap(FGraphicsContext* const GraphicsContext,
+        const FTexture& Target, const FTexture& DepthBuffer);
 
 private:
     std::unordered_map<std::wstring, std::unique_ptr<FModel>> Models{};
