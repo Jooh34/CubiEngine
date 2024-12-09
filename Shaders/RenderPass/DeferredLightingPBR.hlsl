@@ -32,6 +32,8 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float roughness = aoMetalRoughness.z;
     float metalic = aoMetalRoughness.y;
 
+    const float3 worldSpaceNormal = normalize(mul(normal.xyz, (float3x3)sceneBuffer.inverseViewMatrix));
+
     if (depth > 0.9999f) return;
 
     // temporal constant value for directional light
@@ -47,16 +49,23 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     context.NoH = max(dot(N,H), 0.f);
 
     float3 color = float3(0,0,0);
-    color += cookTorrence(albedo.xyz, roughness, metalic, context) * 10.f; // TODO : light color, attenuation
+    color += cookTorrence(albedo.xyz, roughness, metalic, context) * 5.f; // TODO : light color, attenuation
 
     // IBL : PrefilteredEnvMap from UE4
     const float3 f0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo.xyz, metalic);
+    float3 kS = fresnelSchlickFunctionRoughness(f0, context.NoV, roughness);
     
+    // diffuse IBL
+    float3 irradiance = PrefilterEnvmap.SampleLevel(linearClampSampler, worldSpaceNormal, 5).xyz;
+    const float3 kD = lerp(float3(1.0f, 1.0f, 1.0f) - kS, float3(0.0f, 0.0f, 0.0f), metalic);
+    float3 diffuseIBL = kD * irradiance * albedo.xyz;
+
+    // specular IBL
     const float3 R = normalize(mul(reflect(-V, N), (float3x3)sceneBuffer.inverseViewMatrix));
     const float3 PrefilteredColor = PrefilterEnvmap.SampleLevel(minMapLinearMipPointClampSampler, R, roughness * 6.0f).xyz;
     const float2 EnvBRDF = EnvBRDFTexture.Sample(pointWrapSampler, float2(roughness, context.NoV));
     const float3 specularIBL = PrefilteredColor * (f0 * EnvBRDF.x + EnvBRDF.y);
-    color += specularIBL;
+    color += (diffuseIBL + specularIBL);
     
     outputTexture[dispatchThreadID.xy] = float4(color, 1.0f);
 }

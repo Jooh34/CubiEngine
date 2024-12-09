@@ -29,6 +29,12 @@ float3 F_Schlick( float3 SpecularColor, const float VoH )
 	return saturate( 50.0 * SpecularColor.g ) * Fc + (1 - Fc) * SpecularColor;
 }
 
+float3 fresnelSchlickFunctionRoughness(const float3 f0, const float vDotN, const float roughnessFactor)
+{
+    return f0 + (max(float3(1.0 - roughnessFactor, 1.0 - roughnessFactor, 1.0 - roughnessFactor), f0) - f0) *
+                    pow(1.0 - vDotN, 5.0);
+}
+
 // From UnrealEngine
 float D_GGX(float a2, float NoH)
 {
@@ -65,7 +71,7 @@ float3 cookTorrence(float3 albedo, float roughness, float metalic, BxDFContext c
     
     // Calculation of analytical lighting contribution
     float3 diffuseContrib = (1.0 - F) * diffuseLambert(albedo);
-    float3 specContrib = F * G * D / (4 * context.NoL * context.NoV);
+    float3 specContrib = F * G * D / (4 * context.NoL * context.NoV + EPSILON);
 
     return context.NoL * (diffuseContrib + specContrib);
 }
