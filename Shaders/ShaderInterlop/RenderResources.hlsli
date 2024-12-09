@@ -79,6 +79,8 @@ namespace interlop
         uint GBufferBIndex;
         uint GBufferCIndex;
         uint depthTextureIndex;
+        uint prefilteredEnvmapIndex;
+        uint envBRDFTextureIndex;
         uint outputTextureIndex;
 
         uint width;
@@ -115,5 +117,20 @@ namespace interlop
     {
         uint sceneBufferIndex;
         uint cubenmapTextureIndex;
+    };
+
+    struct GeneratePrefilteredCubemapResource
+    {
+        uint srcMipSrvIndex;
+        uint dstMipUavIndex;
+        uint mipLevel;
+        uint totalMipLevel;
+        
+        float2 texelSize;
+    };
+
+    struct GenerateBRDFLutRenderResource
+    {
+        uint textureUavIndex;
     };
 }

@@ -15,6 +15,9 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     Texture2D<float4> GBufferC = ResourceDescriptorHeap[renderResources.GBufferCIndex];
     Texture2D<float> depthTexture = ResourceDescriptorHeap[renderResources.depthTextureIndex];
     RWTexture2D<float4> outputTexture = ResourceDescriptorHeap[renderResources.outputTextureIndex];
+
+    TextureCube<float4> PrefilterEnvmap = ResourceDescriptorHeap[renderResources.prefilteredEnvmapIndex];
+    Texture2D<float2> EnvBRDFTexture = ResourceDescriptorHeap[renderResources.envBRDFTextureIndex];
     
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
     ConstantBuffer<interlop::LightBuffer> lightBuffer = ResourceDescriptorHeap[renderResources.lightBufferIndex];
@@ -25,9 +28,9 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     const float depth = depthTexture.Sample(pointClampSampler, uv);
     const float4 albedo = GBufferA.Sample(pointClampSampler, uv);
     const float4 normal = GBufferB.Sample(pointClampSampler, uv);
-    const float4 metalRoughness = GBufferC.Sample(pointClampSampler, uv);
-    // const float4 ao = ResourceDescriptorHeap[renderResources.aoTextureIndex].Sample(pointClampSampler, uv);
-    // const float4 emissive = ResourceDescriptorHeap[renderResources.emissiveTextureIndex].Sample(pointClampSampler, uv);
+    const float4 aoMetalRoughness = GBufferC.Sample(pointClampSampler, uv);
+    float roughness = aoMetalRoughness.z;
+    float metalic = aoMetalRoughness.y;
 
     if (depth > 0.9999f) return;
 
@@ -44,7 +47,16 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     context.NoH = max(dot(N,H), 0.f);
 
     float3 color = float3(0,0,0);
-    color += cookTorrence(albedo.xyz, metalRoughness.y, metalRoughness.x, context) * 10.f; // TODO : light color, attenuation
+    color += cookTorrence(albedo.xyz, roughness, metalic, context) * 10.f; // TODO : light color, attenuation
 
+    // IBL : PrefilteredEnvMap from UE4
+    const float3 f0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo.xyz, metalic);
+    
+    const float3 R = normalize(mul(reflect(-V, N), (float3x3)sceneBuffer.inverseViewMatrix));
+    const float3 PrefilteredColor = PrefilterEnvmap.SampleLevel(minMapLinearMipPointClampSampler, R, roughness * 6.0f).xyz;
+    const float2 EnvBRDF = EnvBRDFTexture.Sample(pointWrapSampler, float2(roughness, context.NoV));
+    const float3 specularIBL = PrefilteredColor * (f0 * EnvBRDF.x + EnvBRDF.y);
+    color += specularIBL;
+    
     outputTexture[dispatchThreadID.xy] = float4(color, 1.0f);
 }

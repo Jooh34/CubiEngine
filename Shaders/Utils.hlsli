@@ -158,3 +158,38 @@ void packGBuffer(const float3 albedo, const float3 normal, const float ao, float
     GBufferB = float4(normal, emissive.g);
     GBufferC = float4(ao, metalRoughness, emissive.b);
 }
+
+float vanDerCorputRadicalInverse(uint bits)
+{
+    bits = (bits << 16u) | (bits >> 16u);
+    bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+    bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+    bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+    bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+
+    return float(bits) * 2.3283064365386963e-10;
+}
+
+float2 Hammersley(uint i, float invSample)
+{
+    return float2(i*invSample, vanDerCorputRadicalInverse(i));
+}
+
+float3 ImportanceSampleGGX(float2 Xi, float roughnessFactor, float3 normal, float3 s, float3 t)
+{
+    const float alpha = roughnessFactor * roughnessFactor;
+    const float alpha2 = alpha * alpha;
+    
+    const float phi = 2.0f * PI * Xi.x;
+
+    const float cosTheta = sqrt((1.0f - Xi.y) / (1.0f +  (alpha2 - 1.0f) * Xi.y));
+    const float sinTheta = sqrt(1.0f - pow(cosTheta, 2.0f));
+    
+    
+    // Spherical -> Cartesian coordinates.
+    const float3 h = float3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
+
+    // Tangent to world space transformation.
+    float3 sampleVector = h.x * s + h.y * t + normal * h.z;
+    return normalize(sampleVector);
+}

@@ -3,7 +3,7 @@
 #include "Graphics/GraphicsDevice.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc)
+FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : Device(Device)
 {
     uint32_t MipLevels = 6u;
 
@@ -24,7 +24,7 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc)
         .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
         .MipLevels = MipLevels,
         .DepthOrArraySize = 6u,
-        .Name = Desc.Name + std::wstring(L"CubeMap"),
+        .Name = Desc.Name + std::wstring(L" CubeMap"),
     });
 
     ConvertEquirectToCubeMapPipelineState =
@@ -50,7 +50,6 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc)
         .DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO,
         });
 
-
     std::unique_ptr<FComputeContext> ComputeContext = Device->GetComputeContext();
     ComputeContext->Reset();
 
@@ -67,13 +66,108 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc)
          };
 
         ComputeContext->Set32BitComputeConstants(&RenderResources);
-
-        const uint32_t numGroups = max(1u, GCubeMapTextureDimension / 8u);
+        
+        uint32_t Dim = GCubeMapTextureDimension >> i;
+        const uint32_t numGroups = max(1u, Dim / 8u);
 
         ComputeContext->Dispatch(numGroups, numGroups, 6u);
     }
    
-    ComputeContext->AddResourceBarrier(CubeMapTexture, D3D12_RESOURCE_STATE_COMMON);
+    ComputeContext->AddResourceBarrier(CubeMapTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    ComputeContext->ExecuteResourceBarriers();
+
+    Device->ExecuteAndFlushComputeContext(std::move(ComputeContext));
+
+    GeneratePrefilteredCubemap(Desc, MipLevels);
+    GenerateBRDFLut(Desc);
+}
+
+void FCubeMap::GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint32_t MipLevels)
+{
+    PrefilterPipelineState =
+        Device->CreatePipelineState(FComputePipelineStateCreationDesc{
+            .CsShaderPath = L"Shaders/CubeMap/GeneratePrefilteredCubemapCS.hlsl",
+            .PipelineName = L"GeneratePrefilteredCubemapCS Pipeline",
+        });
+
+    PrefilteredCubemapTexture = Device->CreateTexture(FTextureCreationDesc{
+        .Usage = ETextureUsage::CubeMap,
+        .Width = GCubeMapTextureDimension,
+        .Height = GCubeMapTextureDimension,
+        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+        .MipLevels = MipLevels,
+        .DepthOrArraySize = 6u,
+        .Name = Desc.Name + std::wstring(L" Prefiltered Cubemap"),
+     });
+
+    std::unique_ptr<FComputeContext> ComputeContext = Device->GetComputeContext();
+    ComputeContext->Reset();
+
+    ComputeContext->AddResourceBarrier(PrefilteredCubemapTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    ComputeContext->ExecuteResourceBarriers();
+    ComputeContext->SetComputeRootSignatureAndPipeline(PrefilterPipelineState);
+
+    // Process for all Mips
+    for (uint32_t i = 0; i < MipLevels; i++)
+    {
+        uint32_t Dim = GCubeMapTextureDimension >> i;
+
+        const interlop::GeneratePrefilteredCubemapResource RenderResources = {
+           .srcMipSrvIndex = CubeMapTexture.SrvIndex,
+           .dstMipUavIndex = PrefilteredCubemapTexture.MipUavIndex[i],
+           .mipLevel = i,
+           .totalMipLevel = MipLevels,
+           .texelSize = {1.0f / Dim, 1.0f / Dim},
+        };
+
+        ComputeContext->Set32BitComputeConstants(&RenderResources);
+
+        const uint32_t numGroups = max(1u, Dim / 8u);
+
+        ComputeContext->Dispatch(numGroups, numGroups, 6u);
+    }
+
+    ComputeContext->AddResourceBarrier(PrefilteredCubemapTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    ComputeContext->ExecuteResourceBarriers();
+
+    Device->ExecuteAndFlushComputeContext(std::move(ComputeContext));
+}
+
+void FCubeMap::GenerateBRDFLut(const FCubeMapCreationDesc& Desc)
+{
+    BRDFLutPipelineState =
+        Device->CreatePipelineState(FComputePipelineStateCreationDesc{
+            .CsShaderPath = L"Shaders/CubeMap/GenerateBRDFLutCS.hlsl",
+            .PipelineName = L"GenerateBRDFLutCS Pipeline",
+        });
+
+    BRDFLutTexture = Device->CreateTexture(FTextureCreationDesc{
+        .Usage = ETextureUsage::UAVTexture,
+        .Width = GBRDFLutTextureDimension,
+        .Height = GBRDFLutTextureDimension,
+        .Format = DXGI_FORMAT_R16G16_FLOAT,
+        .MipLevels = 1u,
+        .DepthOrArraySize = 1u,
+        .Name = Desc.Name + std::wstring(L" BRDFLut Texture"),
+    });
+    
+    std::unique_ptr<FComputeContext> ComputeContext = Device->GetComputeContext();
+    ComputeContext->Reset();
+
+    ComputeContext->AddResourceBarrier(BRDFLutTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    ComputeContext->ExecuteResourceBarriers();
+    ComputeContext->SetComputeRootSignatureAndPipeline(BRDFLutPipelineState);
+
+    const interlop::GenerateBRDFLutRenderResource RenderResources = {
+        .textureUavIndex = BRDFLutTexture.UavIndex
+    };
+
+    ComputeContext->Set32BitComputeConstants(&RenderResources);
+
+    const uint32_t numGroups = max(1u, GBRDFLutTextureDimension / 8u);
+    ComputeContext->Dispatch(numGroups, numGroups, 1u);
+
+    ComputeContext->AddResourceBarrier(PrefilteredCubemapTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     ComputeContext->ExecuteResourceBarriers();
 
     Device->ExecuteAndFlushComputeContext(std::move(ComputeContext));
