@@ -2,44 +2,45 @@
 
 FLight::FLight()
 {
-    NumLight = 0;
+    LightBufferData = {
+        .numLight = 0,
+    };
 }
 
-void FLight::AddLight(float Position[4], float Color[4])
+void FLight::AddLight(float Position[4], float Color[4], float Intensity)
 {
-    if (NumLight >= interlop::MAX_LIGHTS)
+    if (LightBufferData.numLight >= interlop::MAX_LIGHTS)
     {
         return;
     }
+    
+    uint32_t CurIndex = LightBufferData.numLight;
 
-    memcpy(LightPosition[NumLight], Position, sizeof(float)*4);
-    memcpy(LightColor[NumLight], Color, sizeof(float)*4);
-    NumLight++;
+    LightBufferData.lightPosition[CurIndex] = XMFLOAT4{
+        Position[0],
+        Position[1],
+        Position[2],
+        Position[3],
+    };
+
+    LightBufferData.lightColor[CurIndex] = XMFLOAT4{
+        Color[0],
+        Color[1],
+        Color[2],
+        Color[3],
+    };
+
+    LightBufferData.intensity[CurIndex] = Intensity;
+
+    LightBufferData.numLight++;
 }
 
-interlop::LightBuffer FLight::GetLightBuffer(XMMATRIX ViewMatrix)
+interlop::LightBuffer FLight::GetLightBufferWithViewUpdate(XMMATRIX ViewMatrix)
 {
-    interlop::LightBuffer LightBufferData = {
-        .numLight = 0,
-    };
-    
-    for (int i = 0; i < NumLight; i++)
+    for (int i = 0; i < LightBufferData.numLight; i++)
     {
-        XMFLOAT4 LightPositionXM = XMFLOAT4{
-            LightPosition[i][0],
-            LightPosition[i][1],
-            LightPosition[i][2],
-            LightPosition[i][3],
-        };
-        LightBufferData.lightPosition[i] = LightPositionXM;
+        XMFLOAT4 LightPositionXM = LightBufferData.lightPosition[i];
 
-        LightBufferData.lightColor[i] = XMFLOAT4{
-            LightColor[i][0],
-            LightColor[i][1],
-            LightColor[i][2],
-            LightColor[i][3],
-        };
-        
         XMVECTOR Vec = XMVector4Transform(Dx::XMLoadFloat4(&LightPositionXM), ViewMatrix);
         Dx::XMStoreFloat4(&LightBufferData.viewSpaceLightPosition[i], Vec);
     }

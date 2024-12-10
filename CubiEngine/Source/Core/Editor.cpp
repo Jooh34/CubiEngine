@@ -1,0 +1,98 @@
+#include "Core/Editor.h"
+#include "Graphics/GraphicsDevice.h"
+#include "Graphics/GraphicsContext.h"
+#include "ShaderInterlop/ConstantBuffers.hlsli"
+#include "Scene/Scene.h"
+#include "Core/FileSystem.h"
+
+#include <imgui.h>
+#include <imgui_impl_dx12.h>
+#include <imgui_impl_sdl2.h>
+
+FEditor::FEditor(FGraphicsDevice* Device, SDL_Window* Window, uint32_t Width, uint32_t Height)
+    :Window(Window)
+{
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize = ImVec2((float)Width, (float)Height);
+
+    const std::string iniFilePath = FFileSystem::GetFullPath("imgui.ini");
+    const auto relativeIniFilePath = std::filesystem::relative(iniFilePath);
+    std::string ini = relativeIniFilePath.string();
+    io.IniFilename = ini.c_str();
+
+    FDescriptorHandle FontDescriptorHandle = Device->GetCbvSrvUavDescriptorHeap()->GetCurrentDescriptorHandle();
+
+    ImGui_ImplSDL2_InitForD3D(Window);
+    ImGui_ImplDX12_Init(Device->GetDevice(), FGraphicsDevice::FRAMES_IN_FLIGHT,
+        Device->GetSwapChainFormat(),
+        Device->GetCbvSrvUavDescriptorHeap()->GetDescriptorHeap(),
+        FontDescriptorHandle.CpuDescriptorHandle, FontDescriptorHandle.GpuDescriptorHandle);
+
+    Device->GetCbvSrvUavDescriptorHeap()->OffsetCurrentHandle();
+}
+
+FEditor::~FEditor()
+{
+    ImGui_ImplDX12_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+}
+
+void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
+{
+    ImGui_ImplDX12_NewFrame();
+    ImGui_ImplSDL2_NewFrame(Window);
+    ImGui::NewFrame();
+    
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("Menu"))
+        {
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
+    
+    RenderLightProperties(Scene);
+
+    ImGui::Render();
+    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), GraphicsContext->GetCommandList());
+}
+
+void FEditor::RenderLightProperties(FScene* Scene)
+{
+    ImGui::Begin("Light Properties");
+    interlop::LightBuffer& LightBuffer = Scene->Light.LightBufferData;
+
+    if (ImGui::TreeNode("Directional Light"))
+    {
+        constexpr uint32_t DirectionalLightIndex = 0u;
+
+        DirectX::XMFLOAT4& Color = LightBuffer.lightColor[DirectionalLightIndex];
+
+        ImGui::ColorPicker3("Light Color", &Color.x,
+            ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_DisplayRGB |
+            ImGuiColorEditFlags_HDR);
+
+        ImGui::SliderFloat("Intensity", &LightBuffer.intensity[DirectionalLightIndex], 0.0f, 10.0f);
+
+        LightBuffer.lightColor[DirectionalLightIndex] = { Color.x, Color.y, Color.z, Color.w };
+
+        DirectX::XMFLOAT4& Position = LightBuffer.lightPosition[DirectionalLightIndex];
+
+        ImGui::SliderFloat3("Directional Light Directional", &Position.x, -1.0f, 1.0f);
+
+        ImGui::TreePop();
+    }
+    ImGui::End();
+}
+
+void FEditor::OnWindowResized(uint32_t Width, uint32_t Height)
+{
+    ImGui::GetMainViewport()->WorkSize = ImVec2((float)Width, (float)Height);
+    ImGui::GetMainViewport()->Size = ImVec2((float)Width, (float)Height);
+}

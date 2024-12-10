@@ -174,8 +174,11 @@ void FCubeMap::GenerateBRDFLut(const FCubeMapCreationDesc& Desc)
 }
 
 void FCubeMap::Render(FGraphicsContext* const GraphicsContext,
-    interlop::ScreenSpaceCubeMapRenderResources& RenderResource, const FTexture& Target, const FTexture& DepthBuffer)
+    interlop::ScreenSpaceCubeMapRenderResources& RenderResource, FTexture& Target, const FTexture& DepthBuffer)
 {
+    GraphicsContext->AddResourceBarrier(Target, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    GraphicsContext->ExecuteResourceBarriers();
+
     GraphicsContext->SetGraphicsPipelineState(ScreenSpaceCubemapPipelineState);
     GraphicsContext->SetPrimitiveTopologyLayout(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 

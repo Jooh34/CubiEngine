@@ -71,7 +71,7 @@ float3 cookTorrence(float3 albedo, float roughness, float metalic, BxDFContext c
     
     // Calculation of analytical lighting contribution
     float3 diffuseContrib = (1.0 - F) * diffuseLambert(albedo);
-    float3 specContrib = F * G * D / (4 * context.NoL * context.NoV + EPSILON);
+    float3 specContrib = F * G * D / max(4 * context.NoL * context.NoV, MIN_FLOAT_VALUE);
 
     return context.NoL * (diffuseContrib + specContrib);
 }

@@ -7,10 +7,13 @@
 #include "Renderer/PostProcess.h"
 
 class FInput;
+class FEditor;
+struct SDL_Window;
+
 class FRenderer
 {
 public:
-    FRenderer(FGraphicsDevice* GraphicsDevice, uint32_t Width, uint32_t Height);
+    FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32_t Width, uint32_t Height);
     ~FRenderer();
 
     void Update(float DeltaTime, FInput* Input);
@@ -30,4 +33,6 @@ private:
     std::unique_ptr<FDeferredGPass> DeferredGPass;
     std::unique_ptr<FDebugPass> DebugPass;
     std::unique_ptr<FPostProcess> PostProcess;
+
+    std::unique_ptr<FEditor> Editor;
 };

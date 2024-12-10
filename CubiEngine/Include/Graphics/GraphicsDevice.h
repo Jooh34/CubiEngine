@@ -61,6 +61,8 @@ public:
 
     void GenerateMipmap(FTexture& Texture);
 
+    DXGI_FORMAT GetSwapChainFormat() { return SwapchainFormat; }
+
 private:
     bool bInitialized = false;
 

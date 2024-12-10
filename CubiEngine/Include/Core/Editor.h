@@ -1,0 +1,20 @@
+#pragma once
+
+class FGraphicsDevice;
+class FGraphicsContext;
+class FScene;
+
+class FEditor
+{
+public:
+    FEditor(FGraphicsDevice* Device, SDL_Window* Window, uint32_t Width, uint32_t Height);
+    ~FEditor();
+
+    void Render(FGraphicsContext* GraphicsContext, FScene* Scene);
+    void RenderLightProperties(FScene* Scene);
+
+    void OnWindowResized(uint32_t Width, uint32_t Height);
+
+private:
+    SDL_Window* Window;
+};

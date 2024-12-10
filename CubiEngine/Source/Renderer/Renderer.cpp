@@ -1,7 +1,8 @@
 #include "Renderer/Renderer.h"
 #include "Core/Input.h"
+#include "Core/Editor.h"
 
-FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, uint32_t Width, uint32_t Height)
+FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32_t Width, uint32_t Height)
     :Width(Width), Height(Height), GraphicsDevice(GraphicsDevice)
 {
     Scene = std::make_unique<FScene>(GraphicsDevice, Width, Height);
@@ -20,6 +21,8 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, uint32_t Width, uint32_t H
     DeferredGPass = std::make_unique<FDeferredGPass>(GraphicsDevice, Width, Height);
     DebugPass = std::make_unique<FDebugPass>(GraphicsDevice, Width, Height);
     PostProcess = std::make_unique<FPostProcess>(GraphicsDevice, Width, Height);
+
+    Editor = std::make_unique<FEditor>(GraphicsDevice, Window, Width, Height);
 }
 
 FRenderer::~FRenderer()
@@ -115,6 +118,12 @@ void FRenderer::Render()
         GraphicsContext->ExecuteResourceBarriers();
         GraphicsContext->CopyResource(BackBuffer.GetResource(), LDR.GetResource());
 
+        // ----- Editor ------
+        GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->ExecuteResourceBarriers();
+        GraphicsContext->SetRenderTarget(BackBuffer);
+        Editor->Render(GraphicsContext, Scene.get());
+        // -------------------
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
         GraphicsContext->ExecuteResourceBarriers();
     }
@@ -146,4 +155,5 @@ void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
     DeferredGPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     DebugPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     PostProcess->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+    Editor->OnWindowResized(Width, Height);
 }

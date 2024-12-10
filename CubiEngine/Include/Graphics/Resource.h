@@ -104,7 +104,7 @@ struct FTexture
 
     std::vector<uint32_t> MipUavIndex{};
 
-    D3D12_RESOURCE_STATES ResourceState;
+    D3D12_RESOURCE_STATES ResourceState{};
 
     std::wstring DebugName{};
 

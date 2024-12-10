@@ -54,6 +54,7 @@ namespace interlop
         float4 lightPosition[MAX_LIGHTS];
         float4 lightColor[MAX_LIGHTS];
         float4 viewSpaceLightPosition[MAX_LIGHTS];
+        float intensity[MAX_LIGHTS];
 
         uint numLight;
     };

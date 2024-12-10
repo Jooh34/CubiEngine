@@ -22,7 +22,7 @@ public:
 
     void Render(FGraphicsContext* const GraphicsContext,
         interlop::ScreenSpaceCubeMapRenderResources& RenderResource,
-        const FTexture& Target, const FTexture& DepthBuffer);
+        FTexture& Target, const FTexture& DepthBuffer);
 
     FTexture CubeMapTexture;
     FTexture PrefilteredCubemapTexture;

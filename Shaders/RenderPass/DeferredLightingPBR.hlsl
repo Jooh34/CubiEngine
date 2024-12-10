@@ -36,20 +36,28 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     if (depth > 0.9999f) return;
 
-    // temporal constant value for directional light
-    const float3 L = normalize(-lightBuffer.viewSpaceLightPosition[0].xyz);
     const float3 V = normalize(-viewSpaceCoordsFromDepthBuffer(depth, uv, sceneBuffer.inverseProjectionMatrix));
-    const float3 H = normalize(V+L);
     const float3 N = normal.xyz;
-
+    
     BxDFContext context = (BxDFContext)0;
-    context.VoH = max(dot(V,H), 0.f);
     context.NoV = max(dot(N,V), 0.f); 
-    context.NoL = max(dot(N,L), 0.f);
-    context.NoH = max(dot(N,H), 0.f);
-
+    
     float3 color = float3(0,0,0);
-    color += cookTorrence(albedo.xyz, roughness, metalic, context) * 5.f; // TODO : light color, attenuation
+    {
+        // Directional Light
+        uint DLIndex = 0;
+        float4 lightColor = lightBuffer.lightColor[DLIndex];
+        float lightIntensity = lightBuffer.intensity[DLIndex];
+
+        const float3 L = normalize(-lightBuffer.viewSpaceLightPosition[DLIndex].xyz);
+        const float3 H = normalize(V+L);
+
+        context.VoH = max(dot(V,H), 0.f);
+        context.NoH = max(dot(N,H), 0.f);
+        context.NoL = max(dot(N,L), 0.f);
+
+        color += lightColor.xyz * lightIntensity * cookTorrence(albedo.xyz, roughness, metalic, context) * 5.f; // TODO : light color, attenuation
+    }
 
     // IBL : PrefilteredEnvMap from UE4
     const float3 f0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo.xyz, metalic);

@@ -29,14 +29,15 @@ public:
     FBuffer& GetLightBuffer() { return LightBuffer; }
     std::optional<FCubeMap>& GetEnviromentMap() { return EnviromentMap; }
     void RenderEnvironmentMap(FGraphicsContext* const GraphicsContext,
-        const FTexture& Target, const FTexture& DepthBuffer);
+        FTexture& Target, const FTexture& DepthBuffer);
+
+    FLight Light;
 
 private:
     std::unordered_map<std::wstring, std::unique_ptr<FModel>> Models{};
     FGraphicsDevice* Device;
 
     FCamera Camera;
-    FLight Light;
     FBuffer SceneBuffer{};
     FBuffer LightBuffer{};
     std::optional<FCubeMap> EnviromentMap{};

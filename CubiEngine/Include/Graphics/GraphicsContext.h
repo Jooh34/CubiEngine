@@ -16,6 +16,7 @@ public:
     void ClearRenderTargetView(const FTexture& InRenderTarget, std::span<const float, 4> Color);
     void ClearDepthStencilView(const FTexture& Texture);
 
+    void SetRenderTarget(const FTexture& RenderTarget) const;
     void SetRenderTarget(const FTexture& RenderTarget, const FTexture& DepthStencilTexture) const;
     void SetRenderTargets(const std::span<const FTexture> RenderTargets, const FTexture& DepthStencilTexture) const;
 

@@ -59,6 +59,14 @@ void FGraphicsContext::ClearDepthStencilView(const FTexture& Texture)
         1.0f, 1u, 0u, nullptr);
 }
 
+void FGraphicsContext::SetRenderTarget(const FTexture& RenderTarget) const
+{
+    D3D12_CPU_DESCRIPTOR_HANDLE RtvHandle =
+        Device->GetRtvDescriptorHeap()->GetDescriptorHandleFromIndex(RenderTarget.RtvIndex).CpuDescriptorHandle;
+
+    CommandList->OMSetRenderTargets(1, &RtvHandle, FALSE, nullptr);
+}
+
 void FGraphicsContext::SetRenderTarget(const FTexture& RenderTarget, const FTexture& DepthStencilTexture) const
 {
     D3D12_CPU_DESCRIPTOR_HANDLE RtvHandle =

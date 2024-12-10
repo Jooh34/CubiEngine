@@ -2,6 +2,8 @@
 #include "Core/FileSystem.h"
 #include "Renderer/Renderer.h"
 
+#include <imgui_impl_sdl2.h>
+
 // Setting the Agility SDK parameters.
 extern "C"
 {
@@ -48,7 +50,7 @@ bool Application::Init(uint32_t Width, uint32_t Height)
     // Initialize renderer
     GraphicsDevice = std::make_unique<FGraphicsDevice>(
         Width, Height, DXGI_FORMAT_R10G10B10A2_UNORM, WindowHandle);
-    D3DRenderer = new FRenderer(GraphicsDevice.get(), Width, Height);
+    D3DRenderer = new FRenderer(GraphicsDevice.get(), Window, Width, Height);
 
     IsRunning = true;
     return true;
@@ -95,6 +97,8 @@ void Application::HandleEvents()
     Input.Reset();
     while (SDL_PollEvent(&Event))
     {
+        ImGui_ImplSDL2_ProcessEvent(&Event);
+
         if (Event.type == SDL_QUIT)
         {
             IsRunning = false;

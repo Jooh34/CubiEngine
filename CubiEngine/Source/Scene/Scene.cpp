@@ -61,7 +61,7 @@ void FScene::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Hei
 
     SceneBuffer.Update(&SceneBufferData);
     
-    const interlop::LightBuffer LightBufferData = Light.GetLightBuffer(Camera.GetViewMatrix());
+    const interlop::LightBuffer LightBufferData = Light.GetLightBufferWithViewUpdate(Camera.GetViewMatrix());
     LightBuffer.Update(&LightBufferData);
 }
 
@@ -93,7 +93,7 @@ void FScene::RenderModels(FGraphicsContext* const GraphicsContext,
 }
 
 void FScene::RenderEnvironmentMap(FGraphicsContext* const GraphicsContext,
-    const FTexture& Target, const FTexture& DepthBuffer)
+    FTexture& Target, const FTexture& DepthBuffer)
 {
     interlop::ScreenSpaceCubeMapRenderResources RenderResource = {
         .sceneBufferIndex = SceneBuffer.CbvIndex,
