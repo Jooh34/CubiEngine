@@ -572,3 +572,18 @@ void FModel::Render(const FGraphicsContext* const GraphicsContext,
         GraphicsContext->DrawIndexedInstanced(Mesh.IndicesCount);
     }
 }
+
+void FModel::Render(const FGraphicsContext* const GraphicsContext,
+    interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource)
+{
+    for (const FMesh& Mesh : Meshes)
+    {
+        GraphicsContext->SetIndexBuffer(Mesh.IndexBuffer);
+
+        ShadowDepthPassRenderResource.positionBufferIndex = Mesh.PositionBuffer.SrvIndex;
+        ShadowDepthPassRenderResource.transformBufferIndex = Transform.TransformBuffer.CbvIndex;
+
+        GraphicsContext->SetGraphicsRoot32BitConstants(&ShadowDepthPassRenderResource);
+        GraphicsContext->DrawIndexedInstanced(Mesh.IndicesCount);
+    }
+}

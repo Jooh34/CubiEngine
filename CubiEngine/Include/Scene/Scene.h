@@ -24,9 +24,12 @@ public:
         interlop::UnlitPassRenderResources& UnlitRenderResources);
     void RenderModels(FGraphicsContext* const GraphicsContext,
         interlop::DeferredGPassRenderResources& DeferredGRenderResources);
+    void RenderModels(FGraphicsContext* const GraphicsContext,
+        interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource);
 
     FBuffer& GetSceneBuffer() { return SceneBuffer; }
     FBuffer& GetLightBuffer() { return LightBuffer; }
+    FCamera& GetCamera() { return Camera; }
     std::optional<FCubeMap>& GetEnviromentMap() { return EnviromentMap; }
     void RenderEnvironmentMap(FGraphicsContext* const GraphicsContext,
         FTexture& Target, const FTexture& DepthBuffer);

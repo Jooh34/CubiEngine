@@ -58,4 +58,9 @@ namespace interlop
 
         uint numLight;
     };
+    
+    ConstantBufferStruct ShadowBuffer
+    {
+        float4x4 lightViewProjectionMatrix;
+    };
 } // namespace interlop

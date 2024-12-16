@@ -3,6 +3,7 @@
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Utils.hlsli"
 #include "Shading/BRDF.hlsli"
+#include "Shadow/Shadow.hlsl"
 
 ConstantBuffer<interlop::PBRRenderResources> renderResources : register(b0);
 
@@ -21,6 +22,8 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
     ConstantBuffer<interlop::LightBuffer> lightBuffer = ResourceDescriptorHeap[renderResources.lightBufferIndex];
+    ConstantBuffer<interlop::ShadowBuffer> shadowBuffer = ResourceDescriptorHeap[renderResources.shadowBufferIndex];
+
 
     float2 invViewport = float2(1.f/(float)renderResources.width, 1.f/(float)renderResources.height);
     const float2 uv = (dispatchThreadID.xy + 0.5f) * invViewport;
@@ -36,12 +39,13 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     if (depth > 0.9999f) return;
 
-    const float3 V = normalize(-viewSpaceCoordsFromDepthBuffer(depth, uv, sceneBuffer.inverseProjectionMatrix));
+    const float3 viewSpacePosition = viewSpaceCoordsFromDepthBuffer(depth, uv, sceneBuffer.inverseProjectionMatrix);
+    const float3 V = normalize(-viewSpacePosition);
     const float3 N = normal.xyz;
     
     BxDFContext context = (BxDFContext)0;
     context.NoV = max(dot(N,V), 0.f); 
-    
+
     float3 color = float3(0,0,0);
     {
         // Directional Light
@@ -56,7 +60,13 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         context.NoH = max(dot(N,H), 0.f);
         context.NoL = max(dot(N,L), 0.f);
 
-        color += lightColor.xyz * lightIntensity * cookTorrence(albedo.xyz, roughness, metalic, context) * 5.f; // TODO : light color, attenuation
+        // shadow
+        const float4 worldSpacePosition = mul(float4(viewSpacePosition, 1.0f), sceneBuffer.inverseViewMatrix);
+        const float4 lightSpacePosition = mul(worldSpacePosition, shadowBuffer.lightViewProjectionMatrix);
+
+        const float shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex);
+        const float attenuation = (1.f - shadow);
+        color += attenuation * lightColor.xyz * lightIntensity * cookTorrence(albedo.xyz, roughness, metalic, context); // TODO : light color, attenuation
     }
 
     // IBL : PrefilteredEnvMap from UE4
@@ -64,16 +74,17 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float3 kS = fresnelSchlickFunctionRoughness(f0, context.NoV, roughness);
     
     // diffuse IBL
-    float3 irradiance = PrefilterEnvmap.SampleLevel(linearClampSampler, worldSpaceNormal, 5).xyz;
-    const float3 kD = lerp(float3(1.0f, 1.0f, 1.0f) - kS, float3(0.0f, 0.0f, 0.0f), metalic);
-    float3 diffuseIBL = kD * irradiance * albedo.xyz;
+    // float3 irradiance = PrefilterEnvmap.SampleLevel(linearClampSampler, worldSpaceNormal, 5).xyz;
+    // const float3 kD = lerp(float3(1.0f, 1.0f, 1.0f) - kS, float3(0.0f, 0.0f, 0.0f), metalic);
+    // float3 diffuseIBL = kD * irradiance * albedo.xyz;
+    float3 diffuseIBL = float3(0,0,0);
 
     // specular IBL
     const float3 R = normalize(mul(reflect(-V, N), (float3x3)sceneBuffer.inverseViewMatrix));
     const float3 PrefilteredColor = PrefilterEnvmap.SampleLevel(minMapLinearMipPointClampSampler, R, roughness * 6.0f).xyz;
     const float2 EnvBRDF = EnvBRDFTexture.Sample(pointWrapSampler, float2(roughness, context.NoV));
     const float3 specularIBL = PrefilteredColor * (f0 * EnvBRDF.x + EnvBRDF.y);
-    color += (diffuseIBL + specularIBL);
+    color += renderResources.iblIntensity * (diffuseIBL + specularIBL);
     
     outputTexture[dispatchThreadID.xy] = float4(color, 1.0f);
 }

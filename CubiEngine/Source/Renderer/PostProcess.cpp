@@ -17,6 +17,13 @@ FPostProcess::FPostProcess(FGraphicsDevice* const GraphicsDevice, uint32_t Width
         .PipelineName = L"DebugVisualizeCubeMap Pipeline"
     };
     DebugVisualizeCubeMapPipeline = GraphicsDevice->CreatePipelineState(DebugVisualizeCubeMapPipelineDesc);
+    
+    FComputePipelineStateCreationDesc DebugVisualizeDepthPipelineDesc = FComputePipelineStateCreationDesc
+    {
+        .CsShaderPath = L"Shaders/PostProcess/DebugVisualizeDepth.hlsl",
+        .PipelineName = L"DebugVisualizeDepth Pipeline"
+    };
+    DebugVisualizeDepthPipeline = GraphicsDevice->CreatePipelineState(DebugVisualizeDepthPipelineDesc);
 
     InitSizeDependantResource(GraphicsDevice, Width, Height);
 }
@@ -66,19 +73,33 @@ void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext,
 
 void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FTexture& SrcTexture, uint32_t Width, uint32_t Height)
 {
+    GraphicsContext->AddResourceBarrier(LDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->ExecuteResourceBarriers();
+
     if (SrcTexture.Usage == ETextureUsage::CubeMap)
     {
-        GraphicsContext->AddResourceBarrier(LDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-        GraphicsContext->ExecuteResourceBarriers();
-
         interlop::DebugVisualizeCubeMapRenderResources RenderResources = {
             .srcTextureIndex = SrcTexture.SrvIndex,
             .dstTextureIndex = LDRTexture.UavIndex,
-            .width = Width,
-            .height = Height,
         };
 
         GraphicsContext->SetComputePipelineState(DebugVisualizeCubeMapPipeline);
+        GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
+
+        // shader (8,8,6)
+        GraphicsContext->Dispatch(
+            max((uint32_t)std::ceil(Width / 8.0f), 1u),
+            max((uint32_t)std::ceil(Height / 8.0f), 1u),
+        1);
+    }
+    else if (SrcTexture.Usage == ETextureUsage::DepthStencil)
+    {
+        interlop::DebugVisualizeDepthRenderResources RenderResources = {
+            .srcTextureIndex = SrcTexture.SrvIndex,
+            .dstTextureIndex = LDRTexture.UavIndex,
+        };
+
+        GraphicsContext->SetComputePipelineState(DebugVisualizeDepthPipeline);
         GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
 
         // shader (8,8,6)

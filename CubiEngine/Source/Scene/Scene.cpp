@@ -32,7 +32,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     }
     AddModel(Desc);
 
-    float LightPosition[4] = { 1,-1,1,0 };
+    float LightPosition[4] = { 0,-1,0,0 };
     float LightColor[4] = { 1,1,1,1 };
     AddLight(LightPosition, LightColor);
 
@@ -89,6 +89,14 @@ void FScene::RenderModels(FGraphicsContext* const GraphicsContext,
     for (const auto& [_, Model] : Models)
     {
         Model->Render(GraphicsContext, DeferredGRenderResources);
+    }
+}
+
+void FScene::RenderModels(FGraphicsContext* const GraphicsContext, interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource)
+{
+    for (const auto& [_, Model] : Models)
+    {
+        Model->Render(GraphicsContext, ShadowDepthPassRenderResource);
     }
 }
 

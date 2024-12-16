@@ -81,12 +81,17 @@ namespace interlop
         uint depthTextureIndex;
         uint prefilteredEnvmapIndex;
         uint envBRDFTextureIndex;
+        uint shadowDepthTextureIndex;
+
         uint outputTextureIndex;
 
         uint width;
         uint height;
         uint sceneBufferIndex;
         uint lightBufferIndex;
+        uint shadowBufferIndex;
+
+        float iblIntensity;
     };
 
     struct ConvertEquirectToCubeMapRenderResource
@@ -99,8 +104,12 @@ namespace interlop
     {
         uint srcTextureIndex;
         uint dstTextureIndex;
-        uint width;
-        uint height;
+    };
+
+    struct DebugVisualizeDepthRenderResources
+    {
+        uint srcTextureIndex;
+        uint dstTextureIndex;
     };
 
     struct GenerateMipmapResource
@@ -132,5 +141,12 @@ namespace interlop
     struct GenerateBRDFLutRenderResource
     {
         uint textureUavIndex;
+    };
+
+    struct ShadowDepthPassRenderResource
+    {
+        uint positionBufferIndex;
+        uint transformBufferIndex;
+        uint shadowBufferIndex;
     };
 }

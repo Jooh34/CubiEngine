@@ -19,6 +19,7 @@ public:
     void SetRenderTarget(const FTexture& RenderTarget) const;
     void SetRenderTarget(const FTexture& RenderTarget, const FTexture& DepthStencilTexture) const;
     void SetRenderTargets(const std::span<const FTexture> RenderTargets, const FTexture& DepthStencilTexture) const;
+    void SetRenderTargetDepthOnly(const FTexture& DepthStencilTexture) const;
 
     void SetGraphicsPipelineState(const FPipelineState& PipelineState) const;
     void SetComputePipelineState(const FPipelineState& PipelineState) const;

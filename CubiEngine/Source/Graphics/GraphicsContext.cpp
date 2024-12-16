@@ -94,6 +94,14 @@ void FGraphicsContext::SetRenderTargets(const std::span<const FTexture> RenderTa
     CommandList->OMSetRenderTargets(RtvHandles.size(), RtvHandles.data(), TRUE, &DsvHandle);
 }
 
+void FGraphicsContext::SetRenderTargetDepthOnly(const FTexture& DepthStencilTexture) const
+{
+    D3D12_CPU_DESCRIPTOR_HANDLE DsvHandle =
+        Device->GetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(DepthStencilTexture.DsvIndex).CpuDescriptorHandle;
+
+    CommandList->OMSetRenderTargets(0, nullptr, FALSE, &DsvHandle);
+}
+
 void FGraphicsContext::SetGraphicsPipelineState(const FPipelineState& PipelineState) const
 {
     CommandList->SetPipelineState(PipelineState.PipelineStateObject.Get());
@@ -106,7 +114,7 @@ void FGraphicsContext::SetComputePipelineState(const FPipelineState& PipelineSta
 
 void FGraphicsContext::SetViewport(const D3D12_VIEWPORT& Viewport) const
 {
-    static D3D12_RECT scissorRect{ .left = 0u, .top = 0u, .right = (LONG)Viewport.Width, .bottom = (LONG)Viewport.Height };
+    D3D12_RECT scissorRect{ .left = 0u, .top = 0u, .right = (LONG)Viewport.Width, .bottom = (LONG)Viewport.Height };
 
     CommandList->RSSetViewports(1u, &Viewport);
     CommandList->RSSetScissorRects(1u, &scissorRect);

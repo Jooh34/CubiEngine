@@ -21,12 +21,17 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32
     DeferredGPass = std::make_unique<FDeferredGPass>(GraphicsDevice, Width, Height);
     DebugPass = std::make_unique<FDebugPass>(GraphicsDevice, Width, Height);
     PostProcess = std::make_unique<FPostProcess>(GraphicsDevice, Width, Height);
+    ShadowDepthPass = std::make_unique<FShadowDepthPass>(GraphicsDevice);
 
     Editor = std::make_unique<FEditor>(GraphicsDevice, Window, Width, Height);
 }
 
 FRenderer::~FRenderer()
 {
+    if (GraphicsDevice)
+    {
+        GraphicsDevice->FlushAllQueue();
+    }
 }
 
 void FRenderer::Update(float DeltaTime, FInput* Input)
@@ -66,6 +71,13 @@ void FRenderer::Render()
     // Resource Transition + BackBuffer Clear
     BeginFrame(GraphicsContext, BackBuffer, DepthTexture);
     
+    // ----- Shadow Depth pass -----
+    if (ShadowDepthPass)
+    {
+        ShadowDepthPass->Render(GraphicsContext, Scene.get());
+    }
+    // ----- Shadow Depth pass -----
+
     // ----- Deferred GPass ----
     if (DeferredGPass)
     {
@@ -79,28 +91,9 @@ void FRenderer::Render()
     // ----- Deferred Lighting Pass -----
     if (DeferredGPass)
     {
-        DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext, DepthTexture, Width, Height);
+        DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext, ShadowDepthPass.get(), DepthTexture, Width, Height);
     }
     // ----- Deferred Lighting Pass -----
-
-    // ----- Debug Mode -----
-    bool bDebugTexture = false;
-    if (bDebugTexture)
-    {
-        //FTexture& TextureToDebug = DeferredGPass->GBuffer.GBufferB;
-
-        //// Copy to final image
-        //GraphicsContext->ExecuteResourceBarriers();
-
-        //DebugPass->Copy(GraphicsContext, TextureToDebug, DebugPass->TextureForCopy, Width, Height);
-
-        //GraphicsContext->AddResourceBarrier(DebugPass->TextureForCopy, D3D12_RESOURCE_STATE_COPY_SOURCE);
-        //GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
-        //GraphicsContext->CopyResource(BackBuffer.GetResource(), DebugPass->TextureForCopy.GetResource());
-
-        //GraphicsContext->AddResourceBarrier(TextureToDebug, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    // ----- Debug Mode -----
 
     // ----- Post Process -----
     {
@@ -110,7 +103,7 @@ void FRenderer::Render()
         PostProcess->Tonemapping(GraphicsContext, HDR, Width, Height);
 
         // ----- Vis Debug -----
-        //PostProcess->DebugVisualize(GraphicsContext, Scene->GetEnviromentMap()->CubeMapTexture, Width, Height);
+        // PostProcess->DebugVisualize(GraphicsContext, ShadowDepthPass->GetShadowDepthTexture(), Width, Height);
         // ----- Vis Debug -----
 
         GraphicsContext->AddResourceBarrier(LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);

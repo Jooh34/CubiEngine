@@ -50,6 +50,8 @@ public:
         interlop::UnlitPassRenderResources& UnlitRenderResources);
     void Render(const FGraphicsContext* const GraphicsContext,
         interlop::DeferredGPassRenderResources& DeferredGPassRenderResources);
+    void Render(const FGraphicsContext* const GraphicsContext,
+        interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource);
 private:
     std::wstring ModelName;
     std::string ModelDir;

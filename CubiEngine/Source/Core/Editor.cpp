@@ -65,6 +65,8 @@ void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
 
 void FEditor::RenderLightProperties(FScene* Scene)
 {
+    ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
+
     ImGui::Begin("Light Properties");
     interlop::LightBuffer& LightBuffer = Scene->Light.LightBufferData;
 
@@ -88,6 +90,15 @@ void FEditor::RenderLightProperties(FScene* Scene)
 
         ImGui::TreePop();
     }
+
+    if (ImGui::TreeNode("IBL Light"))
+    {
+        float& IBLIntensity = Scene->Light.IBLIntensity;
+        ImGui::SliderFloat("Intensity", &IBLIntensity, 0.0f, 10.0f);
+
+        ImGui::TreePop();
+    }
+
     ImGui::End();
 }
 

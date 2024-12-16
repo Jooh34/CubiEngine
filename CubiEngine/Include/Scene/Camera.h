@@ -14,6 +14,8 @@ public:
     XMMATRIX GetProjMatrix() const { return ProjMatrix; }
     XMMATRIX GetViewProjMatrix() const { return ViewMatrix * ProjMatrix; }
 
+    XMVECTOR GetCameraPosition() const { return CamPosition; }
+
 private:
     float MovementSpeed{};
     float RotationSpeed{};

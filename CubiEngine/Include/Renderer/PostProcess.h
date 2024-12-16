@@ -20,6 +20,8 @@ public:
     void DebugVisualize(FGraphicsContext* const GraphicsContext, FTexture& SrcTexture, uint32_t Width, uint32_t Height);
 
     FPipelineState TonemappingPipelineState;
-    FPipelineState DebugVisualizeCubeMapPipeline;
     FTexture LDRTexture;
+
+    FPipelineState DebugVisualizeCubeMapPipeline;
+    FPipelineState DebugVisualizeDepthPipeline;
 };

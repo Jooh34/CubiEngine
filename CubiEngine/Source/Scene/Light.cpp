@@ -42,7 +42,7 @@ interlop::LightBuffer FLight::GetLightBufferWithViewUpdate(XMMATRIX ViewMatrix)
         XMFLOAT4 LightPositionXM = LightBufferData.lightPosition[i];
 
         XMVECTOR Vec = XMVector4Transform(Dx::XMLoadFloat4(&LightPositionXM), ViewMatrix);
-        Dx::XMStoreFloat4(&LightBufferData.viewSpaceLightPosition[i], Vec);
+        Dx::XMStoreFloat4(&LightBufferData.viewSpaceLightPosition[i], XMVector3Normalize(Vec));
     }
 
     return LightBufferData;

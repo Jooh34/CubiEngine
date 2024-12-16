@@ -2,6 +2,7 @@
 #include "Graphics/GraphicsDevice.h"
 #include "Graphics/Resource.h"
 #include "Scene/Scene.h"
+#include "Renderer/ShadowDepthPass.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
 FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height)
@@ -113,7 +114,8 @@ void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const Graphic
     Scene->RenderModels(GraphicsContext, RenderResources);
 }
 
-void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext, FTexture& DepthTexture, uint32_t Width, uint32_t Height)
+void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext,
+    FShadowDepthPass* ShadowDepthPass, FTexture& DepthTexture, uint32_t Width, uint32_t Height)
 {
     interlop::PBRRenderResources RenderResources = {
         .GBufferAIndex = GBuffer.GBufferA.SrvIndex,
@@ -122,17 +124,21 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .depthTextureIndex = DepthTexture.SrvIndex,
         .prefilteredEnvmapIndex = Scene->GetEnviromentMap()->PrefilteredCubemapTexture.SrvIndex,
         .envBRDFTextureIndex = Scene->GetEnviromentMap()->BRDFLutTexture.SrvIndex,
+        .shadowDepthTextureIndex = ShadowDepthPass->GetShadowDepthTexture().SrvIndex,
         .outputTextureIndex = HDRTexture.UavIndex,
         .width = Width,
         .height = Height,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
+        .shadowBufferIndex = ShadowDepthPass->GetShadowBuffer().CbvIndex,
+        .iblIntensity = Scene->Light.IBLIntensity,
     };
 
     // Resource Barrier
     GraphicsContext->AddResourceBarrier(GBuffer.GBufferA, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(GBuffer.GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(GBuffer.GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(ShadowDepthPass->GetShadowDepthTexture(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(HDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 

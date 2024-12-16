@@ -26,6 +26,12 @@ void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t He
     float PitchVector = Input->GetDY() * RotationSpeed;
     float YawVector = Input->GetDX() * RotationSpeed;
     
+    float Boost = 1.f;
+    if (Input->GetKeyState(SDL_SCANCODE_LSHIFT))
+    {
+        Boost = 2.f;
+    }
+
     if (Input->GetKeyState(SDL_SCANCODE_W))
     {
         MoveVector = XMVectorAdd(MoveVector, CamFront);
@@ -51,7 +57,7 @@ void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t He
         MoveVector = XMVectorSubtract(MoveVector,WorldUp);
     }
 
-    float Speed = MovementSpeed * DeltaTime;
+    float Speed = MovementSpeed * DeltaTime * Boost;
     MoveVector = XMVectorScale(XMVector3Normalize(MoveVector), Speed);
     CamPosition = XMVectorAdd(CamPosition, MoveVector);
     
