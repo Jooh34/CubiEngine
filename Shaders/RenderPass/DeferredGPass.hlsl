@@ -56,7 +56,13 @@ PsOutput PsMain(VSOutput psInput)
 {
     ConstantBuffer<interlop::MaterialBuffer> materialBuffer = ResourceDescriptorHeap[renderResources.materialBufferIndex];
 
-    float3 albedo = getAlbedo(psInput.textureCoord, renderResources.albedoTextureIndex, renderResources.albedoTextureSamplerIndex, materialBuffer.albedoColor).xyz;
+    float4 albedoEmissive = getAlbedo(psInput.textureCoord, renderResources.albedoTextureIndex, renderResources.albedoTextureSamplerIndex, materialBuffer.albedoColor);
+    if (albedoEmissive.a < 0.9f)
+    {
+        discard;
+    }
+
+    float3 albedo = albedoEmissive.xyz;
     float3 normal = getNormal(psInput.textureCoord, renderResources.normalTextureIndex, renderResources.normalTextureSamplerIndex, psInput.normal, psInput.tbnMatrix).xyz;
     normal = mul(normal, psInput.viewMatrix);
     float ao = getAO(psInput.textureCoord, renderResources.aoTextureIndex, renderResources.aoTextureSamplerIndex).x;

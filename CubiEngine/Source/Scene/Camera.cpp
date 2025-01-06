@@ -12,7 +12,7 @@ FCamera::FCamera(uint32_t Width, uint32_t Height)
     FovY = Dx::XM_PIDIV4;
     AspectRatio = static_cast<float>(Width) / Height;
     NearZ = 1.f;
-    FarZ = 10000.f;
+    FarZ = 3000.f;
 
     UpdateMatrix();
 }
@@ -29,7 +29,7 @@ void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t He
     float Boost = 1.f;
     if (Input->GetKeyState(SDL_SCANCODE_LSHIFT))
     {
-        Boost = 2.f;
+        Boost = 4.f;
     }
 
     if (Input->GetKeyState(SDL_SCANCODE_W))

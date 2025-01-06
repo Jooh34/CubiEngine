@@ -28,28 +28,20 @@ FShadowDepthPass::FShadowDepthPass(FGraphicsDevice* const Device)
     };
 
     ShadowDepthPassPipelineState = Device->CreatePipelineState(PipelineStateDesc);
-
-    ShadowBuffer = Device->CreateBuffer<interlop::ShadowBuffer>(FBufferCreationDesc{
-        .Usage = EBufferUsage::ConstantBuffer,
-        .Name = L"Shadow Buffer",
-    });
-
-    ShadowBufferData = {};
 }
 
 void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
 {
+    float SceneRadius = Scene->SceneRadius;
+
     uint32_t DIndex = 0u;
     XMVECTOR LightDirection = XMVector3Normalize(XMLoadFloat4(&Scene->Light.LightBufferData.lightPosition[DIndex]));
 
-    float SceneRadius = 100.f;
-    XMVECTOR CamPos = Scene->GetCamera().GetCameraPosition();
+    XMVECTOR Center = Scene->GetCamera().GetCameraPosition();
     float NearZ = 0.1f;
     float FarZ = SceneRadius * 2.f;
-
-    XMMATRIX ViewProj = CalculateLightViewProjMatrix(LightDirection, CamPos, SceneRadius, NearZ, FarZ);
-    ShadowBufferData.lightViewProjectionMatrix = ViewProj;
-    ShadowBuffer.Update(&ShadowBufferData);
+    
+    ViewProjectionMatrix = CalculateLightViewProjMatrix(LightDirection, Center, SceneRadius, NearZ, FarZ);
 
     GraphicsContext->SetGraphicsPipelineState(ShadowDepthPassPipelineState);
     GraphicsContext->SetRenderTargetDepthOnly(ShadowDepthTexture);
@@ -65,7 +57,7 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     GraphicsContext->ClearDepthStencilView(ShadowDepthTexture);
 
     interlop::ShadowDepthPassRenderResource RenderResources{
-        .shadowBufferIndex = ShadowBuffer.CbvIndex,
+        .lightViewProjectionMatrix = ViewProjectionMatrix,
     };
 
     Scene->RenderModels(GraphicsContext, RenderResources);
@@ -82,7 +74,6 @@ XMMATRIX FShadowDepthPass::CalculateLightViewProjMatrix(XMVECTOR LightDirection,
     );
     XMVECTOR UpVector = Dx::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
     if (Dx::XMVector3Equal(Dx::XMVector3Cross(UpVector, LightDirection), Dx::XMVectorZero())) {
-        // 빛 방향이 Y축과 평행하면 Z축을 사용
         UpVector = Dx::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
     }
 

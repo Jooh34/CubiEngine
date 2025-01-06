@@ -118,6 +118,7 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
     FShadowDepthPass* ShadowDepthPass, FTexture& DepthTexture, uint32_t Width, uint32_t Height)
 {
     interlop::PBRRenderResources RenderResources = {
+        .lightViewProjectionMatrix = ShadowDepthPass->GetViewProjectionMatrix(),
         .GBufferAIndex = GBuffer.GBufferA.SrvIndex,
         .GBufferBIndex = GBuffer.GBufferB.SrvIndex,
         .GBufferCIndex = GBuffer.GBufferC.SrvIndex,
@@ -130,7 +131,6 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .height = Height,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
-        .shadowBufferIndex = ShadowDepthPass->GetShadowBuffer().CbvIndex,
         .iblIntensity = Scene->Light.IBLIntensity,
     };
 

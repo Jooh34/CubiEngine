@@ -66,14 +66,17 @@ FModel::FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreation
         }
     }
     
-    LoadSamplers(GraphicsDevice, GLTFModel);
-    LoadMaterials(GraphicsDevice, GLTFModel);
+    const std::jthread loadSamplerThread([&]() { LoadSamplers(GraphicsDevice, GLTFModel); });
+    const std::jthread loadMaterialThread([&]() { LoadMaterials(GraphicsDevice, GLTFModel); });
 
     const tinygltf::Scene& scene = GLTFModel.scenes[GLTFModel.defaultScene];
-    for (const int& nodeIndex : scene.nodes)
-    {
-        LoadNode(GraphicsDevice, ModelCreationDesc, nodeIndex, GLTFModel);
-    }
+
+    const std::jthread loadMeshThread([&]() {
+        for (const int& nodeIndex : scene.nodes)
+        {
+            LoadNode(GraphicsDevice, ModelCreationDesc, nodeIndex, GLTFModel);
+        }
+    });
 }
 
 void FModel::LoadSamplers(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel)
@@ -264,6 +267,20 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                 PbrMaterial.EmissiveSampler = Samplers[emissiveTexture.sampler];
             }
         }
+        
+        if (material.alphaMode.compare("BLEND"))
+        {
+            PbrMaterial.AlphaMode = EAlphaMode::Blend;
+        }
+        else if (material.alphaMode.compare("MASK"))
+        {
+            PbrMaterial.AlphaMode = EAlphaMode::Mask;
+        }
+        else
+        {
+            PbrMaterial.AlphaMode = EAlphaMode::Opaque;
+        }
+        PbrMaterial.AlphaCutoff = material.alphaCutoff;
 
         PbrMaterial.MaterialBuffer = GraphicsDevice->CreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
             .Usage = EBufferUsage::ConstantBuffer,

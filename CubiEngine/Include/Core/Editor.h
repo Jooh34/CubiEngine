@@ -11,6 +11,7 @@ public:
     ~FEditor();
 
     void Render(FGraphicsContext* GraphicsContext, FScene* Scene);
+    void RenderCameraProperties(FScene* Scene);
     void RenderLightProperties(FScene* Scene);
 
     void OnWindowResized(uint32_t Width, uint32_t Height);

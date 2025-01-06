@@ -16,6 +16,8 @@ public:
 
     XMVECTOR GetCameraPosition() const { return CamPosition; }
 
+    float FarZ;
+
 private:
     float MovementSpeed{};
     float RotationSpeed{};
@@ -35,7 +37,6 @@ private:
     float FovY;
     float AspectRatio;
     float NearZ;
-    float FarZ;
 
     static constexpr XMVECTOR WorldFront = XMVECTOR{ 0.0f, 0.0f, 1.0f, 0.0f };
     static constexpr XMVECTOR WorldRight = XMVECTOR{ 1.0f, 0.0f, 0.0f, 0.0f };

@@ -75,6 +75,13 @@ enum class ETextureUsage
     UAVTexture
 };
 
+enum class EAlphaMode
+{
+    Opaque = 0,
+    Mask,
+    Blend,
+};
+
 struct FTextureCreationDesc
 {
     ETextureUsage Usage{};

@@ -130,8 +130,10 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
                 .SlicePitch = Width * Height * TextureCreationDesc.BytesPerPixel,
             };
         }
-
+        
         // Use the copy context and execute UpdateSubresources functions on the copy command queue.
+        std::scoped_lock<std::recursive_mutex> LockGuard(ResourceMutex);
+
         CopyContext->Reset();
 
         UpdateSubresources(CopyContext->GetCommandList(), Texture.Allocation.Resource.Get(),

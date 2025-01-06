@@ -36,6 +36,8 @@ public:
 
     FLight Light;
 
+    float SceneRadius;
+
 private:
     std::unordered_map<std::wstring, std::unique_ptr<FModel>> Models{};
     FGraphicsDevice* Device;

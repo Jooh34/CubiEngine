@@ -32,9 +32,8 @@ float calculateShadow(float4 lightSpacPosition, float NoL, uint shadowDepthTextu
     {
         for (int y = -samplesOffset; y <= samplesOffset; ++y)
         {
-            float currPCFDepth =
-                shadowDepthTexture.Sample(pointClampSampler, shadowPosition.xy + float2(x, y) * texelSize).r;
-            shadow += shadowPosition.z - bias > currPCFDepth ? 1.0f : 0.0f;
+            float curDepth = shadowDepthTexture.Sample(pointClampSampler, shadowPosition.xy + float2(x, y) * texelSize).r;
+            shadow += (shadowPosition.z - bias > curDepth ? 1.0f : 0.0f);
         }
     }
 

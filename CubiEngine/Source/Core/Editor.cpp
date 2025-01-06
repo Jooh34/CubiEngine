@@ -57,14 +57,26 @@ void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
         ImGui::EndMainMenuBar();
     }
     
+    RenderCameraProperties(Scene);
     RenderLightProperties(Scene);
 
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), GraphicsContext->GetCommandList());
 }
 
+void FEditor::RenderCameraProperties(FScene* Scene)
+{
+    ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
+    ImGui::Begin("Camera Properties");
+    
+    ImGui::SliderFloat("Far Clip Distance", &Scene->GetCamera().FarZ, 10.0f, 5000.0f);
+
+    ImGui::End();
+}
+
 void FEditor::RenderLightProperties(FScene* Scene)
 {
+    ImGui::SetNextWindowPos(ImVec2(100, 200));
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
 
     ImGui::Begin("Light Properties");
@@ -73,20 +85,22 @@ void FEditor::RenderLightProperties(FScene* Scene)
     if (ImGui::TreeNode("Directional Light"))
     {
         constexpr uint32_t DirectionalLightIndex = 0u;
+        
+        ImGui::SliderFloat("Scene Radius", &Scene->SceneRadius, 10.0f, 3000.0f);
+        ImGui::SliderFloat("Intensity", &LightBuffer.intensity[DirectionalLightIndex], 0.0f, 10.0f);
 
+        DirectX::XMFLOAT4& Position = LightBuffer.lightPosition[DirectionalLightIndex];
+
+        ImGui::SliderFloat3("Directional Light Directional", &Position.x, -1.0f, 1.0f);
+
+        //
         DirectX::XMFLOAT4& Color = LightBuffer.lightColor[DirectionalLightIndex];
 
         ImGui::ColorPicker3("Light Color", &Color.x,
             ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_DisplayRGB |
             ImGuiColorEditFlags_HDR);
 
-        ImGui::SliderFloat("Intensity", &LightBuffer.intensity[DirectionalLightIndex], 0.0f, 10.0f);
-
         LightBuffer.lightColor[DirectionalLightIndex] = { Color.x, Color.y, Color.z, Color.w };
-
-        DirectX::XMFLOAT4& Position = LightBuffer.lightPosition[DirectionalLightIndex];
-
-        ImGui::SliderFloat3("Directional Light Directional", &Position.x, -1.0f, 1.0f);
 
         ImGui::TreePop();
     }

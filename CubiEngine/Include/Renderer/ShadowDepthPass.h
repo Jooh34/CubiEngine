@@ -16,14 +16,13 @@ public:
     void Render(FGraphicsContext* GraphicsContext, FScene* Scene);
 
     FTexture& GetShadowDepthTexture() { return ShadowDepthTexture; }
-    FBuffer& GetShadowBuffer() { return ShadowBuffer; }
 
     XMMATRIX CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Center, float SceneRadius, float NearZ, float FarZ);
+    XMMATRIX GetViewProjectionMatrix() { return ViewProjectionMatrix; }
 
 private:
     FTexture ShadowDepthTexture;
     FPipelineState ShadowDepthPassPipelineState;
 
-    FBuffer ShadowBuffer;
-    interlop::ShadowBuffer ShadowBufferData;
+    XMMATRIX ViewProjectionMatrix{};
 };

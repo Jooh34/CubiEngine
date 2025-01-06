@@ -22,6 +22,8 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .ModelPath = "Models/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
             .ModelName = L"MetalRoughSpheres",
         };
+
+        SceneRadius = 100.f;
     }
     else if (Scene == 1)
     {
@@ -29,10 +31,12 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .ModelPath = "Models/Sponza/sponza.glb",
             .ModelName = L"Sponza",
         };
+
+        SceneRadius = 1000.f;
     }
     AddModel(Desc);
 
-    float LightPosition[4] = { 0,-1,0,0 };
+    float LightPosition[4] = { 1,-1,0,0 };
     float LightColor[4] = { 1,1,1,1 };
     AddLight(LightPosition, LightColor);
 

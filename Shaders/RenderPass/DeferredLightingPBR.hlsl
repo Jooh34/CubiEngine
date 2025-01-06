@@ -22,8 +22,6 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
     ConstantBuffer<interlop::LightBuffer> lightBuffer = ResourceDescriptorHeap[renderResources.lightBufferIndex];
-    ConstantBuffer<interlop::ShadowBuffer> shadowBuffer = ResourceDescriptorHeap[renderResources.shadowBufferIndex];
-
 
     float2 invViewport = float2(1.f/(float)renderResources.width, 1.f/(float)renderResources.height);
     const float2 uv = (dispatchThreadID.xy + 0.5f) * invViewport;
@@ -62,7 +60,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
         // shadow
         const float4 worldSpacePosition = mul(float4(viewSpacePosition, 1.0f), sceneBuffer.inverseViewMatrix);
-        const float4 lightSpacePosition = mul(worldSpacePosition, shadowBuffer.lightViewProjectionMatrix);
+        const float4 lightSpacePosition = mul(worldSpacePosition, renderResources.lightViewProjectionMatrix);
 
         const float shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex);
         const float attenuation = (1.f - shadow);

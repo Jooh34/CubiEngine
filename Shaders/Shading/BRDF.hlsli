@@ -62,15 +62,16 @@ float Vis_SmithJointApprox( float a2, float NoV, float NoL )
 
 float3 cookTorrence(float3 albedo, float roughness, float metalic, BxDFContext context)
 {
-    float3 F0 = ComputeF0(0.04f, albedo, metalic);
+    float3 F0 = ComputeF0(0.08f, albedo, metalic);
     float a2 = pow(roughness, 4);
 
     float3 F = F_Schlick(F0, context.VoH);
     float D = D_GGX(a2, context.NoH);
     float G = G_GeometricAttenuation(context);
+    //float G = Vis_SmithJointApprox(a2, context.NoV, context.NoL); // need energy conservation?
     
     // Calculation of analytical lighting contribution
-    float3 diffuseContrib = (1.0 - F) * diffuseLambert(albedo);
+    float3 diffuseContrib = (1.0 - metalic) * (1.0 - F) * diffuseLambert(albedo);
     float3 specContrib = F * G * D / max(4 * context.NoL * context.NoV, MIN_FLOAT_VALUE);
 
     return context.NoL * (diffuseContrib + specContrib);

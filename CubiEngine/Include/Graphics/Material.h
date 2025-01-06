@@ -23,4 +23,7 @@ struct FPBRMaterial
     interlop::MaterialBuffer MaterialBufferData;
 
     uint32_t MaterialIndex{};
+
+    EAlphaMode AlphaMode;
+    double AlphaCutoff;
 };

@@ -4,6 +4,7 @@
 #ifdef __cplusplus
     #define uint uint32_t
     #define float2 XMFLOAT2
+    #define float4x4 XMMATRIX
 #endif
 
 namespace interlop
@@ -75,6 +76,8 @@ namespace interlop
 
     struct PBRRenderResources
     {
+        float4x4 lightViewProjectionMatrix;
+
         uint GBufferAIndex;
         uint GBufferBIndex;
         uint GBufferCIndex;
@@ -89,7 +92,6 @@ namespace interlop
         uint height;
         uint sceneBufferIndex;
         uint lightBufferIndex;
-        uint shadowBufferIndex;
 
         float iblIntensity;
     };
@@ -145,8 +147,9 @@ namespace interlop
 
     struct ShadowDepthPassRenderResource
     {
+        float4x4 lightViewProjectionMatrix;
+
         uint positionBufferIndex;
         uint transformBufferIndex;
-        uint shadowBufferIndex;
     };
 }
