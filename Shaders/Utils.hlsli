@@ -3,6 +3,7 @@
 
 static const float MIN_FLOAT_VALUE = 1.0e-5;
 static const float EPSILON = 1.0e-4;
+static const float EPS = 1.0e-4;
 
 static const float PI = 3.14159265359;
 static const float TWO_PI = 2.0f * PI;
@@ -159,6 +160,12 @@ void packGBuffer(const float3 albedo, const float3 normal, const float ao, float
     GBufferC = float4(ao, metalRoughness, emissive.b);
 }
 
+float pow4(float x)
+{
+    float xx = x*x;
+    return xx*xx;
+}
+
 float vanDerCorputRadicalInverse(uint bits)
 {
     bits = (bits << 16u) | (bits >> 16u);
@@ -175,21 +182,41 @@ float2 Hammersley(uint i, float invSample)
     return float2(i*invSample, vanDerCorputRadicalInverse(i));
 }
 
-float3 ImportanceSampleGGX(float2 Xi, float roughnessFactor, float3 normal, float3 s, float3 t)
+// UnrealEngine 4 by Karis
+float3 ImportanceSampleGGX(float2 Xi, float Roughness, float3 N)
 {
-    const float alpha = roughnessFactor * roughnessFactor;
-    const float alpha2 = alpha * alpha;
-    
-    const float phi = 2.0f * PI * Xi.x;
+    float a = Roughness * Roughness;
+    float Phi = 2 * PI * Xi.x;
+    float CosTheta = sqrt((1-Xi.y) / (1+(a*a-1) * Xi.y));
+    float SinTheta = sqrt(1-CosTheta*CosTheta);
 
-    const float cosTheta = sqrt((1.0f - Xi.y) / (1.0f +  (alpha2 - 1.0f) * Xi.y));
-    const float sinTheta = sqrt(1.0f - pow(cosTheta, 2.0f));
-    
-    
-    // Spherical -> Cartesian coordinates.
-    const float3 h = float3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
+    float3 H;
+    H.x = SinTheta*cos(Phi);
+    H.y = SinTheta*sin(Phi);
+    H.z = CosTheta;
 
+    float3 UpVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
+    float3 TangentX = normalize(cross(UpVector, N));
+    float3 TangentY = normalize(cross(N, TangentX));
+    
     // Tangent to world space transformation.
-    float3 sampleVector = h.x * s + h.y * t + normal * h.z;
-    return normalize(sampleVector);
+    return TangentX * H.x + TangentY * H.y + N * H.z;
+}
+
+// from "course notes moving frostbite to pbr"
+// https://seblagarde.wordpress.com/wp-content/uploads/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
+void ImportanceSampleCosDir(float2 u, float3 N, out float3 L, out float NdotL, out float pdf)
+{
+    float3 upVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
+    float3 tangentX = normalize(cross(upVector, N));
+    float3 tangentY = cross(N, tangentX);
+
+    float r = u.x;
+    float phi = u.y * PI * 2;
+
+    L = float3(r*cos(phi), r*sin(phi), sqrt(max(0.0f, 1.0f-u.x)));
+    L = normalize(tangentX * L.y + tangentY * L.x + N * L.z);
+
+    NdotL = dot(L,N);
+    pdf = NdotL * INV_PI;
 }

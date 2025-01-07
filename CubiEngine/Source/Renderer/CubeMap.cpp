@@ -145,7 +145,7 @@ void FCubeMap::GenerateBRDFLut(const FCubeMapCreationDesc& Desc)
         .Usage = ETextureUsage::UAVTexture,
         .Width = GBRDFLutTextureDimension,
         .Height = GBRDFLutTextureDimension,
-        .Format = DXGI_FORMAT_R16G16_FLOAT,
+        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
         .MipLevels = 1u,
         .DepthOrArraySize = 1u,
         .Name = Desc.Name + std::wstring(L" BRDFLut Texture"),

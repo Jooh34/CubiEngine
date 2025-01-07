@@ -20,7 +20,7 @@ float3 diffuseLambert(float3 diffuseColor)
 
 // From UnrealnEngine
 // [Schlick 1994, "An Inexpensive BRDF Model for Physically-Based Rendering"]
-float3 F_Schlick( float3 SpecularColor, const float VoH )
+float3 F_Schlick(float3 SpecularColor, const float VoH )
 {
 	float Fc = pow( 1 - VoH, 5 );					// 1 sub, 3 mul
 	//return Fc + (1 - Fc) * SpecularColor;		// 1 add, 3 mad
@@ -29,10 +29,30 @@ float3 F_Schlick( float3 SpecularColor, const float VoH )
 	return saturate( 50.0 * SpecularColor.g ) * Fc + (1 - Fc) * SpecularColor;
 }
 
+// https://seblagarde.wordpress.com/wp-content/uploads/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
+float3 F_Schlick(float3 f0, float f90 , float u)
+{
+    return f0 + ( f90 - f0 ) * pow (1.f-u , 5.f);
+}
+
+
 float3 fresnelSchlickFunctionRoughness(const float3 f0, const float vDotN, const float roughnessFactor)
 {
     return f0 + (max(float3(1.0 - roughnessFactor, 1.0 - roughnessFactor, 1.0 - roughnessFactor), f0) - f0) *
                     pow(1.0 - vDotN, 5.0);
+}
+
+// https://seblagarde.wordpress.com/wp-content/uploads/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
+float Fr_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
+{
+    float energyBias = lerp(0, 0.5, linearRoughness);
+    float energyFactor = lerp(1.0, 1.0/1.51, linearRoughness);
+    float fd90 = energyBias + 2.0 * LdotH*LdotH*linearRoughness;
+    float3 f0 = float3(1.f, 1.f, 1.f);
+    float lightScatter = F_Schlick(f0, fd90, NdotL).r;
+    float viewScatter = F_Schlick(f0, fd90, NdotV).r;
+
+    return lightScatter * viewScatter * energyFactor;
 }
 
 // From UnrealEngine
@@ -63,7 +83,7 @@ float Vis_SmithJointApprox( float a2, float NoV, float NoL )
 float3 cookTorrence(float3 albedo, float roughness, float metalic, BxDFContext context)
 {
     float3 F0 = ComputeF0(0.08f, albedo, metalic);
-    float a2 = pow(roughness, 4);
+    float a2 = pow4(roughness);
 
     float3 F = F_Schlick(F0, context.VoH);
     float D = D_GGX(a2, context.NoH);

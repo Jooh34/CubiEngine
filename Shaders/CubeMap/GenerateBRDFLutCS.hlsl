@@ -4,6 +4,7 @@
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Utils.hlsli"
+#include "Shading/BRDF.hlsli"
 
 ConstantBuffer<interlop::GenerateBRDFLutRenderResource> renderResources : register(b0);
 
@@ -23,7 +24,7 @@ float smithGeometryFunction(float cosLI, float cosLO, const float roughnessFacto
 [numthreads(32, 32, 1)] 
 void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID) 
 {
-    RWTexture2D<float2> lutTexture = ResourceDescriptorHeap[renderResources.textureUavIndex];
+    RWTexture2D<float4> lutTexture = ResourceDescriptorHeap[renderResources.textureUavIndex];
 
     float textureWidth, textureHeight;
     lutTexture.GetDimensions(textureWidth, textureHeight);
@@ -39,6 +40,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     // dfg2 is the integral term involving F0 * integral[brdf . (n.wi) . (1 - vDotH)^5 dwi]
     float dfg1 = 0.0f;
     float dfg2 = 0.0f;
+    float diffuse = 0.0f;
 
     uint numSample = 1024;
     float invNumSample = 1.f/ numSample; 
@@ -47,15 +49,16 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     for (uint i = 0u; i < numSample; ++i)
     {
         const float2 Xi = Hammersley(i, invNumSample);
-        const float3 H = ImportanceSampleGGX(Xi, roughness, N, float3(1,0,0), float3(0,1,0));
+        const float3 H = ImportanceSampleGGX(Xi, roughness, N);
 
-        const float3 L = reflect(-V, H);
+        float3 L = reflect(-V, H);
 
         // Using the fact that N = (0, 0, 1).
         float nDotL = max(L.z, 0.0f);
         float nDotH = max(H.z, 0.0f);
         float vDotH = saturate(dot(V, H));
 
+        // specular term
         if (nDotL > 0.0)
         {
             // The microfacet BRDF formulation.
@@ -65,8 +68,19 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
             dfg1 += (1 - f) * gv;
             dfg2 += f * gv;
+
+        }
+            
+        // diffuse term
+        float pdf;
+        ImportanceSampleCosDir(Xi, N, L, nDotL, pdf);
+        if (nDotL > 0.0)
+        {
+            float LdotH = saturate(dot(L, normalize(V+L)));
+            float NdotV = saturate(dot(N, V));
+            diffuse += Fr_DisneyDiffuse(NdotV, nDotL, LdotH, sqrt(roughness));
         }
     }
 
-    lutTexture[dispatchThreadID.xy] = float2(dfg1, dfg2) * invNumSample;
+    lutTexture[dispatchThreadID.xy] = float4(dfg1, dfg2, diffuse, 1.f) * invNumSample;
 }
