@@ -124,6 +124,7 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .GBufferCIndex = GBuffer.GBufferC.SrvIndex,
         .depthTextureIndex = DepthTexture.SrvIndex,
         .prefilteredEnvmapIndex = Scene->GetEnviromentMap()->PrefilteredCubemapTexture.SrvIndex,
+        .cubemapTextureIndex = Scene->GetEnviromentMap()->CubeMapTexture.SrvIndex,
         .envBRDFTextureIndex = Scene->GetEnviromentMap()->BRDFLutTexture.SrvIndex,
         .shadowDepthTextureIndex = ShadowDepthPass->GetShadowDepthTexture().SrvIndex,
         .outputTextureIndex = HDRTexture.UavIndex,

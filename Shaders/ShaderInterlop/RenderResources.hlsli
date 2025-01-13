@@ -83,6 +83,8 @@ namespace interlop
         uint GBufferCIndex;
         uint depthTextureIndex;
         uint prefilteredEnvmapIndex;
+        uint cubemapTextureIndex;
+        uint PBRRenderResources;
         uint envBRDFTextureIndex;
         uint shadowDepthTextureIndex;
 

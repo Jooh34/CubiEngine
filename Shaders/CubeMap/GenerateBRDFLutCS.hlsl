@@ -48,7 +48,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     for (uint i = 0u; i < numSample; ++i)
     {
-        const float2 Xi = Hammersley(i, invNumSample);
+        float2 Xi = Hammersley(i, invNumSample);
         const float3 H = ImportanceSampleGGX(Xi, roughness, N);
 
         float3 L = reflect(-V, H);
@@ -72,6 +72,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
             
         // diffuse term
+        Xi = frac(Xi + 0.5f);
         float pdf;
         ImportanceSampleCosDir(Xi, N, L, nDotL, pdf);
         if (nDotL > 0.0)

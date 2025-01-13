@@ -17,6 +17,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     Texture2D<float> depthTexture = ResourceDescriptorHeap[renderResources.depthTextureIndex];
     RWTexture2D<float4> outputTexture = ResourceDescriptorHeap[renderResources.outputTextureIndex];
 
+    TextureCube<float4> CubeMapTexture = ResourceDescriptorHeap[renderResources.cubemapTextureIndex];
     TextureCube<float4> PrefilterEnvmap = ResourceDescriptorHeap[renderResources.prefilteredEnvmapIndex];
     Texture2D<float4> EnvBRDFTexture = ResourceDescriptorHeap[renderResources.envBRDFTextureIndex];
     
@@ -69,24 +70,55 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     // IBL : PrefilteredEnvMap from UE4
     const float3 f0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo.xyz, metalic);
-    float3 kS = fresnelSchlickFunctionRoughness(f0, context.NoV, roughness);
     
-    // diffuse IBL
-    // float3 irradiance = PrefilterEnvmap.SampleLevel(linearClampSampler, worldSpaceNormal, 5).xyz;
-    // const float3 kD = lerp(float3(1.0f, 1.0f, 1.0f) - kS, float3(0.0f, 0.0f, 0.0f), metalic);
-    // float3 diffuseIBL = kD * irradiance * albedo.xyz;
-    float3 diffuseIBL = float3(0,0,0);
+    float MAX_MIPLEVEL = 12.f;
+    int EnvResolution = 1024;
+    uint numSample = 128u;
+    float InvNumSamples = 1.f / numSample;
 
-    // specular IBL
-    const float3 R = normalize(mul(reflect(-V, N), (float3x3)sceneBuffer.inverseViewMatrix));
-    float MAX_MIPLEVEL = 6.f;
-    const float3 PrefilteredColor = PrefilterEnvmap.SampleLevel(minMapLinearMipPointClampSampler, R, roughness * (MAX_MIPLEVEL-1.f)).xyz;
+    float3 accBrdf = float3(0,0,0);
+    float accBrdfWeight = 0.f;
+    float3 accDiffuseBrdf = float3(0,0,0);
+    for (uint i = 0u; i < numSample; ++i)
+    {
+        float2 Xi = Hammersley( i, InvNumSamples );
+        float3 H = ImportanceSampleGGX( Xi, roughness, N);
+        float3 L = reflect(-V, H);
+        float sampledNoL = dot(N, L);
+        if (sampledNoL > 0)
+        {
+            float sampledNoH = saturate(dot(N, H));
+            float sampledLoH = saturate(dot(L, H));
+            float D = D_GGX(roughness*roughness, sampledNoH);
+            float pdf = D * sampledNoH /(4* sampledLoH * PI + EPS);
+            float omegaS = 1.0 / ( numSample * pdf + EPS);
+            float omegaP = 4.0 * PI / (6.0 * EnvResolution * EnvResolution ) ;
+            float mipLevel = roughness == 0.0 ? 0.0 : clamp(0.5 * log2 ( omegaS / omegaP) , 0, MAX_MIPLEVEL);
+            float3 Li = CubeMapTexture.SampleLevel(pointClampSampler, L, mipLevel).rgb;
+            accBrdf += Li * sampledNoL;
+            accBrdfWeight += sampledNoL;
+        }
+
+        // diffuse term
+        Xi = frac(Xi + 0.5);
+        float pdf;
+        float nDotL;
+        ImportanceSampleCosDir(Xi, N, L, nDotL, pdf);
+        if (nDotL > 0.0)
+        {
+            accDiffuseBrdf += CubeMapTexture.SampleLevel(pointClampSampler, L, 7).rgb;
+        }
+    }
+
+    float3 SpecularLD = accBrdf * (1.f / accBrdfWeight);
+    float3 DiffuseLD = accDiffuseBrdf * (1.f / numSample);
+
     const float4 EnvBRDF = EnvBRDFTexture.Sample(pointWrapSampler, float2(roughness, context.NoV));
-    const float3 specularIBL = PrefilteredColor * (f0 * EnvBRDF.x + EnvBRDF.y);
-    color += renderResources.iblIntensity * (diffuseIBL + specularIBL);
+    const float3 specularDFG = (f0 * EnvBRDF.x + EnvBRDF.y);
+    const float diffuseDFG = EnvBRDF.z;
 
-    // diffuse IBL
-    color += renderResources.iblIntensity * PrefilteredColor * EnvBRDF.z;
+    color += specularDFG * SpecularLD;
+    //color += diffuseDFG * DiffuseLD;
     
     outputTexture[dispatchThreadID.xy] = float4(color, 1.0f);
 }
