@@ -69,7 +69,6 @@ float G_GeometricAttenuation(BxDFContext context)
     return min(min(1.f, c1),c2);
 }
 
-// from UnrealEngine
 // Appoximation of joint Smith term for GGX
 // [Heitz 2014, "Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs"]
 float Vis_SmithJointApprox( float a2, float NoV, float NoL )
@@ -87,12 +86,13 @@ float3 cookTorrence(float3 albedo, float roughness, float metalic, BxDFContext c
 
     float3 F = F_Schlick(F0, context.VoH);
     float D = D_GGX(a2, context.NoH);
-    float G = G_GeometricAttenuation(context);
-    //float G = Vis_SmithJointApprox(a2, context.NoV, context.NoL); // need energy conservation?
+    //float G = G_GeometricAttenuation(context);
+    float V = Vis_SmithJointApprox(a2, context.NoV, context.NoL); // need energy conservation?
     
     // Calculation of analytical lighting contribution
     float3 diffuseContrib = (1.0 - metalic) * (1.0 - F) * diffuseLambert(albedo);
-    float3 specContrib = F * G * D / max(4 * context.NoL * context.NoV, MIN_FLOAT_VALUE);
+    // float3 specContrib = F * G * D / max(4 * context.NoL * context.NoV, MIN_FLOAT_VALUE);
+    float3 specContrib = (D*V)*F;
 
     return context.NoL * (diffuseContrib + specContrib);
 }

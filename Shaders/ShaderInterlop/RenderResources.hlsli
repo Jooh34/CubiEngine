@@ -82,10 +82,12 @@ namespace interlop
         uint GBufferBIndex;
         uint GBufferCIndex;
         uint depthTextureIndex;
+        
         uint prefilteredEnvmapIndex;
         uint cubemapTextureIndex;
-        uint PBRRenderResources;
         uint envBRDFTextureIndex;
+        uint envMipCount;
+
         uint shadowDepthTextureIndex;
 
         uint outputTextureIndex;
@@ -95,7 +97,8 @@ namespace interlop
         uint sceneBufferIndex;
         uint lightBufferIndex;
 
-        float iblIntensity;
+        uint bUseEnvmap;
+        uint sampleBias;
     };
 
     struct ConvertEquirectToCubeMapRenderResource

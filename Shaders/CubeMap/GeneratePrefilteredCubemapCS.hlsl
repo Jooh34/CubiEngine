@@ -26,12 +26,12 @@ float3 PrefilterEnvMap(float Roughness, float3 V, in TextureCube<float4> EnvMap)
             float resolution = 1024.f;
             float NoH = saturate(dot(N, H));
             float D = D_GGX(Roughness*Roughness, NoH);
-            float pdf = (D*NoH / (4.0 * NoH)) + EPS;
+            float pdf = (D*NoH / (4.0 * NoH)+EPS);
 
             float saTexel  = 4.0 * PI / (6.0 * resolution * resolution);
-            float saSample = 1.0 / (float(NumSamples) * pdf + 0.0001f);
+            float saSample = 1.0 / (float(NumSamples) * pdf + EPS);
 
-            float mipLevel = Roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel); 
+            float mipLevel = Roughness == 0.0 ? 0.0 : max(0.5 * log2(saSample / saTexel), 0); 
 
             PrefilteredColor += EnvMap.SampleLevel( linearClampSampler , L, mipLevel).rgb * NoL;
             TotalWeight += NoL;
@@ -53,7 +53,7 @@ void CsMain( uint3 dispatchThreadID : SV_DispatchThreadID)
     TextureCube<float4> srcMipTexture = ResourceDescriptorHeap[renderResources.srcMipSrvIndex];
     RWTexture2DArray<float4> dstMipTexture = ResourceDescriptorHeap[renderResources.dstMipUavIndex];
 
-    const float roughness = (float)renderResources.mipLevel / (float)(renderResources.totalMipLevel-1);
+    const float roughness = (float)renderResources.mipLevel / (float)(renderResources.totalMipLevel);
     const float3 V = normalize(getSamplingVector(uv, dispatchThreadID));
 
     float3 color = PrefilterEnvMap(roughness, V, srcMipTexture);

@@ -69,6 +69,8 @@ void FEditor::RenderCameraProperties(FScene* Scene)
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
     ImGui::Begin("Camera Properties");
     
+    ImGui::InputFloat3("Camera Position", &Scene->GetCamera().GetCameraPosition().x);
+
     ImGui::SliderFloat("Far Clip Distance", &Scene->GetCamera().FarZ, 10.0f, 5000.0f);
 
     ImGui::End();
@@ -82,12 +84,15 @@ void FEditor::RenderLightProperties(FScene* Scene)
     ImGui::Begin("Light Properties");
     interlop::LightBuffer& LightBuffer = Scene->Light.LightBufferData;
 
+    bool& bUseEnvmap = Scene->Light.bUseEnvmap;
+    ImGui::Checkbox("UseEnvMap", &bUseEnvmap);
+
     if (ImGui::TreeNode("Directional Light"))
     {
         constexpr uint32_t DirectionalLightIndex = 0u;
         
         ImGui::SliderFloat("Scene Radius", &Scene->SceneRadius, 10.0f, 3000.0f);
-        ImGui::SliderFloat("Intensity", &LightBuffer.intensity[DirectionalLightIndex], 0.0f, 10.0f);
+        ImGui::SliderFloat("Intensity", &LightBuffer.intensity[DirectionalLightIndex], 0.0f, 100.0f);
 
         DirectX::XMFLOAT4& Position = LightBuffer.lightPosition[DirectionalLightIndex];
 
@@ -104,15 +109,6 @@ void FEditor::RenderLightProperties(FScene* Scene)
 
         ImGui::TreePop();
     }
-
-    if (ImGui::TreeNode("IBL Light"))
-    {
-        float& IBLIntensity = Scene->Light.IBLIntensity;
-        ImGui::SliderFloat("Intensity", &IBLIntensity, 0.0f, 10.0f);
-
-        ImGui::TreePop();
-    }
-
     ImGui::End();
 }
 

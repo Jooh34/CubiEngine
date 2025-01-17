@@ -9,5 +9,5 @@ public:
     interlop::LightBuffer GetLightBufferWithViewUpdate(XMMATRIX ViewMatrix);
     interlop::LightBuffer LightBufferData;
 
-    float IBLIntensity = 1.f;
+    bool bUseEnvmap = true;
 };

@@ -187,7 +187,7 @@ float3 ImportanceSampleGGX(float2 Xi, float Roughness, float3 N)
 {
     float a = Roughness * Roughness;
     float Phi = 2 * PI * Xi.x;
-    float CosTheta = sqrt((1-Xi.y) / (1+(a*a-1) * Xi.y));
+    float CosTheta = sqrt((1-Xi.y) / (1.0+(a*a-1.0) * Xi.y));
     float SinTheta = sqrt(1-CosTheta*CosTheta);
 
     float3 H;
@@ -200,7 +200,7 @@ float3 ImportanceSampleGGX(float2 Xi, float Roughness, float3 N)
     float3 TangentY = normalize(cross(N, TangentX));
     
     // Tangent to world space transformation.
-    return TangentX * H.x + TangentY * H.y + N * H.z;
+    return normalize(TangentX * H.x + TangentY * H.y + N * H.z);
 }
 
 // from "course notes moving frostbite to pbr"

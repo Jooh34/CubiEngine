@@ -125,6 +125,8 @@ void FRenderer::Render()
     GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
     GraphicsDevice->Present();
     GraphicsDevice->EndFrame();
+
+    GFrameCount++;
 }
 
 void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)

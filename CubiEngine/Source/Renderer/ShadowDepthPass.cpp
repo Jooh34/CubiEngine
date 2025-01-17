@@ -37,7 +37,7 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     uint32_t DIndex = 0u;
     XMVECTOR LightDirection = XMVector3Normalize(XMLoadFloat4(&Scene->Light.LightBufferData.lightPosition[DIndex]));
 
-    XMVECTOR Center = Scene->GetCamera().GetCameraPosition();
+    XMVECTOR Center = Scene->GetCamera().GetCameraPositionXMV();
     float NearZ = 0.1f;
     float FarZ = SceneRadius * 2.f;
     

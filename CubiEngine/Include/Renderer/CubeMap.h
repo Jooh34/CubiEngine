@@ -17,7 +17,7 @@ class FCubeMap
 public:
     FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc);
 
-    void GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint32_t MipLevels);
+    void GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint32_t MipCount);
     void GenerateBRDFLut(const FCubeMapCreationDesc& Desc);
 
     void Render(FGraphicsContext* const GraphicsContext,
@@ -32,7 +32,11 @@ public:
     FPipelineState ScreenSpaceCubemapPipelineState;
     FPipelineState PrefilterPipelineState;
     FPipelineState BRDFLutPipelineState;
+    
+    uint32_t GetMipCount() const { return MipCount; };
 
 private:
     FGraphicsDevice* Device;
+
+    uint32_t MipCount = 6u;
 };

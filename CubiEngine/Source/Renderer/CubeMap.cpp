@@ -5,12 +5,10 @@
 
 FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : Device(Device)
 {
-    uint32_t MipLevels = 6u;
-
     const FTexture EquirectangularTexture = Device->CreateTexture(FTextureCreationDesc{
         .Usage = ETextureUsage::HDRTextureFromPath,
         .Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
-        .MipLevels = MipLevels,
+        .MipLevels = MipCount,
         .DepthOrArraySize = 1u,
         .BytesPerPixel = 16u,
         .Name = Desc.Name,
@@ -22,7 +20,7 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
         .Width = GCubeMapTextureDimension,
         .Height = GCubeMapTextureDimension,
         .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
-        .MipLevels = MipLevels,
+        .MipLevels = MipCount,
         .DepthOrArraySize = 6u,
         .Name = Desc.Name + std::wstring(L" CubeMap"),
     });
@@ -58,7 +56,7 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
     ComputeContext->SetComputeRootSignatureAndPipeline(ConvertEquirectToCubeMapPipelineState);
     
     // Process for all Mips
-    for (uint32_t i = 0; i < MipLevels; i++)
+    for (uint32_t i = 0; i < MipCount; i++)
     {
          const interlop::ConvertEquirectToCubeMapRenderResource RenderResources = {
             .textureIndex = EquirectangularTexture.SrvIndex,
@@ -78,11 +76,11 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
 
     Device->ExecuteAndFlushComputeContext(std::move(ComputeContext));
 
-    GeneratePrefilteredCubemap(Desc, MipLevels);
+    GeneratePrefilteredCubemap(Desc, MipCount);
     GenerateBRDFLut(Desc);
 }
 
-void FCubeMap::GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint32_t MipLevels)
+void FCubeMap::GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint32_t MipCount)
 {
     PrefilterPipelineState =
         Device->CreatePipelineState(FComputePipelineStateCreationDesc{
@@ -92,10 +90,10 @@ void FCubeMap::GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint
 
     PrefilteredCubemapTexture = Device->CreateTexture(FTextureCreationDesc{
         .Usage = ETextureUsage::CubeMap,
-        .Width = GCubeMapTextureDimension,
-        .Height = GCubeMapTextureDimension,
+        .Width = GPreFilteredCubeMapTextureDimension,
+        .Height = GPreFilteredCubeMapTextureDimension,
         .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
-        .MipLevels = MipLevels,
+        .MipLevels = MipCount,
         .DepthOrArraySize = 6u,
         .Name = Desc.Name + std::wstring(L" Prefiltered Cubemap"),
      });
@@ -108,7 +106,7 @@ void FCubeMap::GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint
     ComputeContext->SetComputeRootSignatureAndPipeline(PrefilterPipelineState);
 
     // Process for all Mips
-    for (uint32_t i = 0; i < MipLevels; i++)
+    for (uint32_t i = 0; i < MipCount; i++)
     {
         uint32_t Dim = GCubeMapTextureDimension >> i;
 
@@ -116,7 +114,7 @@ void FCubeMap::GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint
            .srcMipSrvIndex = CubeMapTexture.SrvIndex,
            .dstMipUavIndex = PrefilteredCubemapTexture.MipUavIndex[i],
            .mipLevel = i,
-           .totalMipLevel = MipLevels,
+           .totalMipLevel = MipCount,
            .texelSize = {1.0f / Dim, 1.0f / Dim},
         };
 

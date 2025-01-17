@@ -126,13 +126,15 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .prefilteredEnvmapIndex = Scene->GetEnviromentMap()->PrefilteredCubemapTexture.SrvIndex,
         .cubemapTextureIndex = Scene->GetEnviromentMap()->CubeMapTexture.SrvIndex,
         .envBRDFTextureIndex = Scene->GetEnviromentMap()->BRDFLutTexture.SrvIndex,
+        .envMipCount = Scene->GetEnviromentMap()->GetMipCount(),
         .shadowDepthTextureIndex = ShadowDepthPass->GetShadowDepthTexture().SrvIndex,
         .outputTextureIndex = HDRTexture.UavIndex,
         .width = Width,
         .height = Height,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
-        .iblIntensity = Scene->Light.IBLIntensity,
+        .bUseEnvmap = Scene->Light.bUseEnvmap ? 1u : 0u,
+        .sampleBias = GFrameCount,
     };
 
     // Resource Barrier

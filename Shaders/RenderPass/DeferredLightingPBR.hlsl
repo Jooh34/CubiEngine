@@ -20,9 +20,12 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     TextureCube<float4> CubeMapTexture = ResourceDescriptorHeap[renderResources.cubemapTextureIndex];
     TextureCube<float4> PrefilterEnvmap = ResourceDescriptorHeap[renderResources.prefilteredEnvmapIndex];
     Texture2D<float4> EnvBRDFTexture = ResourceDescriptorHeap[renderResources.envBRDFTextureIndex];
+    uint EnvMipCount =  renderResources.envMipCount;
     
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
     ConstantBuffer<interlop::LightBuffer> lightBuffer = ResourceDescriptorHeap[renderResources.lightBufferIndex];
+
+    uint sampleBias = renderResources.sampleBias;
 
     float2 invViewport = float2(1.f/(float)renderResources.width, 1.f/(float)renderResources.height);
     const float2 uv = (dispatchThreadID.xy + 0.5f) * invViewport;
@@ -46,12 +49,12 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     context.NoV = max(dot(N,V), 0.f); 
 
     float3 color = float3(0,0,0);
-    {
-        // Directional Light
-        uint DLIndex = 0;
-        float4 lightColor = lightBuffer.lightColor[DLIndex];
-        float lightIntensity = lightBuffer.intensity[DLIndex];
 
+    // Directional Light
+    uint DLIndex = 0;
+    float4 lightColor = lightBuffer.lightColor[DLIndex];
+    float lightIntensity = lightBuffer.intensity[DLIndex];
+    {
         const float3 L = normalize(-lightBuffer.viewSpaceLightPosition[DLIndex].xyz);
         const float3 H = normalize(V+L);
 
@@ -68,57 +71,29 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         color += attenuation * lightColor.xyz * lightIntensity * cookTorrence(albedo.xyz, roughness, metalic, context); // TODO : light color, attenuation
     }
 
-    // IBL : PrefilteredEnvMap from UE4
+    
     const float3 f0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo.xyz, metalic);
     
-    float MAX_MIPLEVEL = 12.f;
-    int EnvResolution = 1024;
-    uint numSample = 128u;
-    float InvNumSamples = 1.f / numSample;
-
-    float3 accBrdf = float3(0,0,0);
-    float accBrdfWeight = 0.f;
-    float3 accDiffuseBrdf = float3(0,0,0);
-    for (uint i = 0u; i < numSample; ++i)
+    if (renderResources.bUseEnvmap)
     {
-        float2 Xi = Hammersley( i, InvNumSamples );
-        float3 H = ImportanceSampleGGX( Xi, roughness, N);
-        float3 L = reflect(-V, H);
-        float sampledNoL = dot(N, L);
-        if (sampledNoL > 0)
-        {
-            float sampledNoH = saturate(dot(N, H));
-            float sampledLoH = saturate(dot(L, H));
-            float D = D_GGX(roughness*roughness, sampledNoH);
-            float pdf = D * sampledNoH /(4* sampledLoH * PI + EPS);
-            float omegaS = 1.0 / ( numSample * pdf + EPS);
-            float omegaP = 4.0 * PI / (6.0 * EnvResolution * EnvResolution ) ;
-            float mipLevel = roughness == 0.0 ? 0.0 : clamp(0.5 * log2 ( omegaS / omegaP) , 0, MAX_MIPLEVEL);
-            float3 Li = CubeMapTexture.SampleLevel(pointClampSampler, L, mipLevel).rgb;
-            accBrdf += Li * sampledNoL;
-            accBrdfWeight += sampledNoL;
-        }
+        // Envmap Specular
+        float3 L = reflect(-V, N);
+        float3 H = normalize(V+L);
 
-        // diffuse term
-        Xi = frac(Xi + 0.5);
-        float pdf;
-        float nDotL;
-        ImportanceSampleCosDir(Xi, N, L, nDotL, pdf);
-        if (nDotL > 0.0)
-        {
-            accDiffuseBrdf += CubeMapTexture.SampleLevel(pointClampSampler, L, 7).rgb;
-        }
+        uint numSample = 1024;
+        int EnvResolution = 1024;
+        uint PrefilterMipLevel = roughness * EnvMipCount;
+        float3 SpecularLD = PrefilterEnvmap.SampleLevel(pointClampSampler, L, PrefilterMipLevel).rgb;
+        
+        float NoV = saturate(dot(N, V));
+        const float4 EnvBRDF = EnvBRDFTexture.Sample(pointWrapSampler, float2(roughness, NoV));
+        const float3 specularDFG = (f0 * EnvBRDF.x + EnvBRDF.y);
+        
+        color += specularDFG * SpecularLD;
+
+        // Envmap Diffuse
+        // TODO
     }
-
-    float3 SpecularLD = accBrdf * (1.f / accBrdfWeight);
-    float3 DiffuseLD = accDiffuseBrdf * (1.f / numSample);
-
-    const float4 EnvBRDF = EnvBRDFTexture.Sample(pointWrapSampler, float2(roughness, context.NoV));
-    const float3 specularDFG = (f0 * EnvBRDF.x + EnvBRDF.y);
-    const float diffuseDFG = EnvBRDF.z;
-
-    color += specularDFG * SpecularLD;
-    //color += diffuseDFG * DiffuseLD;
     
     outputTexture[dispatchThreadID.xy] = float4(color, 1.0f);
 }

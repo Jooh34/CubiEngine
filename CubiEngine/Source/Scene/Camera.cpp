@@ -19,6 +19,8 @@ FCamera::FCamera(uint32_t Width, uint32_t Height)
 
 void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height)
 {
+    CamPositionXMV = XMLoadFloat4(&CamPosition);
+
     AspectRatio = static_cast<float>(Width) / Height;
 
     XMVECTOR MoveVector = XMVECTOR{ 0.f, 0.f, 0.f, 0.f };
@@ -59,10 +61,12 @@ void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t He
 
     float Speed = MovementSpeed * DeltaTime * Boost;
     MoveVector = XMVectorScale(XMVector3Normalize(MoveVector), Speed);
-    CamPosition = XMVectorAdd(CamPosition, MoveVector);
+    CamPositionXMV = XMVectorAdd(CamPositionXMV, MoveVector);
     
     Pitch = std::clamp(Pitch + PitchVector, (float)-M_PI * 89/180.f, (float)M_PI * 89/180.f);
     Yaw += YawVector;
+
+    XMStoreFloat4(&CamPosition, CamPositionXMV);
 
     UpdateMatrix();
 }
@@ -76,8 +80,9 @@ void FCamera::UpdateMatrix()
     CamFront = XMVector3Normalize(XMVector3TransformCoord(WorldFront, RotationMatrix));
     CamRight = XMVector3Normalize(XMVector3TransformCoord(WorldRight, RotationMatrix));
     CamUp = XMVector3Normalize(XMVector3TransformCoord(WorldUp, RotationMatrix));
-    const XMVECTOR CamTarget = XMVectorAdd(CamPosition, CamFront);
+    const XMVECTOR CamTarget = XMVectorAdd(CamPositionXMV, CamFront);
 
-    ViewMatrix = XMMatrixLookAtLH(CamPosition, CamTarget, WorldUpVector);
+    ViewMatrix = XMMatrixLookAtLH(CamPositionXMV, CamTarget, WorldUpVector);
     ProjMatrix = XMMatrixPerspectiveFovLH(FovY, AspectRatio, NearZ, FarZ);
 }
+

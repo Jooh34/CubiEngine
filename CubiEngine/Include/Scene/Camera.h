@@ -10,11 +10,23 @@ public:
     void Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height);
     void UpdateMatrix();
 
+    void SetCamPosition(float X, float Y, float Z)
+    {
+        CamPosition = { X, Y, Z, 1.f };
+    };
+    void SetCamRotation(float InPitch, float InYaw, float InRoll)
+    {
+        Pitch = InPitch;
+        Yaw = InYaw;
+        Roll = InRoll;
+    };
+
     XMMATRIX GetViewMatrix() const { return ViewMatrix; }
     XMMATRIX GetProjMatrix() const { return ProjMatrix; }
     XMMATRIX GetViewProjMatrix() const { return ViewMatrix * ProjMatrix; }
 
-    XMVECTOR GetCameraPosition() const { return CamPosition; }
+    XMFLOAT4& GetCameraPosition() { return CamPosition; }
+    XMVECTOR GetCameraPositionXMV() const { return CamPositionXMV; }
 
     float FarZ;
 
@@ -22,13 +34,16 @@ private:
     float MovementSpeed{};
     float RotationSpeed{};
 
-    XMVECTOR CamPosition { 0.f,0.f,0.f,1.f };
-    XMVECTOR CamFront{ 0.f, 0.f, 1.f, 0.f };
-    XMVECTOR CamRight{ 1.f, 0.f, 0.f, 0.f };
-    XMVECTOR CamUp{ 0.f, 1.f, 0.f, 0.f };
+    XMFLOAT4 CamPosition { 0.f,0.f,0.f,1.f };
     float Pitch = 0.f;
     float Yaw = 0.f;
     float Roll = 0.f;
+
+    // use below read only
+    XMVECTOR CamPositionXMV { 0.f,0.f,0.f,1.f };
+    XMVECTOR CamFront{ 0.f, 0.f, 1.f, 0.f };
+    XMVECTOR CamRight{ 1.f, 0.f, 0.f, 0.f };
+    XMVECTOR CamUp{ 0.f, 1.f, 0.f, 0.f };
 
     XMMATRIX ViewMatrix{};
     XMMATRIX ProjMatrix{};

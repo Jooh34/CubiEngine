@@ -49,6 +49,7 @@ using Dx::XMMatrixInverse;
 using Dx::XMVectorScale;
 using Dx::XMVectorSubtract;
 using Dx::XMLoadFloat4;
+using Dx::XMStoreFloat4;
 
 #ifdef _DEBUG
 constexpr bool DEBUG_MODE = true;
@@ -65,6 +66,8 @@ constexpr uint32_t InitialWidth = 1200;
 constexpr uint32_t InitialHeight = 900;
 
 constexpr uint32_t GCubeMapTextureDimension = 1024u;
+constexpr uint32_t GPreFilteredCubeMapTextureDimension = 1024u;
 constexpr uint32_t GBRDFLutTextureDimension = 32u;
 constexpr uint32_t GShadowDepthDimension = 4096u;
 
+inline uint32_t GFrameCount = 0;
