@@ -57,6 +57,7 @@ void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
         ImGui::EndMainMenuBar();
     }
     
+    RnederDebugProperties(Scene);
     RenderCameraProperties(Scene);
     RenderLightProperties(Scene);
 
@@ -64,8 +65,23 @@ void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), GraphicsContext->GetCommandList());
 }
 
+void FEditor::RnederDebugProperties(FScene* Scene)
+{
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
+
+    ImGui::Begin("Debug Properties");
+
+    ImGui::Checkbox("White Furnace", &Scene->bWhiteFurnace);
+    ImGui::Checkbox("Tone Mapping", &Scene->bToneMapping);
+    ImGui::Checkbox("Gamma Correction", &Scene->bGammaCorrection);
+
+    ImGui::End();
+}
+
 void FEditor::RenderCameraProperties(FScene* Scene)
 {
+    ImGui::SetNextWindowPos(ImVec2(0, 200));
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
     ImGui::Begin("Camera Properties");
     
@@ -78,14 +94,16 @@ void FEditor::RenderCameraProperties(FScene* Scene)
 
 void FEditor::RenderLightProperties(FScene* Scene)
 {
-    ImGui::SetNextWindowPos(ImVec2(100, 200));
+    ImGui::SetNextWindowPos(ImVec2(0, 400));
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
 
     ImGui::Begin("Light Properties");
     interlop::LightBuffer& LightBuffer = Scene->Light.LightBufferData;
 
-    bool& bUseEnvmap = Scene->Light.bUseEnvmap;
-    ImGui::Checkbox("UseEnvMap", &bUseEnvmap);
+    bool& bUseEnvmapDiffuse = Scene->Light.bUseEnvmapDiffuse;
+    ImGui::Checkbox("Use EnvMap Diffuse", &bUseEnvmapDiffuse);
+    bool& bUseEnvmapSpecular = Scene->Light.bUseEnvmapSpecular;
+    ImGui::Checkbox("Use EnvMap Specular", &bUseEnvmapSpecular);
 
     if (ImGui::TreeNode("Directional Light"))
     {

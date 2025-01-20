@@ -24,5 +24,6 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float phi = atan2(samplingVector.z, samplingVector.x);
     float theta = acos(samplingVector.y);
 
-    outputCubeMapTexture[dispatchThreadID] = inputTexture.SampleLevel(linearWrapSampler, float2(phi / TWO_PI, theta / PI), 0.0f);
+    float4 color = inputTexture.SampleLevel(linearWrapSampler, float2(phi / TWO_PI, theta / PI), 0.0f);
+    outputCubeMapTexture[dispatchThreadID] = color;
 }

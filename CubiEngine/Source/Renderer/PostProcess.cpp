@@ -1,5 +1,6 @@
 #include "Renderer/PostProcess.h"
 #include "Graphics/GraphicsDevice.h"
+#include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
 FPostProcess::FPostProcess(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
@@ -47,7 +48,7 @@ void FPostProcess::OnWindowResized(const FGraphicsDevice* const Device, uint32_t
     InitSizeDependantResource(Device, InWidth, InHeight);
 }
 
-void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext,
+void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext, FScene* Scene,
     FTexture& HDRTexture, uint32_t Width, uint32_t Height)
 {
     //GraphicsContext->AddResourceBarrier(SrcTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
@@ -59,6 +60,8 @@ void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext,
         .dstTextureIndex = LDRTexture.UavIndex,
         .width = Width,
         .height = Height,
+        .bToneMapping = Scene->bToneMapping,
+        .bGammaCorrection = Scene->bGammaCorrection,
     };
 
     GraphicsContext->SetComputePipelineState(TonemappingPipelineState);

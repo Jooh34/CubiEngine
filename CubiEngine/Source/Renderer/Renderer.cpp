@@ -100,7 +100,7 @@ void FRenderer::Render()
         FTexture& HDR = DeferredGPass->HDRTexture;
         FTexture& LDR = PostProcess->LDRTexture;
         
-        PostProcess->Tonemapping(GraphicsContext, HDR, Width, Height);
+        PostProcess->Tonemapping(GraphicsContext, Scene.get(), HDR, Width, Height);
 
         // ----- Vis Debug -----
         // PostProcess->DebugVisualize(GraphicsContext, ShadowDepthPass->GetShadowDepthTexture(), Width, Height);

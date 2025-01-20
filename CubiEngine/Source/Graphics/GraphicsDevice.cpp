@@ -269,7 +269,6 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
         }
     }
 
-    // Todo: mipmap generation
     MipmapGenerator->GenerateMipmap(Texture);
 
     return Texture;

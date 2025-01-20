@@ -71,27 +71,35 @@ float G_GeometricAttenuation(BxDFContext context)
 
 // Appoximation of joint Smith term for GGX
 // [Heitz 2014, "Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs"]
-float Vis_SmithJointApprox( float a2, float NoV, float NoL )
+float Vis_SmithJointApprox( float a, float NoV, float NoL )
 {
-	float a = sqrt(a2);
-	float Vis_SmithV = NoL * ( NoV * ( 1 - a ) + a );
-	float Vis_SmithL = NoV * ( NoL * ( 1 - a ) + a );
-	return 0.5 * rcp( Vis_SmithV + Vis_SmithL );
+	float Vis_SmithV = NoL * ( NoV * ( 1.0 - a ) + a );
+	float Vis_SmithL = NoV * ( NoL * ( 1.0 - a ) + a );
+	return 0.5 / ( Vis_SmithV + Vis_SmithL );
+}
+
+// From the filament docs. Geometric Shadowing function
+// https://google.github.io/filament/Filament.html#toc4.4.2
+float V_SmithGGXCorrelated(float NoV, float NoL, float roughness) {
+    float a2 = pow(roughness, 4.0);
+    float GGXV = NoL * sqrt(NoV * NoV * (1.0 - a2) + a2);
+    float GGXL = NoV * sqrt(NoL * NoL * (1.0 - a2) + a2);
+    return 0.5 / (GGXV + GGXL);
 }
 
 float3 cookTorrence(float3 albedo, float roughness, float metalic, BxDFContext context)
 {
     float3 F0 = ComputeF0(0.08f, albedo, metalic);
-    float a2 = pow4(roughness);
+    float a = roughness*roughness;
+    float a2 = a*a;
 
     float3 F = F_Schlick(F0, context.VoH);
     float D = D_GGX(a2, context.NoH);
-    //float G = G_GeometricAttenuation(context);
-    float V = Vis_SmithJointApprox(a2, context.NoV, context.NoL); // need energy conservation?
+    float V = Vis_SmithJointApprox(a, context.NoV, context.NoL);
     
-    // Calculation of analytical lighting contribution
-    float3 diffuseContrib = (1.0 - metalic) * (1.0 - F) * diffuseLambert(albedo);
-    // float3 specContrib = F * G * D / max(4 * context.NoL * context.NoV, MIN_FLOAT_VALUE);
+    float3 diffuseColor = (1.0 - metalic) * albedo;
+
+    float3 diffuseContrib = (1.0 - F) * diffuseLambert(diffuseColor);
     float3 specContrib = (D*V)*F;
 
     return context.NoL * (diffuseContrib + specContrib);

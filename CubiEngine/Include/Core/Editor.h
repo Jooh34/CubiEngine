@@ -11,6 +11,8 @@ public:
     ~FEditor();
 
     void Render(FGraphicsContext* GraphicsContext, FScene* Scene);
+
+    void RnederDebugProperties(FScene* Scene);
     void RenderCameraProperties(FScene* Scene);
     void RenderLightProperties(FScene* Scene);
 

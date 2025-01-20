@@ -72,6 +72,9 @@ namespace interlop
         uint dstTextureIndex;
         uint width;
         uint height;
+
+        uint bToneMapping;
+        uint bGammaCorrection;
     };
 
     struct PBRRenderResources
@@ -82,10 +85,11 @@ namespace interlop
         uint GBufferBIndex;
         uint GBufferCIndex;
         uint depthTextureIndex;
-        
+
         uint prefilteredEnvmapIndex;
         uint cubemapTextureIndex;
         uint envBRDFTextureIndex;
+        uint envIrradianceTextureIndex;
         uint envMipCount;
 
         uint shadowDepthTextureIndex;
@@ -97,7 +101,9 @@ namespace interlop
         uint sceneBufferIndex;
         uint lightBufferIndex;
 
-        uint bUseEnvmap;
+        uint bUseEnvmapDiffuse;
+        uint bUseEnvmapSpecular;
+        uint bWhiteFurnace;
         uint sampleBias;
     };
 

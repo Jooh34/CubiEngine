@@ -29,15 +29,15 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float textureWidth, textureHeight;
     lutTexture.GetDimensions(textureWidth, textureHeight);
 
-    float nDotV = (dispatchThreadID.x + 1.0f) / textureWidth;
+    float NoV = (dispatchThreadID.x + 1.0f) / textureWidth;
     float roughness = (dispatchThreadID.y + 1.0f) / textureHeight;
 
-    nDotV  = saturate(nDotV);
+    NoV  = saturate(NoV);
 
-    float3 V = float3(sqrt(1.0f - nDotV * nDotV), 0.0f, nDotV);
+    float3 V = float3(sqrt(1.0f - NoV * NoV), 0.0f, NoV);
 
-    // dfg1 is the integral term involving F0 * integral[brdf . (n.wi) . (1 - (1 - vDotH)^5))dwi]
-    // dfg2 is the integral term involving F0 * integral[brdf . (n.wi) . (1 - vDotH)^5 dwi]
+    // dfg1 is the integral term involving F0 * integral[brdf . (n.wi) . (1 - (1 - VoH)^5))dwi]
+    // dfg2 is the integral term involving F0 * integral[brdf . (n.wi) . (1 - VoH)^5 dwi]
     float dfg1 = 0.0f;
     float dfg2 = 0.0f;
     float diffuse = 0.0f;
@@ -51,37 +51,37 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float2 Xi = Hammersley(i, invNumSample);
         const float3 H = ImportanceSampleGGX(Xi, roughness, N);
 
-        float3 L = reflect(-V, H);
+        float3 L = 2.0 * dot(V, H) * H - V;
 
         // Using the fact that N = (0, 0, 1).
-        float nDotL = max(L.z, 0.0f);
-        float nDotH = max(H.z, 0.0f);
-        float vDotH = saturate(dot(V, H));
+        float NoL = saturate(dot(N, L));
+        float NoH = saturate(dot(N, H));
+        float VoH = saturate(dot(V, H));
 
         // specular term
-        if (nDotL > 0.0)
+        if (NoL > 0.0)
         {
             // The microfacet BRDF formulation.
-            const float g = smithGeometryFunction(nDotL, nDotV, roughness);
-            const float gv = g * vDotH / (nDotH * nDotV);
-            const float f = pow(1.0 - vDotH, 5);
+            // const float g = smithGeometryFunction(NoL, NoV, roughness);
+            const float g = V_SmithGGXCorrelated(NoV, NoL, roughness);
+            const float gv = g * VoH * NoL / (NoH);
+            const float f = pow(1.0 - VoH, 5);
 
             dfg1 += (1 - f) * gv;
             dfg2 += f * gv;
-
         }
             
         // diffuse term
         Xi = frac(Xi + 0.5f);
         float pdf;
-        ImportanceSampleCosDir(Xi, N, L, nDotL, pdf);
-        if (nDotL > 0.0)
+        ImportanceSampleCosDir(Xi, N, L, NoL, pdf);
+        if (NoL > 0.0)
         {
-            float LdotH = saturate(dot(L, normalize(V+L)));
-            float NdotV = saturate(dot(N, V));
-            diffuse += Fr_DisneyDiffuse(NdotV, nDotL, LdotH, sqrt(roughness));
+            float DiffuseLoH = saturate(dot(L, normalize(V+L)));
+            float DiffuseNoV = saturate(dot(N, V));
+            diffuse += Fr_DisneyDiffuse(DiffuseNoV, NoL, DiffuseLoH, sqrt(roughness));
         }
     }
 
-    lutTexture[dispatchThreadID.xy] = float4(dfg1, dfg2, diffuse, 1.f) * invNumSample;
+    lutTexture[dispatchThreadID.xy] = float4(dfg1 * 4, dfg2 * 4, diffuse, 1.f) * invNumSample;
 }

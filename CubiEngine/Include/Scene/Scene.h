@@ -30,13 +30,18 @@ public:
     FBuffer& GetSceneBuffer() { return SceneBuffer; }
     FBuffer& GetLightBuffer() { return LightBuffer; }
     FCamera& GetCamera() { return Camera; }
-    std::optional<FCubeMap>& GetEnviromentMap() { return EnviromentMap; }
+    FCubeMap* GetEnvironmentMap() { return bWhiteFurnace ? WhiteFurnaceMap.get() : EnviromentMap.get(); }
     void RenderEnvironmentMap(FGraphicsContext* const GraphicsContext,
         FTexture& Target, const FTexture& DepthBuffer);
 
     FLight Light;
 
     float SceneRadius;
+
+    // UI control
+    bool bWhiteFurnace = false;
+    bool bToneMapping = true;
+    bool bGammaCorrection = false;
 
 private:
     std::unordered_map<std::wstring, std::unique_ptr<FModel>> Models{};
@@ -45,5 +50,7 @@ private:
     FCamera Camera;
     FBuffer SceneBuffer{};
     FBuffer LightBuffer{};
-    std::optional<FCubeMap> EnviromentMap{};
+    std::unique_ptr<FCubeMap> EnviromentMap{};
+    std::unique_ptr<FCubeMap> WhiteFurnaceMap{};
+
 };

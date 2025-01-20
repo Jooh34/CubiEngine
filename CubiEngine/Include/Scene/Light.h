@@ -5,9 +5,10 @@ class FLight
 {
 public:
     FLight();
-    void AddLight(float Position[4], float Color[4], float Intensity = 10.f);
+    void AddLight(float Position[4], float Color[4], float Intensity = 1.f);
     interlop::LightBuffer GetLightBufferWithViewUpdate(XMMATRIX ViewMatrix);
     interlop::LightBuffer LightBufferData;
 
-    bool bUseEnvmap = true;
+    bool bUseEnvmapDiffuse = true;
+    bool bUseEnvmapSpecular = true;
 };

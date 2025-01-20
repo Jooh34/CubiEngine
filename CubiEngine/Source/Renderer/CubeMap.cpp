@@ -78,6 +78,7 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
 
     GeneratePrefilteredCubemap(Desc, MipCount);
     GenerateBRDFLut(Desc);
+    GenerateIrradianceMap(Desc);
 }
 
 void FCubeMap::GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint32_t MipCount)
@@ -165,7 +166,49 @@ void FCubeMap::GenerateBRDFLut(const FCubeMapCreationDesc& Desc)
     const uint32_t numGroups = max(1u, GBRDFLutTextureDimension / 8u);
     ComputeContext->Dispatch(numGroups, numGroups, 1u);
 
-    ComputeContext->AddResourceBarrier(PrefilteredCubemapTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    ComputeContext->AddResourceBarrier(BRDFLutTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    ComputeContext->ExecuteResourceBarriers();
+
+    Device->ExecuteAndFlushComputeContext(std::move(ComputeContext));
+}
+
+void FCubeMap::GenerateIrradianceMap(const FCubeMapCreationDesc& Desc)
+{
+    GenerateIrradianceMapPipelineState =
+        Device->CreatePipelineState(FComputePipelineStateCreationDesc{
+            .CsShaderPath = L"Shaders/CubeMap/GenerateIrradianceMap.hlsl",
+            .PipelineName = L"GenerateIrradianceMapCS Pipeline",
+        });
+
+    IrradianceCubemapTexture = Device->CreateTexture(FTextureCreationDesc{
+        .Usage = ETextureUsage::CubeMap,
+        .Width = GCubeMapTextureDimension,
+        .Height = GCubeMapTextureDimension,
+        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+        .MipLevels = 1u,
+        .DepthOrArraySize = 6u,
+        .Name = Desc.Name + std::wstring(L"Irradiance Cubemap"),
+    });
+
+    std::unique_ptr<FComputeContext> ComputeContext = Device->GetComputeContext();
+    ComputeContext->Reset();
+
+    ComputeContext->AddResourceBarrier(IrradianceCubemapTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    ComputeContext->ExecuteResourceBarriers();
+    ComputeContext->SetComputeRootSignatureAndPipeline(GenerateIrradianceMapPipelineState);
+
+    const interlop::GeneratePrefilteredCubemapResource RenderResources = {
+       .srcMipSrvIndex = CubeMapTexture.SrvIndex,
+       .dstMipUavIndex = IrradianceCubemapTexture.UavIndex,
+       .texelSize = {1.0f / GCubeMapTextureDimension, 1.0f / GCubeMapTextureDimension},
+    };
+
+    ComputeContext->Set32BitComputeConstants(&RenderResources);
+
+    const uint32_t numGroups = max(1u, GCubeMapTextureDimension / 8u);
+    ComputeContext->Dispatch(numGroups, numGroups, 6u);
+
+    ComputeContext->AddResourceBarrier(IrradianceCubemapTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     ComputeContext->ExecuteResourceBarriers();
 
     Device->ExecuteAndFlushComputeContext(std::move(ComputeContext));

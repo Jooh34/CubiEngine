@@ -41,9 +41,14 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     AddLight(LightPosition, LightColor);
 
     // set environment map
-    EnviromentMap = FCubeMap(Device, FCubeMapCreationDesc{
+    EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
         .EquirectangularTexturePath = L"Assets/Textures/Environment.hdr",
         .Name = L"Environment Map"
+    });
+
+    WhiteFurnaceMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
+        .EquirectangularTexturePath = L"Assets/Textures/WhiteFurnace.hdr",
+        .Name = L"WhiteFurnace Map"
     });
 }
 
@@ -109,11 +114,11 @@ void FScene::RenderEnvironmentMap(FGraphicsContext* const GraphicsContext,
 {
     interlop::ScreenSpaceCubeMapRenderResources RenderResource = {
         .sceneBufferIndex = SceneBuffer.CbvIndex,
-        .cubenmapTextureIndex = EnviromentMap->CubeMapTexture.SrvIndex,
+        .cubenmapTextureIndex = GetEnvironmentMap()->CubeMapTexture.SrvIndex,
     };
 
-    if (EnviromentMap.has_value())
+    if (GetEnvironmentMap())
     {
-        EnviromentMap->Render(GraphicsContext, RenderResource, Target, DepthBuffer);
+        GetEnvironmentMap()->Render(GraphicsContext, RenderResource, Target, DepthBuffer);
     }
 }
