@@ -42,7 +42,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
 
     // set environment map
     EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
-        .EquirectangularTexturePath = L"Assets/Textures/Environment.hdr",
+        .EquirectangularTexturePath = L"Assets/Textures/pisa.hdr",
         .Name = L"Environment Map"
     });
 

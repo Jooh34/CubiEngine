@@ -220,3 +220,17 @@ void ImportanceSampleCosDir(float2 u, float3 N, out float3 L, out float NdotL, o
     NdotL = dot(L,N);
     pdf = NdotL * INV_PI;
 }
+
+float3 UniformSampleHemisphere(float2 uv)
+{
+    const float z = uv.x;
+    const float r = pow(max(0.0f, 1.0f - z * z), 0.5f);
+    const float phi = 2.0f * PI * uv.y;
+    return float3(r * cos(phi), r * sin(phi), z);
+}
+
+// Bring the vector that was randomly sampled from a hemisphere into the coordinate system where N, S and T form the orthonormal basis.
+float3 tangentToWorldCoords(float3 v, float3 n, float3 s, float3 t)
+{
+    return s * v.x + t * v.y + n * v.z;
+}

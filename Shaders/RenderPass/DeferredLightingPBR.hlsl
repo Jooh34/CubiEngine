@@ -7,6 +7,34 @@
 
 ConstantBuffer<interlop::PBRRenderResources> renderResources : register(b0);
 
+float3 SingleScatteringIBL(float3 F0, float2 EnvBRDF, float3 diffuseColor, float3 radiance, float3 irradiance)
+{
+    float3 specularDFG = (F0 * EnvBRDF.x + EnvBRDF.yyy);
+    
+    float3 color = (specularDFG * radiance) + (diffuseColor * irradiance);
+    return color;
+}
+float3 MultipleScatteringIBL(float roughness, float3 F0, float NoV, float2 EnvBRDF, float3 albedo, float3 radiance, float3 irradiance)
+{
+    float3 splat = float3(1-roughness, 1-roughness, 1-roughness);
+    float3 Fr = max(splat, F0) - F0;
+    float3 k_S = F0 + Fr * pow(1.0 - NoV, 5.0);
+
+    float3 FssEss = k_S * EnvBRDF.x + EnvBRDF.y;
+
+    // Multiple scattering, from Fdez-Aguera
+    float Ess = EnvBRDF.x + EnvBRDF.y;
+    float Ems = (1.0 - Ess);
+    float3 F_avg = F0 + (1.0 - F0) / 21.0;
+    float3 Fms = FssEss * F_avg / (1.0 - Ems * F_avg);
+    
+    float3 k_D = albedo * (1.0 - FssEss - Fms*Ems);
+    
+    float3 color = FssEss * radiance + (Fms * Ems + k_D) * irradiance;
+    //float3 color =  FssEss * radiance;
+    return color;
+}
+
 [RootSignature(BindlessRootSignature)]
 [numThreads(8, 8, 1)]
 void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
@@ -55,7 +83,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     const float3 N = normal.xyz;
     
     BxDFContext context = (BxDFContext)0;
-    context.NoV = max(dot(N,V), 0.f); 
+    context.NoV = saturate(dot(N,V)); 
 
     float3 color = float3(0,0,0);
 
@@ -81,61 +109,29 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         color += attenuation * lightColor.xyz * lightIntensity * cookTorrence(albedo.xyz, roughness, metalic, context); // TODO : light color, attenuation
     }
     
-    const float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo.xyz, metalic);
+    // Image Based Lighting
+    float3 DIELECTRIC_SPECULAR = float3(0.04f, 0.04f, 0.04f);
+    float3 diffuseColor = albedo.rgb * (1.0 - DIELECTRIC_SPECULAR) * (1.0 - metalic);
+    const float3 F0 = lerp(DIELECTRIC_SPECULAR, albedo.xyz, metalic);
     
     float3 L = reflect(-V, N);
     float3 WorldSpaceL = normalize(mul(L, (float3x3)sceneBuffer.inverseViewMatrix));
-    if (renderResources.bUseEnvmapSpecular)
-    {
-        // Envmap Specular
-        uint numSample = 1024;
-        int EnvResolution = 1024;
-        uint PrefilterMipLevel = min(roughness * EnvMipCount, EnvMipCount-1);
-        float3 SpecularLD = PrefilterEnvmap.SampleLevel(pointClampSampler, WorldSpaceL, PrefilterMipLevel).rgb;
-        
-        float NoV = saturate(dot(N, V));
-        const float4 EnvBRDF = EnvBRDFTexture.Sample(linearClampSampler, float2(NoV, roughness));
-        const float3 specularDFG = (F0 * EnvBRDF.x + EnvBRDF.yyy);
-        
-        color += specularDFG * SpecularLD;
-    }
+    
+    float NoV = saturate(dot(N, V));
+    float4 EnvBRDF = EnvBRDFTexture.Sample(linearClampSampler, float2(NoV, roughness));
+    const float3 irradiance = IrradianceTexture.Sample(pointWrapSampler, worldSpaceNormal).rgb;
+    uint PrefilterMipLevel = min(roughness * EnvMipCount, EnvMipCount-1);
+    float3 radiance = PrefilterEnvmap.SampleLevel(pointClampSampler, WorldSpaceL, PrefilterMipLevel).rgb;
 
-    if (renderResources.bUseEnvmapDiffuse)
-    {
-        // Envmap Diffuse
-        const float3 irradiance = IrradianceTexture.Sample(pointWrapSampler, N).rgb;
-        float3 diffuseColor = (1-metalic) * albedo.xyz;
-        color += (diffuseColor * irradiance);
-        // TODO
-    }
-    
-    //Multi-scattering
-    
     // if (renderResources.bUseEnvmapSpecular)
     // {
-    //     float NoV = saturate(dot(N, V));
-    //     const float4 EnvBRDF = EnvBRDFTexture.Sample(linearClampSampler, float2(NoV, roughness));
-    //     const float3 irradiance = IrradianceTexture.Sample(pointWrapSampler, N).rgb;
-    //     uint PrefilterMipLevel = min(roughness * EnvMipCount, EnvMipCount-1);
-    //     float3 radiance = PrefilterEnvmap.SampleLevel(pointClampSampler, WorldSpaceL, PrefilterMipLevel).rgb;
-
-    //     float3 splat = float3(1-roughness, 1-roughness, 1-roughness);
-    //     float3 Fr = max(splat, F0) - F0;
-    //     float3 k_S = F0 + Fr * pow(1.0 - NoV, 5.0);
-
-    //     float3 FssEss = k_S * EnvBRDF.x + EnvBRDF.y;
-
-    //     // Multiple scattering, from Fdez-Aguera
-    //     float Ess = EnvBRDF.x + EnvBRDF.y;
-    //     float Ems = (1.0 - Ess);
-    //     float3 F_avg = F0 + (1.0 - F0) / 21.0;
-    //     float3 Fms = FssEss * F_avg / (1.0 - Ems * F_avg);
-        
-    //     float3 diffuseColor = (1-metalic) * albedo.xyz;
-    //     float3 k_D = diffuseColor * (1.0 - FssEss - Fms*Ems);
-        
-    //     color += FssEss * radiance + (Fms * Ems + k_D) * irradiance;
+    //     color += SingleScatteringIBL(F0, EnvBRDF.xy, diffuseColor, radiance, irradiance);
     // }
+
+    if (renderResources.bUseEnvmapSpecular)
+    {
+        color += MultipleScatteringIBL(roughness, F0, NoV, EnvBRDF.xy, albedo.xyz, radiance, irradiance);
+    }
 
     outputTexture[dispatchThreadID.xy] = float4(color, 1.0f);
 }

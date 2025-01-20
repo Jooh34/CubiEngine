@@ -89,7 +89,7 @@ float V_SmithGGXCorrelated(float NoV, float NoL, float roughness) {
 
 float3 cookTorrence(float3 albedo, float roughness, float metalic, BxDFContext context)
 {
-    float3 F0 = ComputeF0(0.08f, albedo, metalic);
+    float3 F0 = ComputeF0(0.04f, albedo, metalic);
     float a = roughness*roughness;
     float a2 = a*a;
 

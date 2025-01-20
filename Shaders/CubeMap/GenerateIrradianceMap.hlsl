@@ -6,34 +6,29 @@
 #include "Utils.hlsli"
 #include "Shading/BRDF.hlsli"
 
-float3 GetIrradiance(float3 V, in TextureCube<float4> EnvMap)
+float3 GetIrradiance(float3 N, in TextureCube<float4> EnvMap)
 {
-    float3 N = V;
-
     float3 PrefilteredColor = float3(0,0,0);
     const uint NumSamples = 1024;
     const float InvNumSamples = 1 / (float)NumSamples;
     float resolution = 1024.f;
 
+    float3 t = float3(0.0f, 0.0f, 0.0f);
+    float3 s = float3(0.0f, 0.0f, 0.0f);
+
+    computeBasisVectors(N, s, t);
+
     for( uint i = 0; i < NumSamples; i++ )
     {
         float2 Xi = Hammersley( i, InvNumSamples );
-        
-        float3 L;
-        float nDotL;
-        float pdf;
-        ImportanceSampleCosDir(Xi, N, L, nDotL, pdf);
-        if (nDotL > 0.0)
+        const float3 L = tangentToWorldCoords(UniformSampleHemisphere(Xi), N, s, t);
+        float NoL = saturate(dot(N, L));
+        if (NoL > 0.0)
         {            
-            float saTexel  = 4.0 * PI / (6.0 * resolution * resolution);
-            float saSample = 1.0 / (float(NumSamples) * pdf + EPS);
-
-            float mipLevel = max(0.5 * log2(saSample / saTexel), 0); 
-
-            PrefilteredColor += EnvMap.SampleLevel(linearClampSampler, L, mipLevel).rgb * nDotL;
+            PrefilteredColor += EnvMap.SampleLevel(linearClampSampler, L, 0).rgb * NoL;
         }
     }
-    return PrefilteredColor * InvNumSamples;
+    return PrefilteredColor * 2.f * InvNumSamples;
 }
 
 ConstantBuffer<interlop::GeneratePrefilteredCubemapResource> renderResources : register(b0);
@@ -48,8 +43,8 @@ void CsMain( uint3 dispatchThreadID : SV_DispatchThreadID)
     TextureCube<float4> srcMipTexture = ResourceDescriptorHeap[renderResources.srcMipSrvIndex];
     RWTexture2DArray<float4> dstMipTexture = ResourceDescriptorHeap[renderResources.dstMipUavIndex];
 
-    const float3 V = normalize(getSamplingVector(uv, dispatchThreadID));
-    float3 color = GetIrradiance(V, srcMipTexture);
+    const float3 N = normalize(getSamplingVector(uv, dispatchThreadID));
+    float3 color = GetIrradiance(N, srcMipTexture);
 
     dstMipTexture[dispatchThreadID] = float4(color, 1.f);
 }

@@ -41,7 +41,7 @@ public:
     // UI control
     bool bWhiteFurnace = false;
     bool bToneMapping = true;
-    bool bGammaCorrection = false;
+    bool bGammaCorrection = true;
 
 private:
     std::unordered_map<std::wstring, std::unique_ptr<FModel>> Models{};
@@ -52,5 +52,4 @@ private:
     FBuffer LightBuffer{};
     std::unique_ptr<FCubeMap> EnviromentMap{};
     std::unique_ptr<FCubeMap> WhiteFurnaceMap{};
-
 };
