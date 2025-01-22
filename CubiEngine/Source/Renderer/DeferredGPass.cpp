@@ -134,9 +134,9 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .height = Height,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
-        .bUseEnvmapDiffuse = Scene->Light.bUseEnvmapDiffuse ? 1u : 0u,
-        .bUseEnvmapSpecular = Scene->Light.bUseEnvmapSpecular ? 1u : 0u,
-        .bWhiteFurnace = Scene->bWhiteFurnace ? 1u : 0u,
+        .bUseEnvmap = Scene->bUseEnvmap ? 1u : 0u,
+        .bUseEnergyCompensation = Scene->bUseEnergyCompensation ? 1u : 0u,
+        .WhiteFurnaceMethod = uint(Scene->WhiteFurnaceMethod),
         .sampleBias = GFrameCount,
     };
 

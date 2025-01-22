@@ -186,8 +186,8 @@ float2 Hammersley(uint i, float invSample)
 float3 ImportanceSampleGGX(float2 Xi, float Roughness, float3 N)
 {
     float a = Roughness * Roughness;
-    float Phi = 2 * PI * Xi.x;
-    float CosTheta = sqrt((1-Xi.y) / (1.0+(a*a-1.0) * Xi.y));
+    float Phi = 2 * PI * Xi.y;
+    float CosTheta = sqrt((1-Xi.x) / (1.0+(a*a-1.0) * Xi.x));
     float SinTheta = sqrt(1-CosTheta*CosTheta);
 
     float3 H;
@@ -221,12 +221,13 @@ void ImportanceSampleCosDir(float2 u, float3 N, out float3 L, out float NdotL, o
     pdf = NdotL * INV_PI;
 }
 
+// for normal (0,0,1)
 float3 UniformSampleHemisphere(float2 uv)
 {
-    const float z = uv.x;
-    const float r = pow(max(0.0f, 1.0f - z * z), 0.5f);
+    const float cosTheta = uv.x; // cosTheta = (1-uv.x),  but okay.
+    const float sinTheta = sqrt(max(0.0f, 1.0f - cosTheta * cosTheta)); // Sin Theta
     const float phi = 2.0f * PI * uv.y;
-    return float3(r * cos(phi), r * sin(phi), z);
+    return float3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
 }
 
 // Bring the vector that was randomly sampled from a hemisphere into the coordinate system where N, S and T form the orthonormal basis.

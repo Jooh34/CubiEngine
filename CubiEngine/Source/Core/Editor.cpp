@@ -72,9 +72,24 @@ void FEditor::RnederDebugProperties(FScene* Scene)
 
     ImGui::Begin("Debug Properties");
 
-    ImGui::Checkbox("White Furnace", &Scene->bWhiteFurnace);
+    const char* wfItems[] = { "Off", "Sampling", "IBL", "Albedo only"};
+    if (ImGui::BeginCombo("White Furnace Method", wfItems[Scene->WhiteFurnaceMethod]))
+    {
+        for (int i = 0; i < IM_ARRAYSIZE(wfItems); i++)
+        {
+            bool isSelected = (Scene->WhiteFurnaceMethod == i);
+            if (ImGui::Selectable(wfItems[i], isSelected))
+                Scene->WhiteFurnaceMethod = i;
+
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
     ImGui::Checkbox("Tone Mapping", &Scene->bToneMapping);
     ImGui::Checkbox("Gamma Correction", &Scene->bGammaCorrection);
+    ImGui::Checkbox("Energy Compensation", &Scene->bUseEnergyCompensation);
 
     ImGui::End();
 }
@@ -100,10 +115,8 @@ void FEditor::RenderLightProperties(FScene* Scene)
     ImGui::Begin("Light Properties");
     interlop::LightBuffer& LightBuffer = Scene->Light.LightBufferData;
 
-    bool& bUseEnvmapDiffuse = Scene->Light.bUseEnvmapDiffuse;
-    ImGui::Checkbox("Use EnvMap Diffuse", &bUseEnvmapDiffuse);
-    bool& bUseEnvmapSpecular = Scene->Light.bUseEnvmapSpecular;
-    ImGui::Checkbox("Use EnvMap Specular", &bUseEnvmapSpecular);
+    bool& bUseEnvmap = Scene->bUseEnvmap;
+    ImGui::Checkbox("Use EnvMap", &bUseEnvmap);
 
     if (ImGui::TreeNode("Directional Light"))
     {

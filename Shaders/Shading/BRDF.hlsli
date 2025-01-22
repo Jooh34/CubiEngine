@@ -18,15 +18,10 @@ float3 diffuseLambert(float3 diffuseColor)
     return diffuseColor * ( 1 / PI );
 }
 
-// From UnrealnEngine
-// [Schlick 1994, "An Inexpensive BRDF Model for Physically-Based Rendering"]
-float3 F_Schlick(float3 SpecularColor, const float VoH )
+float3 F_Schlick(float3 f0, float u)
 {
-	float Fc = pow( 1 - VoH, 5 );					// 1 sub, 3 mul
-	//return Fc + (1 - Fc) * SpecularColor;		// 1 add, 3 mad
-	
-	// Anything less than 2% is physically impossible and is instead considered to be shadowing
-	return saturate( 50.0 * SpecularColor.g ) * Fc + (1 - Fc) * SpecularColor;
+    float f = pow(1.0 - u, 5.0);
+    return f + f0 * (1.0 - f);
 }
 
 // https://seblagarde.wordpress.com/wp-content/uploads/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
@@ -75,7 +70,7 @@ float Vis_SmithJointApprox( float a, float NoV, float NoL )
 {
 	float Vis_SmithV = NoL * ( NoV * ( 1.0 - a ) + a );
 	float Vis_SmithL = NoV * ( NoL * ( 1.0 - a ) + a );
-	return 0.5 / ( Vis_SmithV + Vis_SmithL );
+	return 0.5 / ( Vis_SmithV + Vis_SmithL);
 }
 
 // From the filament docs. Geometric Shadowing function
@@ -87,20 +82,15 @@ float V_SmithGGXCorrelated(float NoV, float NoL, float roughness) {
     return 0.5 / (GGXV + GGXL);
 }
 
-float3 cookTorrence(float3 albedo, float roughness, float metalic, BxDFContext context)
+float3 CookTorrenceSpecular(float roughness, float metalic, float3 F0, BxDFContext context)
 {
-    float3 F0 = ComputeF0(0.04f, albedo, metalic);
     float a = roughness*roughness;
     float a2 = a*a;
-
+    
     float3 F = F_Schlick(F0, context.VoH);
     float D = D_GGX(a2, context.NoH);
     float V = Vis_SmithJointApprox(a, context.NoV, context.NoL);
-    
-    float3 diffuseColor = (1.0 - metalic) * albedo;
 
-    float3 diffuseContrib = (1.0 - F) * diffuseLambert(diffuseColor);
-    float3 specContrib = (D*V)*F;
-
-    return context.NoL * (diffuseContrib + specContrib);
+    float3 color = (D*V)*F;
+    return color;
 }

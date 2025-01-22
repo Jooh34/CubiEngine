@@ -101,9 +101,9 @@ namespace interlop
         uint sceneBufferIndex;
         uint lightBufferIndex;
 
-        uint bUseEnvmapDiffuse;
-        uint bUseEnvmapSpecular;
-        uint bWhiteFurnace;
+        uint bUseEnvmap;
+        uint bUseEnergyCompensation;
+        uint WhiteFurnaceMethod;
         uint sampleBias;
     };
 

@@ -8,19 +8,6 @@
 
 ConstantBuffer<interlop::GenerateBRDFLutRenderResource> renderResources : register(b0);
 
-float schlickBeckmannGS(float cosTheta, const float roughnessFactor)
-{
-    float k = (roughnessFactor * roughnessFactor) / 2.0f;
-
-    return cosTheta / (max((cosTheta * (1.0f - k) + k), MIN_FLOAT_VALUE));
-}
-
-float smithGeometryFunction(float cosLI, float cosLO, const float roughnessFactor)
-{
-    return schlickBeckmannGS(cosLI, roughnessFactor) *
-           schlickBeckmannGS(cosLO, roughnessFactor);
-}
-
 [numthreads(32, 32, 1)] 
 void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID) 
 {
@@ -40,7 +27,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     // dfg2 is the integral term involving F0 * integral[brdf . (n.wi) . (1 - VoH)^5 dwi]
     float dfg1 = 0.0f;
     float dfg2 = 0.0f;
-    float diffuse = 0.0f;
+    float energyComp = 0.0f;
 
     uint numSample = 1024;
     float invNumSample = 1.f/ numSample; 
@@ -61,27 +48,25 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         // specular term
         if (NoL > 0.0)
         {
-            // The microfacet BRDF formulation.
-            // const float g = smithGeometryFunction(NoL, NoV, roughness);
             const float g = V_SmithGGXCorrelated(NoV, NoL, roughness);
             const float gv = g * VoH * NoL / (NoH);
             const float f = pow(1.0 - VoH, 5);
 
             dfg1 += (1 - f) * gv;
             dfg2 += f * gv;
+            energyComp += gv;
         }
+        
+        // multi-scattering Lut
+        // if (NoL > 0.0)
+        // {
+        //     const float g = V_SmithGGXCorrelated(NoV, NoL, roughness);
+        //     const float gv = g * VoH * NoL / (NoH);
             
-        // diffuse term
-        Xi = frac(Xi + 0.5f);
-        float pdf;
-        ImportanceSampleCosDir(Xi, N, L, NoL, pdf);
-        if (NoL > 0.0)
-        {
-            float DiffuseLoH = saturate(dot(L, normalize(V+L)));
-            float DiffuseNoV = saturate(dot(N, V));
-            diffuse += Fr_DisneyDiffuse(DiffuseNoV, NoL, DiffuseLoH, sqrt(roughness));
-        }
+        //     float D = D_GGX(pow4(roughness), NoH);
+        //     energyComp += D * gv * NoL;
+        // }
     }
 
-    lutTexture[dispatchThreadID.xy] = float4(dfg1 * 4, dfg2 * 4, diffuse, 1.f) * invNumSample;
+    lutTexture[dispatchThreadID.xy] = float4(dfg1 * 4, dfg2 * 4, energyComp * 4, 1.f) * invNumSample;
 }
