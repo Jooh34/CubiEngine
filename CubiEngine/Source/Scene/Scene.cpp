@@ -47,7 +47,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     });
 
     WhiteFurnaceMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
-        .EquirectangularTexturePath = L"Assets/Textures/GrayFurnace.hdr",
+        .EquirectangularTexturePath = L"Assets/Textures/WhiteFurnace.hdr",
         .Name = L"WhiteFurnace Map"
     });
 }

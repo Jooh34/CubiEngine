@@ -28,7 +28,7 @@ float3 GetIrradiance(float3 N, in TextureCube<float4> EnvMap)
             PrefilteredColor += EnvMap.SampleLevel(linearClampSampler, L, 0).rgb * NoL;
         }
     }
-    return PrefilteredColor * 2.f * InvNumSamples;
+    return PrefilteredColor * 2.f * InvNumSamples; // (c_diff/PI) * (2*PI)
 }
 
 ConstantBuffer<interlop::GeneratePrefilteredCubemapResource> renderResources : register(b0);

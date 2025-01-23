@@ -203,22 +203,47 @@ float3 ImportanceSampleGGX(float2 Xi, float Roughness, float3 N)
     return normalize(TangentX * H.x + TangentY * H.y + N * H.z);
 }
 
-// from "course notes moving frostbite to pbr"
-// https://seblagarde.wordpress.com/wp-content/uploads/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
-void ImportanceSampleCosDir(float2 u, float3 N, out float3 L, out float NdotL, out float pdf)
+void ImportanceSampleCosDir(float2 u, float3 N, out float3 outL, out float NdotL, out float pdf)
 {
-    float3 upVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
-    float3 tangentX = normalize(cross(upVector, N));
-    float3 tangentY = cross(N, tangentX);
+    float CosTheta = sqrt(max(0.0f, 1.0f - u.x));
+    float SinTheta = sqrt(u.x);
+    float Phi = u.y * PI * 2;
+    
+    float3 L;
+    L.x = SinTheta*cos(Phi);
+    L.y = SinTheta*sin(Phi);
+    L.z = CosTheta;
+    
+    float3 UpVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
+    float3 TangentX = normalize(cross(UpVector, N));
+    float3 TangentY = normalize(cross(N, TangentX));
+    
+    outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
 
-    float r = u.x;
-    float phi = u.y * PI * 2;
+    NdotL = saturate(dot(N,L));
+    pdf = CosTheta * INV_PI;
+}
 
-    L = float3(r*cos(phi), r*sin(phi), sqrt(max(0.0f, 1.0f-u.x)));
-    L = normalize(tangentX * L.y + tangentY * L.x + N * L.z);
+// https://ameye.dev/notes/sampling-the-hemisphere/
+void ImportanceSampleCosDirPow(float2 u, float3 N, float p, out float3 outL, out float NdotL, out float pdf)
+{
+    float CosTheta = pow(max(0.0f, 1.0f - u.x), 1.f/(p+1));
+    float SinTheta = sqrt(u.x);
+    float Phi = u.y * PI * 2;
+    
+    float3 L;
+    L.x = SinTheta*cos(Phi);
+    L.y = SinTheta*sin(Phi);
+    L.z = CosTheta;
+    
+    float3 UpVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
+    float3 TangentX = normalize(cross(UpVector, N));
+    float3 TangentY = normalize(cross(N, TangentX));
+    
+    outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
 
-    NdotL = dot(L,N);
-    pdf = NdotL * INV_PI;
+    NdotL = saturate(dot(N,L));
+    pdf = (p+1) * pow(CosTheta, p) * INV_PI / 2;
 }
 
 // for normal (0,0,1)

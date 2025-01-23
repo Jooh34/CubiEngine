@@ -26,7 +26,9 @@ float3 PrefilterEnvMap(float Roughness, float3 V, in TextureCube<float4> EnvMap)
             float resolution = 1024.f;
             float NoH = saturate(dot(N, H));
             float D = D_GGX(pow4(Roughness), NoH);
-            float pdf = D*NoH / (4.0*NoH);
+            // float pdf = D_GGX(NoH, roughness) * NoH / (4.0 * VoH);
+            // but since V = N => VoH == NoH
+            float pdf = D / 4.0; 
 
             float saTexel  = 4.0 * PI / (6.0 * resolution * resolution);
             float saSample = 1.0 / (float(NumSamples) * pdf + EPS);

@@ -45,28 +45,16 @@ float3 WhiteFurnaceSampling(float3 V, float3 N, float roughness, float metalic, 
 {
     float3 color = float3(0,0,0);
     float3 diffuseTerm = diffuseLambert(diffuseColor);
-    float lightIntensity = 0.5f;
+    float lightIntensity = 1.f;
 
-    uint numSample = 2048u;
+    uint numSample = 4096u;
     float invNumSample = 1.f/ numSample;
     
-    // float3 t = float3(0.0f, 0.0f, 0.0f);
-    // float3 s = float3(0.0f, 0.0f, 0.0f);
-
     for (uint i = 0u; i < numSample; ++i)
     {
         float2 Xi = Hammersley(i, invNumSample);
 
-        // float3 L = tangentToWorldCoords(UniformSampleHemisphere(Xi), N, s, t);
-        // float pdf = rcp(2.f * PI);
-        // float3 H = normalize(V+L);
-
-        // float3 L;
-        // float NoL;
-        // float pdf;
-        // ImportanceSampleCosDir(Xi, N, L, NoL, pdf);
-        // float3 H = normalize(V+L);
-
+        // Specular
         float3 H = ImportanceSampleGGX(Xi, roughness, N);
         float3 L = 2.0 * dot(V, H) * H - V;
 
@@ -80,10 +68,20 @@ float3 WhiteFurnaceSampling(float3 V, float3 N, float roughness, float metalic, 
             float pdf = D * context.NoH / (4.0 * context.VoH);
             
             float3 specularTerm = CookTorrenceSpecular(roughness, metalic, F0, context) * energyCompensation;
-            float3 sampleColor = context.NoL * (specularTerm);
+            float3 sampleColor = context.NoL * specularTerm;
             color += sampleColor / pdf;
         }
-
+        
+        // Diffuse
+        float NoL;
+        float pdf;
+        ImportanceSampleCosDir(Xi, N, L, NoL, pdf);
+        
+        if (context.NoL > 0)
+        {
+            float3 sampleColor = context.NoL * diffuseTerm;
+            color += sampleColor / pdf;
+        }
     }
 
     return color * (invNumSample * lightIntensity);
@@ -179,11 +177,9 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             //onst float shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex);
             const float attenuation = 1.f;
 
-
             float3 diffuseTerm = diffuseLambert(diffuseColor);
             float3 specularTerm = CookTorrenceSpecular(roughness, metalic, F0, context) * energyCompensation;
-
-            color += attenuation * lightColor.xyz * lightIntensity * context.NoL * (diffuseTerm + specularTerm) ;
+            color += attenuation * lightColor.xyz * lightIntensity * context.NoL * (diffuseTerm + max(specularTerm, float3(0,0,0)));
         }
     }
     

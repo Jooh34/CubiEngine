@@ -89,7 +89,8 @@ float3 CookTorrenceSpecular(float roughness, float metalic, float3 F0, BxDFConte
     
     float3 F = F_Schlick(F0, context.VoH);
     float D = D_GGX(a2, context.NoH);
-    float V = Vis_SmithJointApprox(a, context.NoV, context.NoL);
+    float V = V_SmithGGXCorrelated(context.NoV, context.NoL, roughness);
+    // float V = Vis_SmithJointApprox(a, context.NoV, context.NoL);
 
     float3 color = (D*V)*F;
     return color;
