@@ -33,11 +33,11 @@ float3 MultipleScatteringIBL(float roughness, float3 F0, float NoV, float2 EnvBR
     float Ess = EnvBRDF.x + EnvBRDF.y;
     float Ems = (1.0 - Ess);
     float3 F_avg = F0 + (1.0 - F0) / 21.0;
-    float3 Fms = FssEss * F_avg / (1.0 - Ems * F_avg);
+    float3 FmsEms = Ems * FssEss * F_avg / (1.0 - Ems * F_avg);
     
-    float3 k_D = diffuseColor * (1.0 - FssEss - Fms*Ems);
+    float3 k_D = diffuseColor * (1.0 - FssEss - FmsEms);
     
-    float3 color = FssEss * radiance + (Fms * Ems + k_D) * irradiance;
+    float3 color = FssEss * radiance + (FmsEms + k_D) * irradiance;
     return color;
 }
 
@@ -47,6 +47,9 @@ float3 WhiteFurnaceSampling(float3 V, float3 N, float roughness, float metalic, 
     float3 diffuseTerm = diffuseLambert(diffuseColor);
     float lightIntensity = 1.f;
 
+    float3 t = float3(0.0f, 0.0f, 0.0f);
+    float3 s = float3(0.0f, 0.0f, 0.0f);
+
     uint numSample = 4096u;
     float invNumSample = 1.f/ numSample;
     
@@ -54,7 +57,7 @@ float3 WhiteFurnaceSampling(float3 V, float3 N, float roughness, float metalic, 
     {
         float2 Xi = Hammersley(i, invNumSample);
 
-        // Specular
+        // Specular : GGX importance sampling
         float3 H = ImportanceSampleGGX(Xi, roughness, N);
         float3 L = 2.0 * dot(V, H) * H - V;
 
@@ -72,10 +75,10 @@ float3 WhiteFurnaceSampling(float3 V, float3 N, float roughness, float metalic, 
             color += sampleColor / pdf;
         }
         
-        // Diffuse
-        float NoL;
-        float pdf;
-        ImportanceSampleCosDir(Xi, N, L, NoL, pdf);
+        // Diffuse : Uniform Sampling
+        L = tangentToWorldCoords(UniformSampleHemisphere(Xi), N, s, t);
+        context.NoL = saturate(dot(N, L));
+        float pdf = 1 / (2*PI);
         
         if (context.NoL > 0)
         {
