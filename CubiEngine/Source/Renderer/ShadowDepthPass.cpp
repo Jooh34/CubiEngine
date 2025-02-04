@@ -32,16 +32,9 @@ FShadowDepthPass::FShadowDepthPass(FGraphicsDevice* const Device)
 
 void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
 {
-    float SceneRadius = Scene->SceneRadius;
-
     uint32_t DIndex = 0u;
-    XMVECTOR LightDirection = XMVector3Normalize(XMLoadFloat4(&Scene->Light.LightBufferData.lightPosition[DIndex]));
 
-    XMVECTOR Center = Scene->GetCamera().GetCameraPositionXMV();
-    float NearZ = 0.1f;
-    float FarZ = SceneRadius * 2.f;
-    
-    ViewProjectionMatrix = CalculateLightViewProjMatrix(LightDirection, Center, SceneRadius, NearZ, FarZ);
+    ViewProjectionMatrix = Scene->GetCamera().GetDirectionalShadowViewProjMatrix(Scene->Light.LightBufferData.lightPosition[DIndex]);
 
     GraphicsContext->SetGraphicsPipelineState(ShadowDepthPassPipelineState);
     GraphicsContext->SetRenderTargetDepthOnly(ShadowDepthTexture);
@@ -61,23 +54,4 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     };
 
     Scene->RenderModels(GraphicsContext, RenderResources);
-}
-
-XMMATRIX FShadowDepthPass::CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Center, float SceneRadius, float NearZ, float FarZ)
-{
-    float Width = SceneRadius * 2.0f;
-    float Height = SceneRadius * 2.0f;
-    
-    XMVECTOR EyePos = XMVectorAdd(
-        Center,
-        XMVectorScale(LightDirection, -1.0f * SceneRadius)
-    );
-    XMVECTOR UpVector = Dx::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-    if (Dx::XMVector3Equal(Dx::XMVector3Cross(UpVector, LightDirection), Dx::XMVectorZero())) {
-        UpVector = Dx::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-    }
-
-    XMMATRIX ViewMatrix = XMMatrixLookAtLH(EyePos, Center, UpVector);
-    XMMATRIX OrthoMatrix = Dx::XMMatrixOrthographicLH(Width, Height, NearZ, FarZ);
-    return XMMatrixMultiply(ViewMatrix, OrthoMatrix);
 }

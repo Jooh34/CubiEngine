@@ -17,7 +17,6 @@ public:
 
     FTexture& GetShadowDepthTexture() { return ShadowDepthTexture; }
 
-    XMMATRIX CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Center, float SceneRadius, float NearZ, float FarZ);
     XMMATRIX GetViewProjectionMatrix() { return ViewProjectionMatrix; }
 
 private:

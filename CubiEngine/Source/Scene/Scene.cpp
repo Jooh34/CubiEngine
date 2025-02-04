@@ -14,7 +14,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         .Name = L"Light Buffer",
     });
     
-    int Scene = 0;
+    int Scene = 2;
     FModelCreationDesc Desc;
     if (Scene == 0)
     {
@@ -22,8 +22,6 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .ModelPath = "Models/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
             .ModelName = L"MetalRoughSpheres",
         };
-
-        SceneRadius = 100.f;
     }
     else if (Scene == 1)
     {
@@ -31,9 +29,15 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .ModelPath = "Models/Sponza/sponza.glb",
             .ModelName = L"Sponza",
         };
-
-        SceneRadius = 1000.f;
     }
+    else if (Scene == 2)
+    {
+        Desc = {
+            .ModelPath = "Models/FlightHelmet/glTF/FlightHelmet.gltf",
+            .ModelName = L"FlightHelmet",
+        };
+    }
+
     AddModel(Desc);
 
     float LightPosition[4] = { 1,-1,0,0 };

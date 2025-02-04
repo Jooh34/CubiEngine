@@ -36,8 +36,6 @@ public:
 
     FLight Light;
 
-    float SceneRadius;
-
     // UI control
     int WhiteFurnaceMethod = 0;
     bool bToneMapping = true;

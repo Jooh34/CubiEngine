@@ -27,6 +27,11 @@ public:
 
     XMFLOAT4& GetCameraPosition() { return CamPosition; }
     XMVECTOR GetCameraPositionXMV() const { return CamPositionXMV; }
+    
+    XMMATRIX CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Focus, float Radius, float MaxZ);
+    void GetViewFrustumCenterAndRadius(XMFLOAT3& Center, float& Radius);
+
+    XMMATRIX GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightPosition);
 
     float FarZ;
 

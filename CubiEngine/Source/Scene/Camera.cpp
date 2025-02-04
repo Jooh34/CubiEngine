@@ -11,7 +11,7 @@ FCamera::FCamera(uint32_t Width, uint32_t Height)
 
     FovY = Dx::XM_PIDIV4;
     AspectRatio = static_cast<float>(Width) / Height;
-    NearZ = 1.f;
+    NearZ = 0.1f;
     FarZ = 3000.f;
 
     UpdateMatrix();
@@ -32,6 +32,10 @@ void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t He
     if (Input->GetKeyState(SDL_SCANCODE_LSHIFT))
     {
         Boost = 4.f;
+    }
+    else if (Input->GetKeyState(SDL_SCANCODE_LCTRL))
+    {
+        Boost = 0.2f;
     }
 
     if (Input->GetKeyState(SDL_SCANCODE_W))
@@ -86,3 +90,46 @@ void FCamera::UpdateMatrix()
     ProjMatrix = XMMatrixPerspectiveFovLH(FovY, AspectRatio, NearZ, FarZ);
 }
 
+XMMATRIX FCamera::CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Focus, float Radius, float MaxZ)
+{
+    float Width = Radius * 2.0f;
+    float Height = Radius * 2.0f;
+
+    XMVECTOR EyePos = XMVectorAdd(
+        Focus,
+        XMVectorScale(LightDirection, -1.0f * MaxZ)
+    );
+    XMVECTOR UpVector = Dx::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+    if (Dx::XMVector3Equal(Dx::XMVector3Cross(UpVector, LightDirection), Dx::XMVectorZero())) {
+        UpVector = Dx::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+    }
+
+    XMMATRIX ViewMatrix = XMMatrixLookAtLH(EyePos, Focus, UpVector);
+    XMMATRIX OrthoMatrix = Dx::XMMatrixOrthographicLH(Width, Height, 0.f, (MaxZ+ Radius));
+    return XMMatrixMultiply(ViewMatrix, OrthoMatrix);
+}
+
+void FCamera::GetViewFrustumCenterAndRadius(XMFLOAT3& Center, float& Radius)
+{
+    float ny = NearZ * tan(FovY / 2.f);
+    float nx = ny * AspectRatio;
+    float fy = FarZ * tan(FovY / 2.f);
+    float fx = fy * AspectRatio;
+    
+    float HalfZ = (NearZ + FarZ) / 2.f;
+    Center = XMFLOAT3(0, 0, HalfZ);
+    Radius = sqrt(fx * fx + fy * fy + (FarZ - HalfZ) * (FarZ - HalfZ));
+}
+
+XMMATRIX FCamera::GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightDirection)
+{
+    XMFLOAT3 CameraVFCenter;
+    float Radius = 1.f;
+    GetViewFrustumCenterAndRadius(CameraVFCenter, Radius);
+    
+    XMMATRIX InvViewMaterix = XMMatrixInverse(nullptr, ViewMatrix);
+    XMVECTOR CameraVFCenterWorld = XMVector3TransformCoord(XMLoadFloat3(&CameraVFCenter), InvViewMaterix);
+    
+    XMMATRIX LightViewProjectionMatrix = CalculateLightViewProjMatrix(XMLoadFloat4(&LightDirection), CameraVFCenterWorld, Radius, 3000.f);
+    return LightViewProjectionMatrix;
+}

@@ -177,8 +177,8 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             const float4 worldSpacePosition = mul(float4(viewSpacePosition, 1.0f), sceneBuffer.inverseViewMatrix);
             const float4 lightSpacePosition = mul(worldSpacePosition, renderResources.lightViewProjectionMatrix);
 
-            //onst float shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex);
-            const float attenuation = 1.f;
+            const float shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex);
+            const float attenuation = (1-shadow);
 
             float3 diffuseTerm = diffuseLambert(diffuseColor);
             float3 specularTerm = CookTorrenceSpecular(roughness, metalic, F0, context) * energyCompensation;
