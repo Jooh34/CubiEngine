@@ -123,6 +123,7 @@ void FEditor::RenderLightProperties(FScene* Scene)
         constexpr uint32_t DirectionalLightIndex = 0u;
         
         ImGui::SliderFloat("Intensity", &LightBuffer.intensity[DirectionalLightIndex], 0.0f, 100.0f);
+        ImGui::SliderFloat("MaxDistance", &LightBuffer.maxDistance[DirectionalLightIndex], 100.0f, 5000.0f);
 
         DirectX::XMFLOAT4& Position = LightBuffer.lightPosition[DirectionalLightIndex];
 

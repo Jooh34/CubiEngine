@@ -33,7 +33,7 @@ VSOutput VsMain(uint vertexID : SV_VertexID)
     };
 
     VSOutput output;
-    float4 vertexPosition = float4(quadVertices[vertexID], 1.0, 1.0); // Z=0, W=1 for clip space
+    float4 vertexPosition = float4(quadVertices[vertexID], 0.0, 1.0); // Z=0, W=1 for clip space (ReversedZ)
     output.position = vertexPosition;
 
     output.modelSpacePosition = mul(mul(vertexPosition, sceneBuffer.inverseProjectionMatrix), sceneBuffer.inverseViewMatrix);

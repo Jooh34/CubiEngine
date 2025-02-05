@@ -56,7 +56,7 @@ void FGraphicsContext::ClearDepthStencilView(const FTexture& Texture)
         Device->GetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(Texture.DsvIndex);
 
     CommandList->ClearDepthStencilView(DsvHandle.CpuDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH,
-        1.0f, 1u, 0u, nullptr);
+        0.0f, 1u, 0u, nullptr); // ReversedZ
 }
 
 void FGraphicsContext::SetRenderTarget(const FTexture& RenderTarget) const

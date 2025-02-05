@@ -7,7 +7,7 @@ FLight::FLight()
     };
 }
 
-void FLight::AddLight(float Position[4], float Color[4], float Intensity)
+void FLight::AddLight(float Position[4], float Color[4], float Intensity, float MaxDistance)
 {
     if (LightBufferData.numLight >= interlop::MAX_LIGHTS)
     {
@@ -31,6 +31,7 @@ void FLight::AddLight(float Position[4], float Color[4], float Intensity)
     };
 
     LightBufferData.intensity[CurIndex] = Intensity;
+    LightBufferData.maxDistance[CurIndex] = MaxDistance;
 
     LightBufferData.numLight++;
 }

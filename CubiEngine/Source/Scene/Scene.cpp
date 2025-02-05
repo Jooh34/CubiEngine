@@ -14,7 +14,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         .Name = L"Light Buffer",
     });
     
-    int Scene = 2;
+    int Scene = 1;
     FModelCreationDesc Desc;
     if (Scene == 0)
     {

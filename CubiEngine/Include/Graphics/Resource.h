@@ -26,7 +26,7 @@ struct FGraphicsPipelineStateCreationDesc
     std::vector<DXGI_FORMAT> RtvFormats{DXGI_FORMAT_R16G16B16A16_FLOAT};
     uint32_t RtvCount{1u};
     DXGI_FORMAT DepthFormat{DXGI_FORMAT_D32_FLOAT};
-    D3D12_COMPARISON_FUNC DepthComparisonFunc{D3D12_COMPARISON_FUNC_LESS};
+    D3D12_COMPARISON_FUNC DepthComparisonFunc{ D3D12_COMPARISON_FUNC_GREATER_EQUAL }; // reversedZ
     FrontFaceWindingOrder FrontFaceWindingOrder{FrontFaceWindingOrder::ClockWise};
     D3D12_CULL_MODE CullMode{D3D12_CULL_MODE_BACK};
     std::wstring_view PipelineName{};

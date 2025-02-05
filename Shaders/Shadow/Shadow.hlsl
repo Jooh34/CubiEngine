@@ -27,15 +27,15 @@ float calculateShadow(float4 lightSpacPosition, float NoL, uint shadowDepthTextu
     float shadow = 0.0f;
 
     // Half kernel width.
-    const int samplesOffset = 2;
-    for (int x = -samplesOffset; x <= samplesOffset; ++x)
+    const float samplesOffset = 1.5;
+    for (float x = -samplesOffset; x <= samplesOffset; x+=1.0)
     {
-        for (int y = -samplesOffset; y <= samplesOffset; ++y)
+        for (float y = -samplesOffset; y <= samplesOffset; y+=1.0)
         {
-            float curDepth = shadowDepthTexture.Sample(pointClampSampler, shadowPosition.xy + float2(x, y) * 2 * texelSize).r;
-            shadow += (shadowPosition.z - bias > curDepth ? 1.0f : 0.0f);
+            float curDepth = shadowDepthTexture.Sample(linearWrapSampler, shadowPosition.xy + float2(x, y) * texelSize).r;
+            shadow += (shadowPosition.z + bias < curDepth ? 1.0f : 0.0f); // ReversedZ
         }
     }
 
-    return 0.5 + shadow / ((samplesOffset * 2 + 1) * (samplesOffset * 2 + 1) * 2);
+    return shadow / 16.f;
 }

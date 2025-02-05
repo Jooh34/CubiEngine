@@ -34,7 +34,10 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
 {
     uint32_t DIndex = 0u;
 
-    ViewProjectionMatrix = Scene->GetCamera().GetDirectionalShadowViewProjMatrix(Scene->Light.LightBufferData.lightPosition[DIndex]);
+    ViewProjectionMatrix = Scene->GetCamera().GetDirectionalShadowViewProjMatrix(
+        Scene->Light.LightBufferData.lightPosition[DIndex],
+        Scene->Light.LightBufferData.maxDistance[DIndex]
+    );
 
     GraphicsContext->SetGraphicsPipelineState(ShadowDepthPassPipelineState);
     GraphicsContext->SetRenderTargetDepthOnly(ShadowDepthTexture);

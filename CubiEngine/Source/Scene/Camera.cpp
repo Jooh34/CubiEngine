@@ -11,7 +11,7 @@ FCamera::FCamera(uint32_t Width, uint32_t Height)
 
     FovY = Dx::XM_PIDIV4;
     AspectRatio = static_cast<float>(Width) / Height;
-    NearZ = 0.1f;
+    NearZ = 1.f;
     FarZ = 3000.f;
 
     UpdateMatrix();
@@ -88,12 +88,21 @@ void FCamera::UpdateMatrix()
 
     ViewMatrix = XMMatrixLookAtLH(CamPositionXMV, CamTarget, WorldUpVector);
     ProjMatrix = XMMatrixPerspectiveFovLH(FovY, AspectRatio, NearZ, FarZ);
+
+    // https://iolite-engine.com/blog_posts/reverse_z_cheatsheet
+    XMMATRIX M_I = {
+        1.0f,  0.0f,  0.0f,  0.0f,
+        0.0f,  1.0f,  0.0f,  0.0f,
+        0.0f,  0.0f, -1.0f,  0.0f,
+        0.0f,  0.0f,  1.0f,  1.0f
+    };
+    ProjMatrix = XMMatrixMultiply(ProjMatrix, M_I); // ReversedZ
 }
 
 XMMATRIX FCamera::CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Focus, float Radius, float MaxZ)
 {
-    float Width = Radius * 2.0f;
-    float Height = Radius * 2.0f;
+    float Extent = Radius;
+    float LightNearZ = 1.f;
 
     XMVECTOR EyePos = XMVectorAdd(
         Focus,
@@ -105,7 +114,18 @@ XMMATRIX FCamera::CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR
     }
 
     XMMATRIX ViewMatrix = XMMatrixLookAtLH(EyePos, Focus, UpVector);
-    XMMATRIX OrthoMatrix = Dx::XMMatrixOrthographicLH(Width, Height, 0.f, (MaxZ+ Radius));
+    XMMATRIX OrthoMatrix = Dx::XMMatrixOrthographicOffCenterLH(
+        -Extent, Extent, -Extent, Extent, LightNearZ, (MaxZ+ Radius));
+
+    // https://iolite-engine.com/blog_posts/reverse_z_cheatsheet
+    XMMATRIX M_I = {
+        1.0f,  0.0f,  0.0f,  0.0f,
+        0.0f,  1.0f,  0.0f,  0.0f,
+        0.0f,  0.0f, -1.0f,  0.0f,
+        0.0f,  0.0f,  1.0f,  1.0f
+    };
+    OrthoMatrix = XMMatrixMultiply(OrthoMatrix, M_I); // ReversedZ
+
     return XMMatrixMultiply(ViewMatrix, OrthoMatrix);
 }
 
@@ -121,7 +141,7 @@ void FCamera::GetViewFrustumCenterAndRadius(XMFLOAT3& Center, float& Radius)
     Radius = sqrt(fx * fx + fy * fy + (FarZ - HalfZ) * (FarZ - HalfZ));
 }
 
-XMMATRIX FCamera::GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightDirection)
+XMMATRIX FCamera::GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightDirection, float MaxDistance)
 {
     XMFLOAT3 CameraVFCenter;
     float Radius = 1.f;
@@ -130,6 +150,6 @@ XMMATRIX FCamera::GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightDirect
     XMMATRIX InvViewMaterix = XMMatrixInverse(nullptr, ViewMatrix);
     XMVECTOR CameraVFCenterWorld = XMVector3TransformCoord(XMLoadFloat3(&CameraVFCenter), InvViewMaterix);
     
-    XMMATRIX LightViewProjectionMatrix = CalculateLightViewProjMatrix(XMLoadFloat4(&LightDirection), CameraVFCenterWorld, Radius, 3000.f);
+    XMMATRIX LightViewProjectionMatrix = CalculateLightViewProjMatrix(XMLoadFloat4(&LightDirection), CameraVFCenterWorld, Radius, MaxDistance);
     return LightViewProjectionMatrix;
 }

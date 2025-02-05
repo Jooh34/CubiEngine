@@ -31,7 +31,7 @@ public:
     XMMATRIX CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Focus, float Radius, float MaxZ);
     void GetViewFrustumCenterAndRadius(XMFLOAT3& Center, float& Radius);
 
-    XMMATRIX GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightPosition);
+    XMMATRIX GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightPosition, float MaxDistance);
 
     float FarZ;
 
