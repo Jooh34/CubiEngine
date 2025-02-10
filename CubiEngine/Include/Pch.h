@@ -50,6 +50,11 @@ using Dx::XMVectorScale;
 using Dx::XMVectorSubtract;
 using Dx::XMLoadFloat4;
 using Dx::XMStoreFloat4;
+using Dx::XMVectorSet;
+using Dx::XMVector4Transform;
+using Dx::XMVectorDivide;
+using Dx::XMVectorMin;
+using Dx::XMVectorMax;
 
 #ifdef _DEBUG
 constexpr bool DEBUG_MODE = true;
@@ -68,6 +73,8 @@ constexpr uint32_t InitialHeight = 900;
 constexpr uint32_t GCubeMapTextureDimension = 1024u;
 constexpr uint32_t GPreFilteredCubeMapTextureDimension = 1024u;
 constexpr uint32_t GBRDFLutTextureDimension = 32u;
-constexpr uint32_t GShadowDepthDimension = 4096u;
 
 inline uint32_t GFrameCount = 0;
+
+constexpr uint32_t GShadowDepthDimension = 4096u;
+constexpr uint32_t GNumCascadeShadowMap = 1;

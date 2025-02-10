@@ -235,7 +235,7 @@ void FCubeMap::Render(FGraphicsContext* const GraphicsContext,
         .Height = static_cast<float>(Target.Height),
         .MinDepth = 0.0f,
         .MaxDepth = 1.0f,
-     });
+     }, true);
 
     GraphicsContext->SetGraphicsRoot32BitConstants(&RenderResource);
 

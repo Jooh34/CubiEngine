@@ -34,9 +34,9 @@ FRenderer::~FRenderer()
     }
 }
 
-void FRenderer::Update(float DeltaTime, FInput* Input)
+void FRenderer::GameTick(float DeltaTime, FInput* Input)
 {
-    Scene->Update(DeltaTime, Input, Width, Height);
+    Scene->GameTick(DeltaTime, Input, Width, Height);
 }
 
 void FRenderer::BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer, FTexture& DepthTexture)

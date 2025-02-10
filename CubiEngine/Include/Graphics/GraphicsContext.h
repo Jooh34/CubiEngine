@@ -24,7 +24,8 @@ public:
     void SetGraphicsPipelineState(const FPipelineState& PipelineState) const;
     void SetComputePipelineState(const FPipelineState& PipelineState) const;
 
-    void SetViewport(const D3D12_VIEWPORT& Viewport) const;
+    void SetViewport(const D3D12_VIEWPORT& Viewport, bool bScissorRectAsSame = false) const;
+    void SetScissorRects(const D3D12_RECT& Rect) const;
     void SetPrimitiveTopologyLayout(const D3D_PRIMITIVE_TOPOLOGY PrimitiveTopology) const;
 
     void SetIndexBuffer(const FBuffer& Buffer) const;

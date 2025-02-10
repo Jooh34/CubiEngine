@@ -17,11 +17,11 @@ public:
 
     FTexture& GetShadowDepthTexture() { return ShadowDepthTexture; }
 
-    XMMATRIX GetViewProjectionMatrix() { return ViewProjectionMatrix; }
+    XMMATRIX GetViewProjectionMatrix(int Index) { return ViewProjectionMatrix[Index]; }
 
 private:
     FTexture ShadowDepthTexture;
     FPipelineState ShadowDepthPassPipelineState;
 
-    XMMATRIX ViewProjectionMatrix{};
+    XMMATRIX ViewProjectionMatrix[4];
 };

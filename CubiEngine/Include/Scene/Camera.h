@@ -28,12 +28,13 @@ public:
     XMFLOAT4& GetCameraPosition() { return CamPosition; }
     XMVECTOR GetCameraPositionXMV() const { return CamPositionXMV; }
     
-    XMMATRIX CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Focus, float Radius, float MaxZ);
-    void GetViewFrustumCenterAndRadius(XMFLOAT3& Center, float& Radius);
+    XMMATRIX CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Focus, XMVECTOR FrustumCorners[], float MaxZ);
+    void GetShadowBoundingBox(XMFLOAT3& Center, XMVECTOR FrustumCorners[], int CascadeIndex, XMMATRIX InverseViewProj);
 
-    XMMATRIX GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightPosition, float MaxDistance);
+    XMMATRIX GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightPosition, float MaxDistance, int CascadeIndex);
 
     float FarZ;
+    float NearZ;
 
 private:
     float MovementSpeed{};
@@ -56,7 +57,6 @@ private:
     // Projection Matrix
     float FovY;
     float AspectRatio;
-    float NearZ;
 
     static constexpr XMVECTOR WorldFront = XMVECTOR{ 0.0f, 0.0f, 1.0f, 0.0f };
     static constexpr XMVECTOR WorldRight = XMVECTOR{ 1.0f, 0.0f, 0.0f, 0.0f };

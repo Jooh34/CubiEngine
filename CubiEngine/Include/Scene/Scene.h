@@ -16,7 +16,8 @@ public:
     FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height);
     ~FScene();
     
-    void Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height);
+    void GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height);
+    void UpdateBuffers();
     void AddModel(const FModelCreationDesc& Desc);
     void AddLight(float Position[4], float Color[4]) { Light.AddLight(Position, Color); }
 
@@ -27,8 +28,8 @@ public:
     void RenderModels(FGraphicsContext* const GraphicsContext,
         interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource);
 
-    FBuffer& GetSceneBuffer() { return SceneBuffer; }
-    FBuffer& GetLightBuffer() { return LightBuffer; }
+    FBuffer& GetSceneBuffer() { return SceneBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
+    FBuffer& GetLightBuffer() { return LightBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
     FCamera& GetCamera() { return Camera; }
     FCubeMap* GetEnvironmentMap() { return (WhiteFurnaceMethod == 0 || WhiteFurnaceMethod == 3) ? EnviromentMap.get() : WhiteFurnaceMap.get(); }
     void RenderEnvironmentMap(FGraphicsContext* const GraphicsContext,
@@ -38,19 +39,23 @@ public:
 
     // UI control
     int WhiteFurnaceMethod = 0;
+
     bool bToneMapping = true;
     bool bGammaCorrection = true;
 
     bool bUseEnvmap = true;
     bool bUseEnergyCompensation = true;
+    bool bCSMDebug = false;
 
 private:
+    static constexpr uint32_t FRAMES_IN_FLIGHT = 3u;
+
     std::unordered_map<std::wstring, std::unique_ptr<FModel>> Models{};
     FGraphicsDevice* Device;
 
     FCamera Camera;
-    FBuffer SceneBuffer{};
-    FBuffer LightBuffer{};
+    std::array<FBuffer, FRAMES_IN_FLIGHT> SceneBuffer;
+    std::array<FBuffer, FRAMES_IN_FLIGHT> LightBuffer;
     std::unique_ptr<FCubeMap> EnviromentMap{};
     std::unique_ptr<FCubeMap> WhiteFurnaceMap{};
 };

@@ -31,7 +31,7 @@ void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t He
     float Boost = 1.f;
     if (Input->GetKeyState(SDL_SCANCODE_LSHIFT))
     {
-        Boost = 4.f;
+        Boost = 6.f;
     }
     else if (Input->GetKeyState(SDL_SCANCODE_LCTRL))
     {
@@ -99,23 +99,40 @@ void FCamera::UpdateMatrix()
     ProjMatrix = XMMatrixMultiply(ProjMatrix, M_I); // ReversedZ
 }
 
-XMMATRIX FCamera::CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Focus, float Radius, float MaxZ)
+XMMATRIX FCamera::CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Focus, XMVECTOR FrustumCorners[], float MaxZ)
 {
-    float Extent = Radius;
     float LightNearZ = 1.f;
 
     XMVECTOR EyePos = XMVectorAdd(
         Focus,
-        XMVectorScale(LightDirection, -1.0f * MaxZ)
+        XMVectorScale(LightDirection, -100.f)
     );
     XMVECTOR UpVector = Dx::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
     if (Dx::XMVector3Equal(Dx::XMVector3Cross(UpVector, LightDirection), Dx::XMVectorZero())) {
         UpVector = Dx::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
     }
-
+    
     XMMATRIX ViewMatrix = XMMatrixLookAtLH(EyePos, Focus, UpVector);
-    XMMATRIX OrthoMatrix = Dx::XMMatrixOrthographicOffCenterLH(
-        -Extent, Extent, -Extent, Extent, LightNearZ, (MaxZ+ Radius));
+
+    XMVECTOR LightSpaceMin = XMVectorSet(FLT_MAX, FLT_MAX, FLT_MAX, 1.0f);
+    XMVECTOR LightSpaceMax = XMVectorSet(-FLT_MAX, -FLT_MAX, -FLT_MAX, 1.0f);
+    for (int j = 0; j < 8; j++)
+    {
+        FrustumCorners[j] = XMVector4Transform(FrustumCorners[j], ViewMatrix);
+        LightSpaceMin = XMVectorMin(LightSpaceMin, FrustumCorners[j]);
+        LightSpaceMax = XMVectorMax(LightSpaceMax, FrustumCorners[j]);
+    }
+    //XMMATRIX OrthoMatrix = Dx::XMMatrixOrthographicOffCenterLH(
+    //     Dx::XMVectorGetX(MinPoint), Dx::XMVectorGetX(MaxPoint),
+    //     Dx::XMVectorGetY(MinPoint), Dx::XMVectorGetY(MaxPoint),
+    //     Dx::XMVectorGetZ(MinPoint), Dx::XMVectorGetZ(MaxPoint)
+    //);
+    XMMATRIX OrthoMatrix = Dx::XMMatrixOrthographicLH(
+        Dx::XMVectorGetX(LightSpaceMax) - Dx::XMVectorGetX(LightSpaceMin),
+        Dx::XMVectorGetY(LightSpaceMax) - Dx::XMVectorGetY(LightSpaceMin),
+        Dx::XMVectorGetZ(LightSpaceMin) - 3*(Dx::XMVectorGetZ(LightSpaceMax)-Dx::XMVectorGetZ(LightSpaceMin)),
+        Dx::XMVectorGetZ(LightSpaceMax)
+    );
 
     // https://iolite-engine.com/blog_posts/reverse_z_cheatsheet
     XMMATRIX M_I = {
@@ -129,27 +146,42 @@ XMMATRIX FCamera::CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR
     return XMMatrixMultiply(ViewMatrix, OrthoMatrix);
 }
 
-void FCamera::GetViewFrustumCenterAndRadius(XMFLOAT3& Center, float& Radius)
+void FCamera::GetShadowBoundingBox(XMFLOAT3& Center, XMVECTOR FrustumCorners[], int CascadeIndex, XMMATRIX InverseViewProj)
 {
-    float ny = NearZ * tan(FovY / 2.f);
-    float nx = ny * AspectRatio;
-    float fy = FarZ * tan(FovY / 2.f);
-    float fx = fy * AspectRatio;
-    
-    float HalfZ = (NearZ + FarZ) / 2.f;
-    Center = XMFLOAT3(0, 0, HalfZ);
-    Radius = sqrt(fx * fx + fy * fy + (FarZ - HalfZ) * (FarZ - HalfZ));
+    float FarRatio = float(CascadeIndex + 1) / GNumCascadeShadowMap;
+    float NearRatio = float(CascadeIndex) / GNumCascadeShadowMap;
+
+    for (int j = 0; j < 4; j++)
+    {
+        XMVECTOR direction = XMVectorSubtract(FrustumCorners[j + 4], FrustumCorners[j]);
+        FrustumCorners[j] = XMVectorAdd(FrustumCorners[j], XMVectorScale(direction, NearRatio));
+        FrustumCorners[j + 4] = XMVectorAdd(FrustumCorners[j], XMVectorScale(direction, FarRatio));
+    }
+
+    XMVECTOR FrustumCenter = XMVectorSet(0, 0, 0, 0);
+    for (int j = 0; j < 8; j++)
+    {
+        FrustumCorners[j] = XMVector3TransformCoord(FrustumCorners[j], InverseViewProj);
+        FrustumCenter = XMVectorAdd(FrustumCenter, FrustumCorners[j]);
+    }
+    FrustumCenter = XMVectorDivide(FrustumCenter, XMVectorSet(8, 8, 8, 1));
+
+    XMStoreFloat3(&Center, FrustumCenter);
 }
 
-XMMATRIX FCamera::GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightDirection, float MaxDistance)
+XMMATRIX FCamera::GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightDirection, float MaxDistance, int CascadeIndex)
 {
     XMFLOAT3 CameraVFCenter;
-    float Radius = 1.f;
-    GetViewFrustumCenterAndRadius(CameraVFCenter, Radius);
+    XMVECTOR FrustumCorners[8] = {
+        XMVectorSet(-1,  1, 1, 1), XMVectorSet(1,  1, 1, 1),
+        XMVectorSet(1, -1, 1, 1), XMVectorSet(-1, -1, 1, 1),
+        XMVectorSet(-1,  1, 0, 1), XMVectorSet(1,  1, 0, 1),
+        XMVectorSet(1, -1, 0, 1), XMVectorSet(-1, -1, 0, 1),
+    }; // reversedZ
+
+    XMMATRIX InvViewProjMatrix = XMMatrixInverse(nullptr, GetViewProjMatrix());
+    GetShadowBoundingBox(CameraVFCenter, FrustumCorners, CascadeIndex, InvViewProjMatrix);
     
-    XMMATRIX InvViewMaterix = XMMatrixInverse(nullptr, ViewMatrix);
-    XMVECTOR CameraVFCenterWorld = XMVector3TransformCoord(XMLoadFloat3(&CameraVFCenter), InvViewMaterix);
-    
-    XMMATRIX LightViewProjectionMatrix = CalculateLightViewProjMatrix(XMLoadFloat4(&LightDirection), CameraVFCenterWorld, Radius, MaxDistance);
+    XMMATRIX LightViewProjectionMatrix = CalculateLightViewProjMatrix(XMLoadFloat4(&LightDirection), XMLoadFloat3(&CameraVFCenter), FrustumCorners, MaxDistance);
     return LightViewProjectionMatrix;
 }

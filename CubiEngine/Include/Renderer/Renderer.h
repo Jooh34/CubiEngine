@@ -17,7 +17,7 @@ public:
     FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32_t Width, uint32_t Height);
     ~FRenderer();
 
-    void Update(float DeltaTime, FInput* Input);
+    void GameTick(float DeltaTime, FInput* Input);
     void BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer, FTexture& DepthTexture);
     void Render();
     void OnWindowResized(uint32_t InWidth, uint32_t InHeight);

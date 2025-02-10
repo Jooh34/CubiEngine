@@ -44,7 +44,7 @@ void FUnlitPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsCon
         .Height = static_cast<float>(Height),
         .MinDepth = 0.0f,
         .MaxDepth = 1.0f,
-        });
+    }, true);
 
     GraphicsContext->SetPrimitiveTopologyLayout(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 

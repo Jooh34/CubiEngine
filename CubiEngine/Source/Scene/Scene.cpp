@@ -4,15 +4,21 @@
 FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     : Device(Device), Camera(Width, Height)
 {
-    SceneBuffer = Device->CreateBuffer<interlop::SceneBuffer>(FBufferCreationDesc{
-       .Usage = EBufferUsage::ConstantBuffer,
-       .Name = L"Scene Buffer",
-    });
+    for (int i = 0; i < FRAMES_IN_FLIGHT; i++)
+    {
+        SceneBuffer[i] = Device->CreateBuffer<interlop::SceneBuffer>(FBufferCreationDesc{
+           .Usage = EBufferUsage::ConstantBuffer,
+           .Name = L"Scene Buffer" + i,
+        });
+    }
 
-    LightBuffer = Device->CreateBuffer<interlop::LightBuffer>(FBufferCreationDesc{
-        .Usage = EBufferUsage::ConstantBuffer,
-        .Name = L"Light Buffer",
-    });
+    for (int i = 0; i < FRAMES_IN_FLIGHT; i++)
+    {
+        LightBuffer[i] = Device->CreateBuffer<interlop::LightBuffer>(FBufferCreationDesc{
+            .Usage = EBufferUsage::ConstantBuffer,
+            .Name = L"Light Buffer" + i,
+        });
+    }
     
     int Scene = 1;
     FModelCreationDesc Desc;
@@ -60,22 +66,29 @@ FScene::~FScene()
 {
 }
 
-void FScene::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height)
+void FScene::GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height)
 {
     Camera.Update(DeltaTime, Input, Width, Height);
 
+    UpdateBuffers();
+}
+
+void FScene::UpdateBuffers()
+{
     const interlop::SceneBuffer SceneBufferData = {
         .viewProjectionMatrix = Camera.GetViewProjMatrix(),
         .projectionMatrix = Camera.GetProjMatrix(),
         .inverseProjectionMatrix = XMMatrixInverse(nullptr, Camera.GetProjMatrix()),
         .viewMatrix = Camera.GetViewMatrix(),
         .inverseViewMatrix = XMMatrixInverse(nullptr, Camera.GetViewMatrix()),
+        .nearZ = Camera.NearZ,
+        .farZ = Camera.FarZ,
     };
 
-    SceneBuffer.Update(&SceneBufferData);
-    
-    const interlop::LightBuffer LightBufferData = Light.GetLightBufferWithViewUpdate(Camera.GetViewMatrix());
-    LightBuffer.Update(&LightBufferData);
+    GetSceneBuffer().Update(&SceneBufferData);
+
+    const interlop::LightBuffer LightBufferData = Light.GetLightBufferWithViewUpdate(this, Camera.GetViewMatrix());
+    GetLightBuffer().Update(&LightBufferData);
 }
 
 void FScene::AddModel(const FModelCreationDesc& Desc)
@@ -88,7 +101,7 @@ void FScene::AddModel(const FModelCreationDesc& Desc)
 void FScene::RenderModels(FGraphicsContext* const GraphicsContext,
     interlop::UnlitPassRenderResources& UnlitRenderResources)
 {
-    UnlitRenderResources.sceneBufferIndex = SceneBuffer.CbvIndex;
+    UnlitRenderResources.sceneBufferIndex = GetSceneBuffer().CbvIndex;
     for (const auto& [_, Model] : Models)
     {
         Model->Render(GraphicsContext, UnlitRenderResources);
@@ -98,7 +111,7 @@ void FScene::RenderModels(FGraphicsContext* const GraphicsContext,
 void FScene::RenderModels(FGraphicsContext* const GraphicsContext,
     interlop::DeferredGPassRenderResources& DeferredGRenderResources)
 {
-    DeferredGRenderResources.sceneBufferIndex = SceneBuffer.CbvIndex;
+    DeferredGRenderResources.sceneBufferIndex = GetSceneBuffer().CbvIndex;
     for (const auto& [_, Model] : Models)
     {
         Model->Render(GraphicsContext, DeferredGRenderResources);
@@ -117,7 +130,7 @@ void FScene::RenderEnvironmentMap(FGraphicsContext* const GraphicsContext,
     FTexture& Target, const FTexture& DepthBuffer)
 {
     interlop::ScreenSpaceCubeMapRenderResources RenderResource = {
-        .sceneBufferIndex = SceneBuffer.CbvIndex,
+        .sceneBufferIndex = GetSceneBuffer().CbvIndex,
         .cubenmapTextureIndex = GetEnvironmentMap()->CubeMapTexture.SrvIndex,
     };
 

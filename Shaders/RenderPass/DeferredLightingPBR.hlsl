@@ -175,14 +175,24 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             context.NoL = saturate(dot(N,L));
 
             const float4 worldSpacePosition = mul(float4(viewSpacePosition, 1.0f), sceneBuffer.inverseViewMatrix);
-            const float4 lightSpacePosition = mul(worldSpacePosition, renderResources.lightViewProjectionMatrix);
+            uint cascadeIndex = getCascadeIndex(viewSpacePosition.z, sceneBuffer.nearZ, sceneBuffer.farZ, renderResources.numCascadeShadowMap);
+            const float4 lightSpacePosition = mul(worldSpacePosition, lightBuffer.lightViewProjectionMatrix[cascadeIndex]);
 
-            const float shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex);
+            const float shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex, cascadeIndex, renderResources.numCascadeShadowMap, sceneBuffer.farZ);
             const float attenuation = (1-shadow);
 
             float3 diffuseTerm = diffuseLambert(diffuseColor);
             float3 specularTerm = CookTorrenceSpecular(roughness, metalic, F0, context) * energyCompensation;
             color += attenuation * lightColor.xyz * lightIntensity * context.NoL * (diffuseTerm + max(specularTerm, float3(0,0,0)));
+
+            if (renderResources.bCSMDebug)
+            {
+                float cascadeDebug = 0.1f;
+                color += float3(cascadeIndex == 0 ? cascadeDebug : 0,
+                    cascadeIndex == 1 ? cascadeDebug : 0,
+                    cascadeIndex == 2 ? cascadeDebug: 0
+                );
+            }
         }
     }
     

@@ -79,7 +79,7 @@ namespace interlop
 
     struct PBRRenderResources
     {
-        float4x4 lightViewProjectionMatrix;
+        uint numCascadeShadowMap;
 
         uint GBufferAIndex;
         uint GBufferBIndex;
@@ -104,6 +104,7 @@ namespace interlop
         uint bUseEnvmap;
         uint bUseEnergyCompensation;
         uint WhiteFurnaceMethod;
+        uint bCSMDebug;
         uint sampleBias;
     };
 

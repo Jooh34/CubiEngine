@@ -77,7 +77,7 @@ void Application::Run()
 
 void Application::Render(float DeltaTime)
 {
-    D3DRenderer->Update(DeltaTime, &Input);
+    D3DRenderer->GameTick(DeltaTime, &Input);
     D3DRenderer->Render();
 }
 

@@ -99,7 +99,7 @@ void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const Graphic
         .Height = static_cast<float>(Height),
         .MinDepth = 0.0f,
         .MaxDepth = 1.0f,
-        });
+        }, true);
 
     GraphicsContext->SetPrimitiveTopologyLayout(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     
@@ -118,7 +118,7 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
     FShadowDepthPass* ShadowDepthPass, FTexture& DepthTexture, uint32_t Width, uint32_t Height)
 {
     interlop::PBRRenderResources RenderResources = {
-        .lightViewProjectionMatrix = ShadowDepthPass->GetViewProjectionMatrix(),
+        .numCascadeShadowMap = GNumCascadeShadowMap,
         .GBufferAIndex = GBuffer.GBufferA.SrvIndex,
         .GBufferBIndex = GBuffer.GBufferB.SrvIndex,
         .GBufferCIndex = GBuffer.GBufferC.SrvIndex,
@@ -137,6 +137,7 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .bUseEnvmap = Scene->bUseEnvmap ? 1u : 0u,
         .bUseEnergyCompensation = Scene->bUseEnergyCompensation ? 1u : 0u,
         .WhiteFurnaceMethod = uint(Scene->WhiteFurnaceMethod),
+        .bCSMDebug = Scene->bCSMDebug ? 1u : 0u,
         .sampleBias = GFrameCount,
     };
 

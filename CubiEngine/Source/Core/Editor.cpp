@@ -90,6 +90,7 @@ void FEditor::RnederDebugProperties(FScene* Scene)
     ImGui::Checkbox("Tone Mapping", &Scene->bToneMapping);
     ImGui::Checkbox("Gamma Correction", &Scene->bGammaCorrection);
     ImGui::Checkbox("Energy Compensation", &Scene->bUseEnergyCompensation);
+    ImGui::Checkbox("CSM Debug", &Scene->bCSMDebug);
 
     ImGui::End();
 }

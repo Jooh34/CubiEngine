@@ -144,8 +144,8 @@ FAllocation FMemoryAllocator::CreateTextureResourceAllocation(const FTextureCrea
     else if (TextureCreationDesc.Usage == ETextureUsage::DepthStencil)
     {
         constexpr D3D12_DEPTH_STENCIL_VALUE dsValue = {
-            .Depth = 1.0f,
-            .Stencil = 1u,
+            .Depth = 0.0f, // ReversedZ
+            .Stencil = 0u,
         };
         ClearValue = { .Format = dsFormat, .DepthStencil = dsValue };
     }

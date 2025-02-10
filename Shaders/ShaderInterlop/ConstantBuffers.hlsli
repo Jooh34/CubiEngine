@@ -29,6 +29,8 @@ namespace interlop
         float4x4 inverseProjectionMatrix;
         float4x4 viewMatrix;
         float4x4 inverseViewMatrix;
+        float nearZ;
+        float farZ;
     };
 
     ConstantBufferStruct MaterialBuffer
@@ -48,9 +50,11 @@ namespace interlop
     };
 
     static const uint MAX_LIGHTS = 5;
+    static const uint MAX_CASCADE = 4;
 
     ConstantBufferStruct LightBuffer
     {
+        float4x4 lightViewProjectionMatrix[MAX_CASCADE];
         float4 lightPosition[MAX_LIGHTS];
         float4 lightColor[MAX_LIGHTS];
         float4 viewSpaceLightPosition[MAX_LIGHTS];

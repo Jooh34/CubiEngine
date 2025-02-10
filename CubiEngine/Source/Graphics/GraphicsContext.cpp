@@ -112,12 +112,19 @@ void FGraphicsContext::SetComputePipelineState(const FPipelineState& PipelineSta
     CommandList->SetPipelineState(PipelineState.PipelineStateObject.Get());
 }
 
-void FGraphicsContext::SetViewport(const D3D12_VIEWPORT& Viewport) const
+void FGraphicsContext::SetViewport(const D3D12_VIEWPORT& Viewport, bool bScissorRectAsSame) const
 {
-    D3D12_RECT scissorRect{ .left = 0u, .top = 0u, .right = (LONG)Viewport.Width, .bottom = (LONG)Viewport.Height };
-
     CommandList->RSSetViewports(1u, &Viewport);
-    CommandList->RSSetScissorRects(1u, &scissorRect);
+    if (bScissorRectAsSame)
+    {
+        D3D12_RECT ScissorRect{ .left = 0u, .top = 0u, .right = (LONG)Viewport.Width, .bottom = (LONG)Viewport.Height };
+        SetScissorRects(ScissorRect);
+    }
+}
+
+void FGraphicsContext::SetScissorRects(const D3D12_RECT& Rect) const
+{
+    CommandList->RSSetScissorRects(1u, &Rect);
 }
 
 void FGraphicsContext::SetPrimitiveTopologyLayout(const D3D_PRIMITIVE_TOPOLOGY PrimitiveTopology) const
