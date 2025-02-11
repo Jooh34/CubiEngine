@@ -166,6 +166,7 @@ namespace interlop
     {
         uint sceneTextureIndex;
         uint historyTextureIndex;
+        uint velocityTextureIndex;
         uint dstTextureIndex;
         uint width;
         uint height;

@@ -85,6 +85,7 @@ void FScene::UpdateBuffers()
         .inverseProjectionMatrix = XMMatrixInverse(nullptr, Camera.GetProjMatrix()),
         .viewMatrix = Camera.GetViewMatrix(),
         .inverseViewMatrix = XMMatrixInverse(nullptr, Camera.GetViewMatrix()),
+        .prevViewProjMatrix = Camera.GetPrevViewProjMatrix(),
         .nearZ = Camera.NearZ,
         .farZ = Camera.FarZ,
         .width = Width,

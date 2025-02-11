@@ -22,6 +22,11 @@ FTemporalAA::FTemporalAA(FGraphicsDevice* const GraphicsDevice, uint32_t Width, 
     InitSizeDependantResource(GraphicsDevice, Width, Height);
 }
 
+void FTemporalAA::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+{
+    InitSizeDependantResource(Device, InWidth, InHeight);
+}
+
 void FTemporalAA::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
 {
     FTextureCreationDesc HistoryTextureDesc{
@@ -48,15 +53,17 @@ void FTemporalAA::InitSizeDependantResource(const FGraphicsDevice* const Device,
 }
 
 void FTemporalAA::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene,
-    FTexture& HDRTexture, uint32_t Width, uint32_t Height)
+    FTexture& HDRTexture, FTexture& VelocityTexture, uint32_t Width, uint32_t Height)
 {
     GraphicsContext->AddResourceBarrier(HDRTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(VelocityTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(HistoryTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->ExecuteResourceBarriers();
 
     interlop::TemporalAAResolveRenderResource RenderResources = {
         .sceneTextureIndex = HDRTexture.SrvIndex,
         .historyTextureIndex = HistoryTexture.SrvIndex,
+        .velocityTextureIndex = VelocityTexture.SrvIndex,
         .dstTextureIndex = ResolveTexture.UavIndex,
         .width = Width,
         .height = Height,

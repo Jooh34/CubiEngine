@@ -24,6 +24,9 @@ public:
     XMMATRIX GetViewMatrix() const { return ViewMatrix; }
     XMMATRIX GetProjMatrix() const { return ProjMatrix; }
     XMMATRIX GetViewProjMatrix() const { return ViewMatrix * ProjMatrix; }
+    XMMATRIX GetPrevViewProjMatrix() const {
+        return PrevViewMatrix * PrevProjMatrix;
+    }
 
     XMFLOAT4& GetCameraPosition() { return CamPosition; }
     XMVECTOR GetCameraPositionXMV() const { return CamPositionXMV; }
@@ -53,6 +56,8 @@ private:
 
     XMMATRIX ViewMatrix{};
     XMMATRIX ProjMatrix{};
+    XMMATRIX PrevViewMatrix{};
+    XMMATRIX PrevProjMatrix{};
 
     // Projection Matrix
     float FovY;

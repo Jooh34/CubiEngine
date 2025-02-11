@@ -86,6 +86,8 @@ void FCamera::UpdateMatrix()
     CamUp = XMVector3Normalize(XMVector3TransformCoord(WorldUp, RotationMatrix));
     const XMVECTOR CamTarget = XMVectorAdd(CamPositionXMV, CamFront);
 
+    PrevViewMatrix = ViewMatrix;
+    PrevProjMatrix = ProjMatrix;
     ViewMatrix = XMMatrixLookAtLH(CamPositionXMV, CamTarget, WorldUpVector);
     ProjMatrix = XMMatrixPerspectiveFovLH(FovY, AspectRatio, NearZ, FarZ);
 
@@ -122,11 +124,7 @@ XMMATRIX FCamera::CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR
         LightSpaceMin = XMVectorMin(LightSpaceMin, FrustumCorners[j]);
         LightSpaceMax = XMVectorMax(LightSpaceMax, FrustumCorners[j]);
     }
-    //XMMATRIX OrthoMatrix = Dx::XMMatrixOrthographicOffCenterLH(
-    //     Dx::XMVectorGetX(MinPoint), Dx::XMVectorGetX(MaxPoint),
-    //     Dx::XMVectorGetY(MinPoint), Dx::XMVectorGetY(MaxPoint),
-    //     Dx::XMVectorGetZ(MinPoint), Dx::XMVectorGetZ(MaxPoint)
-    //);
+
     XMMATRIX OrthoMatrix = Dx::XMMatrixOrthographicLH(
         Dx::XMVectorGetX(LightSpaceMax) - Dx::XMVectorGetX(LightSpaceMin),
         Dx::XMVectorGetY(LightSpaceMax) - Dx::XMVectorGetY(LightSpaceMin),

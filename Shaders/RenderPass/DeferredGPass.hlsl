@@ -10,6 +10,8 @@ struct VSOutput
     float3 normal : NORMAL;
     float3x3 viewMatrix : VIEW_MATRIX;
     float3x3 tbnMatrix : TBN_MATRIX;
+    float4 curPosition : CUR_POSITION;
+    float4 prevPosition : PREV_POSITION;
 };
 
 ConstantBuffer<interlop::DeferredGPassRenderResources> renderResources : register(b0);
@@ -26,8 +28,8 @@ VSOutput VsMain(uint vertexID : SV_VertexID)
     ConstantBuffer<interlop::DebugBuffer> debugBuffer = ResourceDescriptorHeap[renderResources.debugBufferIndex];
 
     const matrix mvpMatrix = mul(transformBuffer.modelMatrix, sceneBuffer.viewProjectionMatrix);
-    const matrix mvMatrix = mul(transformBuffer.modelMatrix, sceneBuffer.viewMatrix);
     const float3x3 normalMatrix = (float3x3)transpose(transformBuffer.inverseModelMatrix);
+    const matrix prevMvpMatrix = mul(transformBuffer.modelMatrix, sceneBuffer.prevViewProjMatrix);
 
     VSOutput output;
     float4 clipspacePosition = mul(float4(positionBuffer[vertexID], 1.0f), mvpMatrix);
@@ -36,6 +38,8 @@ VSOutput VsMain(uint vertexID : SV_VertexID)
         clipspacePosition = ApplyTAAJittering(clipspacePosition, sceneBuffer.frameCount, float2(sceneBuffer.width, sceneBuffer.height));
     }
     output.position = clipspacePosition;
+    output.curPosition = clipspacePosition;
+    output.prevPosition = mul(float4(positionBuffer[vertexID], 1.0f), prevMvpMatrix);
     output.textureCoord = textureCoordBuffer[vertexID];
     output.normal = normalBuffer[vertexID];
     output.viewMatrix = (float3x3)sceneBuffer.viewMatrix;
@@ -55,6 +59,7 @@ struct PsOutput
     float4 GBufferA : SV_Target0;
     float4 GBufferB : SV_Target1;
     float4 GBufferC : SV_Target2;
+    float2 Velocity : SV_Target3;
 };
 
 [RootSignature(BindlessRootSignature)] 
@@ -74,9 +79,8 @@ PsOutput PsMain(VSOutput psInput)
     float ao = getAO(psInput.textureCoord, renderResources.aoTextureIndex, renderResources.aoTextureSamplerIndex).x;
     float2 metalRoughness = getMetalRoughness(psInput.textureCoord, renderResources.metalRoughnessTextureIndex, renderResources.metalRoughnessTextureSamplerIndex) * float2(materialBuffer.metallicFactor, materialBuffer.roughnessFactor).xy;
     float3 emissive = getEmissive(psInput.textureCoord, albedo, materialBuffer.emissiveFactor, renderResources.emissiveTextureIndex, renderResources.emissiveTextureSamplerIndex).xyz;
-
+    float2 velocity = calculateVelocity(psInput.curPosition, psInput.prevPosition);
     PsOutput output;
-    packGBuffer(albedo, normal, ao, metalRoughness, emissive, output.GBufferA, output.GBufferB, output.GBufferC);
-
+    packGBuffer(albedo, normal, ao, metalRoughness, emissive, velocity, output.GBufferA, output.GBufferB, output.GBufferC, output.Velocity);
     return output;
 }

@@ -71,10 +71,19 @@ void FDeferredGPass::InitSizeDependantResource(const FGraphicsDevice* const Devi
         .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
         .Name = L"HDR",
     };
+    FTextureCreationDesc VelocityTextureDesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_R16G16_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+        .Name = L"Velocity",
+    };
 
     GBuffer.GBufferA = Device->CreateTexture(GBufferADesc);
     GBuffer.GBufferB = Device->CreateTexture(GBufferBDesc);
     GBuffer.GBufferC = Device->CreateTexture(GBufferCDesc);
+    GBuffer.VelocityTexture = Device->CreateTexture(VelocityTextureDesc);
     HDRTexture = Device->CreateTexture(HDRTextureDesc);
 }
 
@@ -86,10 +95,11 @@ void FDeferredGPass::OnWindowResized(const FGraphicsDevice* const Device, uint32
 void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsContext, FTexture& DepthBuffer, uint32_t Width, uint32_t Height)
 {
     GraphicsContext->SetGraphicsPipelineState(GeometryPassPipelineState);
-    std::array<FTexture, 3> Textures = {
+    std::array<FTexture, 4> Textures = {
         GBuffer.GBufferA,
         GBuffer.GBufferB,
         GBuffer.GBufferC,
+        GBuffer.VelocityTexture,
     };
     GraphicsContext->SetRenderTargets(Textures, DepthBuffer);
     GraphicsContext->SetViewport(D3D12_VIEWPORT{
@@ -107,6 +117,7 @@ void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const Graphic
     GraphicsContext->ClearRenderTargetView(GBuffer.GBufferA, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
     GraphicsContext->ClearRenderTargetView(GBuffer.GBufferB, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
     GraphicsContext->ClearRenderTargetView(GBuffer.GBufferC, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+    GraphicsContext->ClearRenderTargetView(GBuffer.VelocityTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
     GraphicsContext->ClearRenderTargetView(HDRTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
 
     interlop::DeferredGPassRenderResources RenderResources{};

@@ -107,6 +107,19 @@ float2 getMetalRoughness(float2 textureCoord, uint metalRoughnessTextureIndex, u
     return float2(0.5f, 0.5f);
 }
 
+float2 calculateVelocity(float4 position, float4 prevPosition)
+{
+    float2 currentUV = position.xy / float2(position.w, position.w);
+	currentUV = currentUV * 0.5f + 0.5f;
+	currentUV.y = 1.f - currentUV.y;
+
+	float2 prevUV = prevPosition.xy / float2(prevPosition.w, prevPosition.w);
+	prevUV = prevUV * 0.5f + 0.5f;
+	prevUV.y = 1.f - prevUV.y;
+
+	return currentUV - prevUV;
+}
+
 float3 getSamplingVector(float2 pixelCoords, uint3 dispatchThreadID)
 {
     // Convert pixelCoords into the range of -1 .. 1 and make sure y goes from top to bottom.
@@ -174,12 +187,13 @@ float3 viewSpaceCoordsFromDepthBuffer(const float depthValue, const float2 uvCoo
     return unprojectedPosition.xyz / unprojectedPosition.w;
 }
 
-void packGBuffer(const float3 albedo, const float3 normal, const float ao, float2 metalRoughness, const float3 emissive,
-    out float4 GBufferA, out float4 GBufferB, out float4 GBufferC)
+void packGBuffer(const float3 albedo, const float3 normal, const float ao, float2 metalRoughness, const float3 emissive, const float2 velocity,
+    out float4 GBufferA, out float4 GBufferB, out float4 GBufferC, out float2 Velocity)
 {
     GBufferA = float4(albedo, emissive.r);
     GBufferB = float4(normal, emissive.g);
     GBufferC = float4(ao, metalRoughness, emissive.b);
+    Velocity = velocity; 
 }
 
 float pow4(float x)

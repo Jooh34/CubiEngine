@@ -103,7 +103,7 @@ void FRenderer::Render()
         
         if (Scene.get()->bUseTaa)
         {
-            TemporalAA->Resolve(GraphicsContext, Scene.get(), *HDR, Width, Height);
+            TemporalAA->Resolve(GraphicsContext, Scene.get(), *HDR, DeferredGPass->GBuffer.VelocityTexture, Width, Height);
             HDR = &TemporalAA->ResolveTexture;
 
             TemporalAA->UpdateHistory(GraphicsContext, Scene.get(), Width, Height);
@@ -159,5 +159,6 @@ void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
     DeferredGPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     DebugPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     PostProcess->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+    TemporalAA->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     Editor->OnWindowResized(Width, Height);
 }
