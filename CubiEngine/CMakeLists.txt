@@ -71,6 +71,8 @@ set(SRC_FILES
     "Include/Renderer/CubeMap.h"
     "Source/Renderer/ShadowDepthPass.cpp"
     "Include/Renderer/ShadowDepthPass.h"
+    "Source/Renderer/TemporalAA.cpp"
+    "Include/Renderer/TemporalAA.h"
 )
 
 add_executable(CubiEngine ${SRC_FILES} "Main.cpp")

@@ -1,4 +1,5 @@
 #include "Scene/Model.h"
+#include "Scene/Scene.h"
 #include "Core/FileSystem.h"
 #include "Graphics/Resource.h"
 #include "Graphics/GraphicsDevice.h"
@@ -551,7 +552,7 @@ void FModel::Render(const FGraphicsContext* const GraphicsContext,
     }
 }
 
-void FModel::Render(const FGraphicsContext* const GraphicsContext,
+void FModel::Render(const FGraphicsContext* const GraphicsContext, FScene* Scene,
     interlop::DeferredGPassRenderResources& DeferredGPassRenderResources)
 {
     for (const FMesh& Mesh : Meshes)
@@ -584,6 +585,7 @@ void FModel::Render(const FGraphicsContext* const GraphicsContext,
         DeferredGPassRenderResources.textureCoordBufferIndex = Mesh.TextureCoordsBuffer.SrvIndex;
         DeferredGPassRenderResources.normalBufferIndex = Mesh.NormalBuffer.SrvIndex;
         DeferredGPassRenderResources.transformBufferIndex = Transform.TransformBuffer.CbvIndex;
+        DeferredGPassRenderResources.debugBufferIndex = Scene->GetDebugBuffer().CbvIndex;
 
         GraphicsContext->SetGraphicsRoot32BitConstants(&DeferredGPassRenderResources);
         GraphicsContext->DrawIndexedInstanced(Mesh.IndicesCount);

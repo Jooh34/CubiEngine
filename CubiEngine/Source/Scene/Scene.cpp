@@ -10,17 +10,19 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
            .Usage = EBufferUsage::ConstantBuffer,
            .Name = L"Scene Buffer" + i,
         });
-    }
 
-    for (int i = 0; i < FRAMES_IN_FLIGHT; i++)
-    {
         LightBuffer[i] = Device->CreateBuffer<interlop::LightBuffer>(FBufferCreationDesc{
             .Usage = EBufferUsage::ConstantBuffer,
             .Name = L"Light Buffer" + i,
         });
+
+        DebugBuffer[i] = Device->CreateBuffer<interlop::DebugBuffer>(FBufferCreationDesc{
+            .Usage = EBufferUsage::ConstantBuffer,
+            .Name = L"Debug Buffer" + i,
+        });
     }
     
-    int Scene = 1;
+    int Scene = 0;
     FModelCreationDesc Desc;
     if (Scene == 0)
     {
@@ -68,6 +70,8 @@ FScene::~FScene()
 
 void FScene::GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height)
 {
+    this->Width = Width;
+    this->Height = Height;
     Camera.Update(DeltaTime, Input, Width, Height);
 
     UpdateBuffers();
@@ -83,12 +87,20 @@ void FScene::UpdateBuffers()
         .inverseViewMatrix = XMMatrixInverse(nullptr, Camera.GetViewMatrix()),
         .nearZ = Camera.NearZ,
         .farZ = Camera.FarZ,
+        .width = Width,
+        .height = Height,
+        .frameCount = GFrameCount,
     };
 
     GetSceneBuffer().Update(&SceneBufferData);
 
     const interlop::LightBuffer LightBufferData = Light.GetLightBufferWithViewUpdate(this, Camera.GetViewMatrix());
     GetLightBuffer().Update(&LightBufferData);
+
+    const interlop::DebugBuffer DebugBufferData = {
+        .bUseTaa = bUseTaa ? 1u : 0u,
+    };
+    GetDebugBuffer().Update(&DebugBufferData);
 }
 
 void FScene::AddModel(const FModelCreationDesc& Desc)
@@ -114,7 +126,7 @@ void FScene::RenderModels(FGraphicsContext* const GraphicsContext,
     DeferredGRenderResources.sceneBufferIndex = GetSceneBuffer().CbvIndex;
     for (const auto& [_, Model] : Models)
     {
-        Model->Render(GraphicsContext, DeferredGRenderResources);
+        Model->Render(GraphicsContext, this, DeferredGRenderResources);
     }
 }
 

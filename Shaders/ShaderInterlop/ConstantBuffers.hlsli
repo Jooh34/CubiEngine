@@ -22,6 +22,11 @@
 
 namespace interlop
 {
+    ConstantBufferStruct DebugBuffer
+    {
+        uint bUseTaa;
+    };
+
     ConstantBufferStruct SceneBuffer
     {
         float4x4 viewProjectionMatrix;
@@ -31,6 +36,11 @@ namespace interlop
         float4x4 inverseViewMatrix;
         float nearZ;
         float farZ;
+        uint width;
+        uint height;
+
+        uint frameCount;
+        float3 padding;
     };
 
     ConstantBufferStruct MaterialBuffer
@@ -49,7 +59,7 @@ namespace interlop
         float4x4 inverseModelMatrix;
     };
 
-    static const uint MAX_LIGHTS = 5;
+    static const uint MAX_LIGHTS = 4;
     static const uint MAX_CASCADE = 4;
 
     ConstantBufferStruct LightBuffer

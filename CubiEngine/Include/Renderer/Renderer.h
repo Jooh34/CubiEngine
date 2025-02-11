@@ -5,6 +5,7 @@
 #include "Renderer/DeferredGPass.h"
 #include "Renderer/DebugPass.h"
 #include "Renderer/PostProcess.h"
+#include "Renderer/TemporalAA.h"
 #include "Renderer/ShadowDepthPass.h"
 
 class FInput;
@@ -33,6 +34,7 @@ private:
     std::unique_ptr<FScene> Scene;
     std::unique_ptr<FDeferredGPass> DeferredGPass;
     std::unique_ptr<FDebugPass> DebugPass;
+    std::unique_ptr<FTemporalAA> TemporalAA;
     std::unique_ptr<FPostProcess> PostProcess;
     std::unique_ptr<FShadowDepthPass> ShadowDepthPass;
 

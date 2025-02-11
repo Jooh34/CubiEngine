@@ -23,13 +23,19 @@ VSOutput VsMain(uint vertexID : SV_VertexID)
 
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
     ConstantBuffer<interlop::TransformBuffer> transformBuffer = ResourceDescriptorHeap[renderResources.transformBufferIndex];
+    ConstantBuffer<interlop::DebugBuffer> debugBuffer = ResourceDescriptorHeap[renderResources.debugBufferIndex];
 
     const matrix mvpMatrix = mul(transformBuffer.modelMatrix, sceneBuffer.viewProjectionMatrix);
     const matrix mvMatrix = mul(transformBuffer.modelMatrix, sceneBuffer.viewMatrix);
     const float3x3 normalMatrix = (float3x3)transpose(transformBuffer.inverseModelMatrix);
 
     VSOutput output;
-    output.position = mul(float4(positionBuffer[vertexID], 1.0f), mvpMatrix);
+    float4 clipspacePosition = mul(float4(positionBuffer[vertexID], 1.0f), mvpMatrix);
+    if (debugBuffer.bUseTaa)
+    {
+        clipspacePosition = ApplyTAAJittering(clipspacePosition, sceneBuffer.frameCount, float2(sceneBuffer.width, sceneBuffer.height));
+    }
+    output.position = clipspacePosition;
     output.textureCoord = textureCoordBuffer[vertexID];
     output.normal = normalBuffer[vertexID];
     output.viewMatrix = (float3x3)sceneBuffer.viewMatrix;

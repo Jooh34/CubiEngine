@@ -6,6 +6,7 @@
 
 class FGraphicsDevice;
 class FGraphicsContext;
+class FScene;
 
 struct FTransform
 {
@@ -48,7 +49,7 @@ public:
 
     void Render(const FGraphicsContext* const GraphicsContext,
         interlop::UnlitPassRenderResources& UnlitRenderResources);
-    void Render(const FGraphicsContext* const GraphicsContext,
+    void Render(const FGraphicsContext* const GraphicsContext, FScene* Scene,
         interlop::DeferredGPassRenderResources& DeferredGPassRenderResources);
     void Render(const FGraphicsContext* const GraphicsContext,
         interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource);

@@ -30,6 +30,7 @@ public:
 
     FBuffer& GetSceneBuffer() { return SceneBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
     FBuffer& GetLightBuffer() { return LightBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
+    FBuffer& GetDebugBuffer() { return DebugBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
     FCamera& GetCamera() { return Camera; }
     FCubeMap* GetEnvironmentMap() { return (WhiteFurnaceMethod == 0 || WhiteFurnaceMethod == 3) ? EnviromentMap.get() : WhiteFurnaceMap.get(); }
     void RenderEnvironmentMap(FGraphicsContext* const GraphicsContext,
@@ -46,8 +47,12 @@ public:
     bool bUseEnvmap = true;
     bool bUseEnergyCompensation = true;
     bool bCSMDebug = false;
+    bool bUseTaa = true;
 
 private:
+    uint32_t Width;
+    uint32_t Height;
+
     static constexpr uint32_t FRAMES_IN_FLIGHT = 3u;
 
     std::unordered_map<std::wstring, std::unique_ptr<FModel>> Models{};
@@ -56,6 +61,7 @@ private:
     FCamera Camera;
     std::array<FBuffer, FRAMES_IN_FLIGHT> SceneBuffer;
     std::array<FBuffer, FRAMES_IN_FLIGHT> LightBuffer;
+    std::array<FBuffer, FRAMES_IN_FLIGHT> DebugBuffer;
     std::unique_ptr<FCubeMap> EnviromentMap{};
     std::unique_ptr<FCubeMap> WhiteFurnaceMap{};
 };

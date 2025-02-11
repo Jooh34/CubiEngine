@@ -87,6 +87,7 @@ void FEditor::RnederDebugProperties(FScene* Scene)
         ImGui::EndCombo();
     }
 
+    ImGui::Checkbox("TAA", &Scene->bUseTaa);
     ImGui::Checkbox("Tone Mapping", &Scene->bToneMapping);
     ImGui::Checkbox("Gamma Correction", &Scene->bGammaCorrection);
     ImGui::Checkbox("Energy Compensation", &Scene->bUseEnergyCompensation);

@@ -21,6 +21,7 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32
     DeferredGPass = std::make_unique<FDeferredGPass>(GraphicsDevice, Width, Height);
     DebugPass = std::make_unique<FDebugPass>(GraphicsDevice, Width, Height);
     PostProcess = std::make_unique<FPostProcess>(GraphicsDevice, Width, Height);
+    TemporalAA = std::make_unique<FTemporalAA>(GraphicsDevice, Width, Height);
     ShadowDepthPass = std::make_unique<FShadowDepthPass>(GraphicsDevice);
 
     Editor = std::make_unique<FEditor>(GraphicsDevice, Window, Width, Height);
@@ -97,19 +98,27 @@ void FRenderer::Render()
 
     // ----- Post Process -----
     {
-        FTexture& HDR = DeferredGPass->HDRTexture;
-        FTexture& LDR = PostProcess->LDRTexture;
+        FTexture* HDR = &DeferredGPass->HDRTexture;
+        FTexture* LDR = &PostProcess->LDRTexture;
         
-        PostProcess->Tonemapping(GraphicsContext, Scene.get(), HDR, Width, Height);
+        if (Scene.get()->bUseTaa)
+        {
+            TemporalAA->Resolve(GraphicsContext, Scene.get(), *HDR, Width, Height);
+            HDR = &TemporalAA->ResolveTexture;
+
+            TemporalAA->UpdateHistory(GraphicsContext, Scene.get(), Width, Height);
+        }
+
+        PostProcess->Tonemapping(GraphicsContext, Scene.get(), *HDR, Width, Height);
 
         // ----- Vis Debug -----
         // PostProcess->DebugVisualize(GraphicsContext, ShadowDepthPass->GetShadowDepthTexture(), Width, Height);
         // ----- Vis Debug -----
 
-        GraphicsContext->AddResourceBarrier(LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        GraphicsContext->AddResourceBarrier(*LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
         GraphicsContext->ExecuteResourceBarriers();
-        GraphicsContext->CopyResource(BackBuffer.GetResource(), LDR.GetResource());
+        GraphicsContext->CopyResource(BackBuffer.GetResource(), LDR->GetResource());
 
         // ----- Editor ------
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);

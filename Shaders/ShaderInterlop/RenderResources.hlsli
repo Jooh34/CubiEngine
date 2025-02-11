@@ -37,23 +37,20 @@ namespace interlop
         uint positionBufferIndex;
         uint textureCoordBufferIndex;
         uint normalBufferIndex;
-
         uint transformBufferIndex;
 
+        uint debugBufferIndex;
         uint sceneBufferIndex;
-
         uint albedoTextureIndex;
         uint albedoTextureSamplerIndex;
 
         uint metalRoughnessTextureIndex;
         uint metalRoughnessTextureSamplerIndex;
-
         uint normalTextureIndex;
         uint normalTextureSamplerIndex;
 
         uint aoTextureIndex;
         uint aoTextureSamplerIndex;
-
         uint emissiveTextureIndex;
         uint emissiveTextureSamplerIndex;
 
@@ -163,5 +160,23 @@ namespace interlop
 
         uint positionBufferIndex;
         uint transformBufferIndex;
+    };
+
+    struct TemporalAAResolveRenderResource
+    {
+        uint sceneTextureIndex;
+        uint historyTextureIndex;
+        uint dstTextureIndex;
+        uint width;
+        uint height;
+        uint historyFrameCount;
+    };
+
+    struct TemporalAAUpdateHistoryRenderResource
+    {
+        uint resolveTextureIndex;
+        uint historyTextureIndex;
+        uint width;
+        uint height;
     };
 }

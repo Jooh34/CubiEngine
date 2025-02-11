@@ -11,6 +11,28 @@ static const float INV_PI = 1.0f / PI;
 static const float INV_TWO_PI = 1.0f / TWO_PI;
 static const float INVALID_INDEX = 4294967295; // UINT32_MAX;
 
+static const int MAX_HALTON_SEQUENCE = 16;
+
+static const float2 HALTON_SEQUENCE[MAX_HALTON_SEQUENCE] = {
+	float2( 0.5, 0.333333 ),
+	float2( 0.25, 0.666667 ),
+	float2( 0.75, 0.111111 ),
+	float2( 0.125, 0.444444 ),
+	float2( 0.625, 0.777778 ),
+	float2( 0.375, 0.222222 ),
+	float2( 0.875, 0.555556 ) ,
+	float2( 0.0625, 0.888889 ),
+	float2( 0.5625, 0.037037 ),
+	float2( 0.3125, 0.37037 ),
+	float2( 0.8125, 0.703704 ),
+	float2( 0.1875, 0.148148 ),
+	float2( 0.6875, 0.481482 ),
+	float2( 0.4375, 0.814815 ),
+	float2( 0.9375, 0.259259 ),
+	float2( 0.03125, 0.592593 )
+};
+
+
 float4 getAlbedo(const float2 textureCoords, const uint albedoTextureIndex, const uint albedoTextureSamplerIndex, const float3 albedoColor)
 {
     if (albedoTextureIndex == INVALID_INDEX)
@@ -259,4 +281,16 @@ float3 UniformSampleHemisphere(float2 uv)
 float3 tangentToWorldCoords(float3 v, float3 n, float3 s, float3 t)
 {
     return s * v.x + t * v.y + n * v.z;
+}
+
+float4 ApplyTAAJittering(float4 clipspacePosition, uint FrameCount, float2 ViewportDimensions)
+{
+	int idx = FrameCount % MAX_HALTON_SEQUENCE;
+
+	float2 jitter = HALTON_SEQUENCE[idx];
+	jitter.x = ( jitter.x - 0.5f ) / ViewportDimensions.x * 2.f;
+	jitter.y = ( jitter.y - 0.5f ) / ViewportDimensions.y * 2.f;
+
+	clipspacePosition.xy += jitter * clipspacePosition.w;
+	return clipspacePosition;
 }
