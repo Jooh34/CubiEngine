@@ -19,7 +19,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     const float2 prevUV = uv - velocity;
 
     float3 sceneColor = sceneTexture.Sample(pointClampSampler, uv).xyz;
-    float3 historyColor = historyTexture.Sample(linearWrapSampler, prevUV).xyz;
+    float3 historyColor = historyTexture.Sample(pointClampSampler, prevUV).xyz;
     
     float3 nearColor0 = sceneTexture.Sample(pointClampSampler, uv, int2(1, 0)).xyz;
     float3 nearColor1 = sceneTexture.Sample(pointClampSampler, uv, int2(0, 1)).xyz;

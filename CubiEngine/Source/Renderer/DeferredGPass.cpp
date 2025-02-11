@@ -18,8 +18,9 @@ FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Wid
                 DXGI_FORMAT_R8G8B8A8_UNORM,
                 DXGI_FORMAT_R16G16B16A16_FLOAT,
                 DXGI_FORMAT_R8G8B8A8_UNORM,
+                DXGI_FORMAT_R16G16_FLOAT,
             },
-        .RtvCount = 3,
+        .RtvCount = 4,
         .PipelineName = L"Deferred GPass Pipeline",
     };
     
@@ -117,7 +118,7 @@ void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const Graphic
     GraphicsContext->ClearRenderTargetView(GBuffer.GBufferA, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
     GraphicsContext->ClearRenderTargetView(GBuffer.GBufferB, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
     GraphicsContext->ClearRenderTargetView(GBuffer.GBufferC, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-    GraphicsContext->ClearRenderTargetView(GBuffer.VelocityTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+    //GraphicsContext->ClearRenderTargetView(GBuffer.VelocityTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
     GraphicsContext->ClearRenderTargetView(HDRTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
 
     interlop::DeferredGPassRenderResources RenderResources{};
