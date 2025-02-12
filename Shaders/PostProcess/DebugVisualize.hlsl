@@ -3,7 +3,7 @@
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-ConstantBuffer<interlop::DebugVisualizeCubeMapRenderResources> renderResources : register(b0);
+ConstantBuffer<interlop::DebugVisualizeRenderResources> renderResources : register(b0);
 
 [RootSignature(BindlessRootSignature)]
 [numthreads(8, 8, 1)]

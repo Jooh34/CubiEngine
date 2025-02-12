@@ -39,6 +39,8 @@ public:
     FLight Light;
 
     // UI control
+    std::vector<std::string> DebugVisualizeList;
+    int DebugVisualizeIndex = 0;
     int WhiteFurnaceMethod = 0;
 
     bool bToneMapping = true;

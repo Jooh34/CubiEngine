@@ -22,7 +22,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         });
     }
     
-    int Scene = 0;
+    int Scene = 1;
     FModelCreationDesc Desc;
     if (Scene == 0)
     {
@@ -62,6 +62,14 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         .EquirectangularTexturePath = L"Assets/Textures/WhiteFurnace.hdr",
         .Name = L"WhiteFurnace Map"
     });
+
+    DebugVisualizeList.push_back(std::string("None"));
+    DebugVisualizeList.push_back(std::string("Depth"));
+    DebugVisualizeList.push_back(std::string("GBufferA"));
+    DebugVisualizeList.push_back(std::string("GBufferB"));
+    DebugVisualizeList.push_back(std::string("GBufferC"));
+    DebugVisualizeList.push_back(std::string("HDRTexture"));
+    DebugVisualizeList.push_back(std::string("TemporalHistory"));
 }
 
 FScene::~FScene()

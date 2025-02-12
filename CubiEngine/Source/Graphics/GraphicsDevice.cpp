@@ -96,6 +96,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
     Texture.Height = TextureCreationDesc.Height;
     Texture.ResourceState = ResourceState;
     Texture.Usage = TextureCreationDesc.Usage;
+    Texture.Format = TextureCreationDesc.Format;
     Texture.DebugName = TextureCreationDesc.Name;
     
     if (TextureData || HdrTextureData) // Upload Texture Buffer

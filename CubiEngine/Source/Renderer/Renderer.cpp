@@ -112,7 +112,13 @@ void FRenderer::Render()
         PostProcess->Tonemapping(GraphicsContext, Scene.get(), *HDR, Width, Height);
 
         // ----- Vis Debug -----
-        // PostProcess->DebugVisualize(GraphicsContext, ShadowDepthPass->GetShadowDepthTexture(), Width, Height);
+        {
+            FTexture* SelectedTexture = GetDebugVisualizeTexture(Scene.get());
+            if (SelectedTexture != nullptr)
+            {
+                PostProcess->DebugVisualize(GraphicsContext, *SelectedTexture, *LDR, Width, Height);
+            }
+        }
         // ----- Vis Debug -----
 
         GraphicsContext->AddResourceBarrier(*LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
@@ -126,6 +132,7 @@ void FRenderer::Render()
         GraphicsContext->SetRenderTarget(BackBuffer);
         Editor->Render(GraphicsContext, Scene.get());
         // -------------------
+
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
         GraphicsContext->ExecuteResourceBarriers();
     }
@@ -161,4 +168,38 @@ void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
     PostProcess->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     TemporalAA->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     Editor->OnWindowResized(Width, Height);
+}
+
+FTexture* FRenderer::GetDebugVisualizeTexture(FScene* Scene)
+{
+    std::string Name = Scene->DebugVisualizeList[Scene->DebugVisualizeIndex];
+
+    if (Name.compare("Depth") == 0)
+    {
+        return &DepthTexture;
+    }
+    else if (Name.compare("GBufferA") == 0)
+    {
+        return &DeferredGPass->GBuffer.GBufferA;
+    }
+    else if (Name.compare("GBufferB") == 0)
+    {
+        return &DeferredGPass->GBuffer.GBufferB;
+    }
+    else if (Name.compare("GBufferC") == 0)
+    {
+        return &DeferredGPass->GBuffer.GBufferC;
+    }
+    else if (Name.compare("HDRTexture") == 0)
+    {
+        return &DeferredGPass->HDRTexture;
+    }
+    else if (Name.compare("TemporalHistory") == 0)
+    {
+        return &TemporalAA->HistoryTexture;
+    }
+    else
+    {
+        return nullptr;
+    }
 }

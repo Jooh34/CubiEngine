@@ -4,6 +4,7 @@
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "Scene/Scene.h"
 #include "Core/FileSystem.h"
+#include "Renderer/PostProcess.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx12.h>
@@ -57,7 +58,7 @@ void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
         ImGui::EndMainMenuBar();
     }
     
-    RnederDebugProperties(Scene);
+    RenderDebugProperties(Scene);
     RenderCameraProperties(Scene);
     RenderLightProperties(Scene);
 
@@ -65,15 +66,51 @@ void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), GraphicsContext->GetCommandList());
 }
 
-void FEditor::RnederDebugProperties(FScene* Scene)
+void AddCombo(const char* Name, const char* Items[], int ItemSize, int& Value)
+{
+    if (ImGui::BeginCombo(Name, Items[Value]))
+    {
+        for (int i = 0; i < ItemSize; i++)
+        {
+            bool isSelected = (Value == i);
+            if (ImGui::Selectable(Items[i], isSelected))
+                Value = i;
+
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+}
+
+void AddCombo(const char* Name, const std::vector<std::string> Items, int ItemSize, int& Value)
+{
+    if (ImGui::BeginCombo(Name, Items[Value].c_str()))
+    {
+        for (int i = 0; i < ItemSize; i++)
+        {
+            bool isSelected = (Value == i);
+            if (ImGui::Selectable(Items[i].c_str(), isSelected))
+                Value = i;
+
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+}
+
+void FEditor::RenderDebugProperties(FScene* Scene)
 {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
 
     ImGui::Begin("Debug Properties");
-
+    
+    AddCombo("Debug Visualize", Scene->DebugVisualizeList, Scene->DebugVisualizeList.size(), Scene->DebugVisualizeIndex);
     const char* wfItems[] = { "Off", "Sampling", "IBL", "Albedo only"};
-    if (ImGui::BeginCombo("White Furnace Method", wfItems[Scene->WhiteFurnaceMethod]))
+    AddCombo("White Furnace Method", wfItems, IM_ARRAYSIZE(wfItems), Scene->WhiteFurnaceMethod);
+    /*if (ImGui::BeginCombo("White Furnace Method", wfItems[Scene->WhiteFurnaceMethod]))
     {
         for (int i = 0; i < IM_ARRAYSIZE(wfItems); i++)
         {
@@ -85,7 +122,7 @@ void FEditor::RnederDebugProperties(FScene* Scene)
                 ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
-    }
+    }*/
 
     ImGui::Checkbox("TAA", &Scene->bUseTaa);
     ImGui::Checkbox("Tone Mapping", &Scene->bToneMapping);

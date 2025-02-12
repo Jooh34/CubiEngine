@@ -111,7 +111,7 @@ namespace interlop
         uint outputCubeMapTextureIndex;
     };
 
-    struct DebugVisualizeCubeMapRenderResources
+    struct DebugVisualizeRenderResources
     {
         uint srcTextureIndex;
         uint dstTextureIndex;

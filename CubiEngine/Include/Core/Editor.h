@@ -12,7 +12,7 @@ public:
 
     void Render(FGraphicsContext* GraphicsContext, FScene* Scene);
 
-    void RnederDebugProperties(FScene* Scene);
+    void RenderDebugProperties(FScene* Scene);
     void RenderCameraProperties(FScene* Scene);
     void RenderLightProperties(FScene* Scene);
 

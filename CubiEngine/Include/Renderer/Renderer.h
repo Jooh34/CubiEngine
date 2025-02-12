@@ -25,6 +25,8 @@ public:
     FGraphicsDevice* GetGraphicsDevice() { return GraphicsDevice; }
 
 private:
+    FTexture* GetDebugVisualizeTexture(FScene* Scene);
+
     FGraphicsDevice* GraphicsDevice;
 
     uint32_t Width{};

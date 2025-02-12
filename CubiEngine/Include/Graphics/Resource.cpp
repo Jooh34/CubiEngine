@@ -94,3 +94,13 @@ bool FTexture::IsSRGB(DXGI_FORMAT Format)
     }
     return false;
 }
+
+bool FTexture::IsDepthFormat()
+{
+    if (Format == DXGI_FORMAT_D32_FLOAT)
+    {
+        return true;
+    }
+
+    return false;
+}

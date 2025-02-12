@@ -12,12 +12,12 @@ FPostProcess::FPostProcess(FGraphicsDevice* const GraphicsDevice, uint32_t Width
     };
     TonemappingPipelineState = GraphicsDevice->CreatePipelineState(TonemappingPipelineDesc);
     
-    FComputePipelineStateCreationDesc DebugVisualizeCubeMapPipelineDesc = FComputePipelineStateCreationDesc
+    FComputePipelineStateCreationDesc DebugVisualizePipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/PostProcess/DebugVisualizeCubeMap.hlsl",
-        .PipelineName = L"DebugVisualizeCubeMap Pipeline"
+        .CsShaderPath = L"Shaders/PostProcess/DebugVisualize.hlsl",
+        .PipelineName = L"DebugVisualize Pipeline"
     };
-    DebugVisualizeCubeMapPipeline = GraphicsDevice->CreatePipelineState(DebugVisualizeCubeMapPipelineDesc);
+    DebugVisualizePipeline = GraphicsDevice->CreatePipelineState(DebugVisualizePipelineDesc);
     
     FComputePipelineStateCreationDesc DebugVisualizeDepthPipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -74,19 +74,19 @@ void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext, FScene* 
     1);
 }
 
-void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FTexture& SrcTexture, uint32_t Width, uint32_t Height)
+void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FTexture& SrcTexture, FTexture& TargetTexture, uint32_t Width, uint32_t Height)
 {
-    GraphicsContext->AddResourceBarrier(LDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(TargetTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
-
-    if (SrcTexture.Usage == ETextureUsage::CubeMap)
+    
+    if (SrcTexture.IsDepthFormat())
     {
-        interlop::DebugVisualizeCubeMapRenderResources RenderResources = {
+        interlop::DebugVisualizeDepthRenderResources RenderResources = {
             .srcTextureIndex = SrcTexture.SrvIndex,
             .dstTextureIndex = LDRTexture.UavIndex,
         };
 
-        GraphicsContext->SetComputePipelineState(DebugVisualizeCubeMapPipeline);
+        GraphicsContext->SetComputePipelineState(DebugVisualizeDepthPipeline);
         GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
 
         // shader (8,8,6)
@@ -95,14 +95,14 @@ void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FText
             max((uint32_t)std::ceil(Height / 8.0f), 1u),
         1);
     }
-    else if (SrcTexture.Usage == ETextureUsage::DepthStencil)
+    else
     {
-        interlop::DebugVisualizeDepthRenderResources RenderResources = {
+        interlop::DebugVisualizeRenderResources RenderResources = {
             .srcTextureIndex = SrcTexture.SrvIndex,
-            .dstTextureIndex = LDRTexture.UavIndex,
+            .dstTextureIndex = TargetTexture.UavIndex,
         };
 
-        GraphicsContext->SetComputePipelineState(DebugVisualizeDepthPipeline);
+        GraphicsContext->SetComputePipelineState(DebugVisualizePipeline);
         GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
 
         // shader (8,8,6)

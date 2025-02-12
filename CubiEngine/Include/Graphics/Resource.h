@@ -103,6 +103,7 @@ struct FTexture
     uint32_t Height{};
     FAllocation Allocation{};
     ETextureUsage Usage{};
+    DXGI_FORMAT Format{};
     
     uint32_t SrvIndex{ INVALID_INDEX_U32 };
     uint32_t UavIndex{ INVALID_INDEX_U32 };
@@ -118,6 +119,7 @@ struct FTexture
     static DXGI_FORMAT ConvertToLinearFormat(const DXGI_FORMAT Format);
     bool IsPowerOfTwo();
     static bool IsSRGB(DXGI_FORMAT Format);
+    bool IsDepthFormat();
 };
 
 struct FCbvCreationDesc
