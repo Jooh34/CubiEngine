@@ -56,6 +56,8 @@ set(SRC_FILES
     "Include/Graphics/MemoryAllocator.h"
     "Source/Graphics/MipmapGenerator.cpp"
     "Include/Graphics/MipmapGenerator.h"
+    "Source/Graphics/Profiler.cpp"
+    "Include/Graphics/Profiler.h"
 
     "Source/Renderer/Renderer.cpp"
     "Include/Renderer/Renderer.h"
@@ -77,8 +79,12 @@ set(SRC_FILES
 
 add_executable(CubiEngine ${SRC_FILES} "Main.cpp")
 
-target_include_directories(CubiEngine PUBLIC "Include" "../Shaders")
-target_link_libraries(CubiEngine PUBLIC External d3d12.lib d3dcompiler.lib dxcompiler.lib)
+target_include_directories(CubiEngine PUBLIC "Include" "../Shaders"
+    ${CMAKE_SOURCE_DIR}/ThirdParty/PIX/include
+)
+target_link_libraries(CubiEngine PUBLIC External d3d12.lib d3dcompiler.lib dxcompiler.lib
+    ${CMAKE_SOURCE_DIR}/ThirdParty/PIX/lib/WinPixEventRuntime.lib
+)
 
 # Enable hot reload in Visual studio 2022.
 if (MSVC AND WIN32 AND NOT MSVC_VERSION VERSION_LESS 142)
@@ -93,7 +99,13 @@ target_precompile_headers(
     "Include/Pch.h"
 )
 
-# Copy dll,exe from DirectXShaderCompiler and DirectXAgilitySDK
+# Copy dll
+add_custom_command(
+    TARGET CubiEngine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/ThirdParty/PIX/lib/WinPixEventRuntime.dll
+            ${CMAKE_BINARY_DIR}/Bin/$<CONFIG>/WinPixEventRuntime.dll)
+
 set(fileList
     D3D12Core.dll D3D12Core.pdb
     d3d12SDKLayers.dll d3d12SDKLayers.pdb
@@ -120,6 +132,7 @@ foreach(Var IN LISTS fileList)
                 ${CMAKE_SOURCE_DIR}/External/DirectXShaderCompiler/bin/x64/${Var}
                 ${CMAKE_BINARY_DIR}/Bin/$<CONFIG>/${Var})
 endforeach()
+# Copy dll
 
 add_custom_command(
     TARGET CubiEngine POST_BUILD

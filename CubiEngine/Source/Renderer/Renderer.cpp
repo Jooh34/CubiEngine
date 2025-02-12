@@ -1,6 +1,7 @@
 #include "Renderer/Renderer.h"
 #include "Core/Input.h"
 #include "Core/Editor.h"
+#include "Graphics/Profiler.h"
 
 FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32_t Width, uint32_t Height)
     :Width(Width), Height(Height), GraphicsDevice(GraphicsDevice)
@@ -75,6 +76,8 @@ void FRenderer::Render()
     // ----- Shadow Depth pass -----
     if (ShadowDepthPass)
     {
+        SCOPED_NAMED_EVENT(GraphicsContext, ShadowDepth);
+
         ShadowDepthPass->Render(GraphicsContext, Scene.get());
     }
     // ----- Shadow Depth pass -----
@@ -82,27 +85,37 @@ void FRenderer::Render()
     // ----- Deferred GPass ----
     if (DeferredGPass)
     {
+        SCOPED_NAMED_EVENT(GraphicsContext, DeferredGPass);
         DeferredGPass->Render(Scene.get(), GraphicsContext, DepthTexture, Width, Height);
 
         // Render Skybox
-        Scene->RenderEnvironmentMap(GraphicsContext, DeferredGPass->HDRTexture, DepthTexture);
+        {
+            SCOPED_NAMED_EVENT(GraphicsContext, EnvironmentMap);
+            Scene->RenderEnvironmentMap(GraphicsContext, DeferredGPass->HDRTexture, DepthTexture);
+        }
     }
     // ----- Deferred GPass ----
     
     // ----- Deferred Lighting Pass -----
     if (DeferredGPass)
     {
+        SCOPED_NAMED_EVENT(GraphicsContext, LightPass);
+
         DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext, ShadowDepthPass.get(), DepthTexture, Width, Height);
     }
     // ----- Deferred Lighting Pass -----
 
     // ----- Post Process -----
     {
+        SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
+
         FTexture* HDR = &DeferredGPass->HDRTexture;
         FTexture* LDR = &PostProcess->LDRTexture;
         
         if (Scene.get()->bUseTaa)
         {
+            SCOPED_NAMED_EVENT(GraphicsContext, TemporalAA);
+
             TemporalAA->Resolve(GraphicsContext, Scene.get(), *HDR, DeferredGPass->GBuffer.VelocityTexture, Width, Height);
             HDR = &TemporalAA->ResolveTexture;
 
@@ -127,10 +140,14 @@ void FRenderer::Render()
         GraphicsContext->CopyResource(BackBuffer.GetResource(), LDR->GetResource());
 
         // ----- Editor ------
-        GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        GraphicsContext->ExecuteResourceBarriers();
-        GraphicsContext->SetRenderTarget(BackBuffer);
-        Editor->Render(GraphicsContext, Scene.get());
+        {
+            SCOPED_NAMED_EVENT(GraphicsContext, Editor);
+
+            GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            GraphicsContext->ExecuteResourceBarriers();
+            GraphicsContext->SetRenderTarget(BackBuffer);
+            Editor->Render(GraphicsContext, Scene.get());
+        }
         // -------------------
 
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);

@@ -1,5 +1,6 @@
 #include "Renderer/PostProcess.h"
 #include "Graphics/GraphicsDevice.h"
+#include "Graphics/Profiler.h"
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
@@ -51,7 +52,8 @@ void FPostProcess::OnWindowResized(const FGraphicsDevice* const Device, uint32_t
 void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext, FScene* Scene,
     FTexture& HDRTexture, uint32_t Width, uint32_t Height)
 {
-    //GraphicsContext->AddResourceBarrier(SrcTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    SCOPED_NAMED_EVENT(GraphicsContext, Tonemapping);
+
     GraphicsContext->AddResourceBarrier(LDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 
@@ -76,6 +78,8 @@ void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext, FScene* 
 
 void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FTexture& SrcTexture, FTexture& TargetTexture, uint32_t Width, uint32_t Height)
 {
+    SCOPED_NAMED_EVENT(GraphicsContext, DebugVisualize);
+
     GraphicsContext->AddResourceBarrier(TargetTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
     

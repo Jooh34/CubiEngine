@@ -1,4 +1,5 @@
 #include "Graphics/Context.h"
+#include "WinPixEventRuntime/pix3.h"
 
 void FContext::CopyTextureRegion(
     const D3D12_TEXTURE_COPY_LOCATION* pDst,
@@ -39,4 +40,14 @@ void FContext::ExecuteResourceBarriers()
 
     CommandList->ResourceBarrier(static_cast<UINT>(ResourceBarriers.size()), ResourceBarriers.data());
     ResourceBarriers.clear();
+}
+
+void FContext::BeginEvent(const char* Name)
+{
+    PIXBeginEvent(CommandList.Get(), PIX_COLOR(255, 255, 255), Name);
+}
+
+void FContext::EndEvent(const char* Name)
+{
+    PIXEndEvent(CommandList.Get());
 }

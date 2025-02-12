@@ -24,7 +24,8 @@ public:
     void AddResourceBarrier(D3D12_RESOURCE_BARRIER& Barrier);
 
     void ExecuteResourceBarriers();
-
+    void BeginEvent(const char* Name);
+    void EndEvent(const char* Name);
 
 protected:
     void AddResourceBarrier(ID3D12Resource* const Resource, const D3D12_RESOURCE_STATES PreviousState, const D3D12_RESOURCE_STATES NewState);

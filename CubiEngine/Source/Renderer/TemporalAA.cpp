@@ -1,5 +1,6 @@
 #include "Renderer/TemporalAA.h"
 #include "Graphics/GraphicsDevice.h"
+#include "Graphics/Profiler.h"
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
@@ -55,6 +56,8 @@ void FTemporalAA::InitSizeDependantResource(const FGraphicsDevice* const Device,
 void FTemporalAA::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene,
     FTexture& HDRTexture, FTexture& VelocityTexture, uint32_t Width, uint32_t Height)
 {
+    SCOPED_NAMED_EVENT(GraphicsContext, TemporalAAResolve);
+
     GraphicsContext->AddResourceBarrier(HDRTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(VelocityTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(HistoryTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
@@ -82,6 +85,8 @@ void FTemporalAA::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene
 
 void FTemporalAA::UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height)
 {
+    SCOPED_NAMED_EVENT(GraphicsContext, TemporalAAUpdateHistory);
+
     GraphicsContext->AddResourceBarrier(ResolveTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(HistoryTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
