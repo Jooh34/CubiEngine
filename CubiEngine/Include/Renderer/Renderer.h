@@ -7,6 +7,7 @@
 #include "Renderer/PostProcess.h"
 #include "Renderer/TemporalAA.h"
 #include "Renderer/ShadowDepthPass.h"
+#include "Renderer/ScreenSpaceGI.h"
 
 class FInput;
 class FEditor;
@@ -39,6 +40,7 @@ private:
     std::unique_ptr<FTemporalAA> TemporalAA;
     std::unique_ptr<FPostProcess> PostProcess;
     std::unique_ptr<FShadowDepthPass> ShadowDepthPass;
+    std::unique_ptr<FScreenSpaceGI> ScreenSpaceGI;
 
     std::unique_ptr<FEditor> Editor;
 };

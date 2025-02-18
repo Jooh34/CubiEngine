@@ -14,6 +14,7 @@ public:
 
     void RenderDebugProperties(FScene* Scene);
     void RenderCameraProperties(FScene* Scene);
+    void RenderGIProperties(FScene* Scene);
     void RenderLightProperties(FScene* Scene);
 
     void OnWindowResized(uint32_t Width, uint32_t Height);

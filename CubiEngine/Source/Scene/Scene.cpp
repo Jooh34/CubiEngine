@@ -22,6 +22,11 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         });
     }
     
+    // Directional Light
+    float LightPosition[4] = { 1,-1,0,0 };
+    float LightColor[4] = { 1,1,1,1 };
+    AddLight(LightPosition, LightColor);
+
     int Scene = 1;
     FModelCreationDesc Desc;
     if (Scene == 0)
@@ -37,6 +42,10 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .ModelPath = "Models/Sponza/sponza.glb",
             .ModelName = L"Sponza",
         };
+        
+        float LightPosition[4] = { 0.f,5.f, 0.f,1.f };
+        float LightColor[4] = { 1,1,1,1 };
+        AddLight(LightPosition, LightColor, 1.f);
     }
     else if (Scene == 2)
     {
@@ -47,10 +56,6 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     }
 
     AddModel(Desc);
-
-    float LightPosition[4] = { 1,-1,0,0 };
-    float LightColor[4] = { 1,1,1,1 };
-    AddLight(LightPosition, LightColor);
 
     // set environment map
     EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
@@ -70,6 +75,10 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     DebugVisualizeList.push_back(std::string("GBufferC"));
     DebugVisualizeList.push_back(std::string("HDRTexture"));
     DebugVisualizeList.push_back(std::string("TemporalHistory"));
+    DebugVisualizeList.push_back(std::string("StochasticNormal"));
+    DebugVisualizeList.push_back(std::string("ScreenSpaceGI"));
+    DebugVisualizeList.push_back(std::string("DenoisedScreenSpaceGITexture"));
+    DebugVisualizeList.push_back(std::string("SSGIHistory"));
 }
 
 FScene::~FScene()

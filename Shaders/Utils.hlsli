@@ -308,3 +308,13 @@ float4 ApplyTAAJittering(float4 clipspacePosition, uint FrameCount, float2 Viewp
 	clipspacePosition.xy += jitter * clipspacePosition.w;
 	return clipspacePosition;
 }
+
+float InterleavedGradientNoise(float2 uv, int FrameCount){
+	// magic values are found by experimentation
+    FrameCount = FrameCount%8;
+	uv += float(FrameCount) * (float2(47, 17) * 0.695f);
+
+    float3 magic = float3( 0.06711056f, 0.00583715f, 52.9829189f );
+    
+    return frac(magic.z * frac(dot(uv, magic.xy)));
+} 

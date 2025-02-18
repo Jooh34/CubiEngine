@@ -131,7 +131,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     const float3 worldSpaceNormal = normalize(mul(normal.xyz, (float3x3)sceneBuffer.inverseViewMatrix));
 
-    if (depth > 0.9999f) return;
+    if (depth < EPS) return;
 
     const float3 viewSpacePosition = viewSpaceCoordsFromDepthBuffer(depth, uv, sceneBuffer.inverseProjectionMatrix);
     const float3 V = normalize(-viewSpacePosition);
@@ -212,7 +212,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
         else
         {
-            color += MultipleScatteringIBL(roughness, F0, context.NoV, EnvBRDF.xy, diffuseColor, radiance, irradiance);
+            color += MultipleScatteringIBL(roughness, F0, context.NoV, EnvBRDF.xy, albedo.xyz, radiance, irradiance);
         }
     }
 

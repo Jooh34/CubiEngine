@@ -60,6 +60,7 @@ void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     
     RenderDebugProperties(Scene);
     RenderCameraProperties(Scene);
+    RenderGIProperties(Scene);
     RenderLightProperties(Scene);
 
     ImGui::Render();
@@ -146,9 +147,24 @@ void FEditor::RenderCameraProperties(FScene* Scene)
     ImGui::End();
 }
 
-void FEditor::RenderLightProperties(FScene* Scene)
+void FEditor::RenderGIProperties(FScene* Scene)
 {
     ImGui::SetNextWindowPos(ImVec2(0, 400));
+    ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
+    ImGui::Begin("GI Properties");
+
+    const char* giItems[] = { "Off", "SSGI" };
+    AddCombo("GI Method", giItems, IM_ARRAYSIZE(giItems), Scene->GIMethod);
+    ImGui::SliderFloat("SSGI Intensity", &Scene->SSGIIntensity, 0.0f, 30.0f);
+    ImGui::SliderFloat("SSGI RayLength", &Scene->SSGIRayLength, 0.0f, 2000.0f);
+    ImGui::SliderInt("SSGI NumSteps", &Scene->SSGINumSteps, 1, 256);
+
+    ImGui::End();
+}
+
+void FEditor::RenderLightProperties(FScene* Scene)
+{
+    ImGui::SetNextWindowPos(ImVec2(0, 600));
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
 
     ImGui::Begin("Light Properties");

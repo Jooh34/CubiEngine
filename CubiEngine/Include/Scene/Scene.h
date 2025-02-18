@@ -42,6 +42,7 @@ public:
     std::vector<std::string> DebugVisualizeList;
     int DebugVisualizeIndex = 0;
     int WhiteFurnaceMethod = 0;
+    int GIMethod = 0;
 
     bool bToneMapping = true;
     bool bGammaCorrection = true;
@@ -50,6 +51,11 @@ public:
     bool bUseEnergyCompensation = true;
     bool bCSMDebug = false;
     bool bUseTaa = true;
+    
+    // SSGI
+    float SSGIIntensity = 1.f;
+    float SSGIRayLength = 1000.f;
+    int SSGINumSteps = 64;
 
 private:
     uint32_t Width;

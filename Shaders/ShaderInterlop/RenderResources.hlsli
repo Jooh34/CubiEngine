@@ -180,4 +180,53 @@ namespace interlop
         uint width;
         uint height;
     };
+
+    struct GenerateStochasticNormalRenderResource
+    {
+        uint srcTextureIndex;
+        uint dstTextureIndex;
+        uint width;
+        uint height;
+        
+        uint frameCount;
+    };
+
+    struct RaycastDiffuseRenderResource
+    {
+        uint sceneColorTextureIndex;
+        uint depthTextureIndex;
+        uint stochasticNormalTextureIndex;
+        uint dstTextureIndex;
+
+        uint sceneBufferIndex;
+        uint width;
+        uint height;
+        float rayLength;
+
+        uint numSteps;
+        float ssgiIntensity;
+    };
+
+    struct CompositionSSGIRenderResource
+    {
+        uint resolveTextureIndex;
+        uint gbufferAIndex;
+        uint dstTextureIndex;
+        uint width;
+        uint height;
+    };
+
+    struct DownSampleResource
+    {
+        uint srcTextureIndex;
+        uint dstTextureIndex;
+        float2 dstTexelSize;
+    };
+
+    struct UpSampleResource
+    {
+        uint srcTextureIndex;
+        uint dstTextureIndex;
+        float2 dstTexelSize;
+    };
 }

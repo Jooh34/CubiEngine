@@ -3,6 +3,8 @@
 #include "Core/Editor.h"
 #include "Graphics/Profiler.h"
 
+#define GI_METHOD_SSGI 1
+
 FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32_t Width, uint32_t Height)
     :Width(Width), Height(Height), GraphicsDevice(GraphicsDevice)
 {
@@ -24,6 +26,7 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32
     PostProcess = std::make_unique<FPostProcess>(GraphicsDevice, Width, Height);
     TemporalAA = std::make_unique<FTemporalAA>(GraphicsDevice, Width, Height);
     ShadowDepthPass = std::make_unique<FShadowDepthPass>(GraphicsDevice);
+    ScreenSpaceGI = std::make_unique<FScreenSpaceGI>(GraphicsDevice, Width, Height);
 
     Editor = std::make_unique<FEditor>(GraphicsDevice, Window, Width, Height);
 }
@@ -95,7 +98,7 @@ void FRenderer::Render()
         }
     }
     // ----- Deferred GPass ----
-    
+
     // ----- Deferred Lighting Pass -----
     if (DeferredGPass)
     {
@@ -105,6 +108,17 @@ void FRenderer::Render()
     }
     // ----- Deferred Lighting Pass -----
 
+    if (Scene->GIMethod == GI_METHOD_SSGI)
+    {
+        SCOPED_NAMED_EVENT(GraphicsContext, ScreenSpaceGI);
+        ScreenSpaceGI->GenerateStochasticNormal(GraphicsContext, Scene.get(), &DeferredGPass->GBuffer.GBufferB, Width, Height);
+        ScreenSpaceGI->RaycastDiffuse(GraphicsContext, Scene.get(), &DeferredGPass->HDRTexture, &DepthTexture, Width, Height);
+        ScreenSpaceGI->Denoise(GraphicsContext, Scene.get(), Width, Height);
+        ScreenSpaceGI->Resolve(GraphicsContext, Scene.get(), &DeferredGPass->GBuffer.VelocityTexture, Width, Height);
+        ScreenSpaceGI->UpdateHistory(GraphicsContext, Scene.get(), Width, Height);
+        ScreenSpaceGI->CompositionSSGI(GraphicsContext, Scene.get(), &DeferredGPass->HDRTexture, &DeferredGPass->GBuffer.GBufferA, Width, Height);
+    }
+    
     // ----- Post Process -----
     {
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
@@ -184,6 +198,7 @@ void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
     DebugPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     PostProcess->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     TemporalAA->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+    ScreenSpaceGI->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     Editor->OnWindowResized(Width, Height);
 }
 
@@ -214,6 +229,22 @@ FTexture* FRenderer::GetDebugVisualizeTexture(FScene* Scene)
     else if (Name.compare("TemporalHistory") == 0)
     {
         return &TemporalAA->HistoryTexture;
+    }
+    else if (Name.compare("StochasticNormal") == 0)
+    {
+        return &ScreenSpaceGI->StochasticNormalTexture;
+    }
+    else if (Name.compare("ScreenSpaceGI") == 0)
+    {
+        return &ScreenSpaceGI->ScreenSpaceGITexture;
+    }
+    else if (Name.compare("SSGIHistory") == 0)
+    {
+        return &ScreenSpaceGI->HistoryTexture;
+    }
+    else if (Name.compare("DenoisedScreenSpaceGITexture") == 0)
+    {
+        return &ScreenSpaceGI->DenoisedScreenSpaceGITexture;
     }
     else
     {
