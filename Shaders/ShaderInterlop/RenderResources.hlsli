@@ -184,6 +184,7 @@ namespace interlop
     struct GenerateStochasticNormalRenderResource
     {
         uint srcTextureIndex;
+        uint gbufferCTextureIndex;
         uint dstTextureIndex;
         uint width;
         uint height;
@@ -228,5 +229,14 @@ namespace interlop
         uint srcTextureIndex;
         uint dstTextureIndex;
         float2 dstTexelSize;
+    };
+
+    struct GaussianBlurRenderResource
+    {
+        uint srcTextureIndex;
+        uint dstTextureIndex;
+        float2 dstTexelSize;
+
+        uint bHorizontal;
     };
 }

@@ -155,8 +155,8 @@ void FEditor::RenderGIProperties(FScene* Scene)
 
     const char* giItems[] = { "Off", "SSGI" };
     AddCombo("GI Method", giItems, IM_ARRAYSIZE(giItems), Scene->GIMethod);
-    ImGui::SliderFloat("SSGI Intensity", &Scene->SSGIIntensity, 0.0f, 30.0f);
-    ImGui::SliderFloat("SSGI RayLength", &Scene->SSGIRayLength, 0.0f, 2000.0f);
+    ImGui::SliderFloat("SSGI Intensity", &Scene->SSGIIntensity, 0.0f, 10.0f);
+    ImGui::SliderFloat("SSGI RayLength", &Scene->SSGIRayLength, 0.0f, 3000.0f);
     ImGui::SliderInt("SSGI NumSteps", &Scene->SSGINumSteps, 1, 256);
 
     ImGui::End();

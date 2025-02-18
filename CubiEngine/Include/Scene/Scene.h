@@ -54,7 +54,7 @@ public:
     
     // SSGI
     float SSGIIntensity = 1.f;
-    float SSGIRayLength = 1000.f;
+    float SSGIRayLength = 2000.f;
     int SSGINumSteps = 64;
 
 private:

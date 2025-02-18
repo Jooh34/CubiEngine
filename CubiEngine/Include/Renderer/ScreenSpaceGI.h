@@ -14,9 +14,10 @@ public:
     void OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
     void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
     
-    void GenerateStochasticNormal(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* GBufferB, uint32_t Width, uint32_t Height);
+    void GenerateStochasticNormal(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* GBufferB, FTexture* GBufferC, uint32_t Width, uint32_t Height);
     void RaycastDiffuse(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* HDR, FTexture* Depth, uint32_t Width, uint32_t Height);
     void Denoise(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height);
+    void DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height);
     void Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* VelocityTexture, uint32_t Width, uint32_t Height);
     void UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height);
     void CompositionSSGI(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* HDR, FTexture* GBufferA, uint32_t Width, uint32_t Height);
@@ -30,16 +31,18 @@ public:
 
     FTexture HalfTexture;
     FTexture QuarterTexture;
+    FTexture BlurXTexture;
 
     
 private:
     FPipelineState GenerateStochasticNormalPipelineState;
     FPipelineState RaycastDiffusePipelineState;
-    FPipelineState SSGIDownSamplePipelineState;
-    FPipelineState SSGIUpSamplePipelineState;
     FPipelineState SSGIResolvePipelineState;
     FPipelineState SSGIUpdateHistoryPipelineState;
     FPipelineState CompositionSSGIPipelineState;
 
+    FPipelineState SSGIDownSamplePipelineState;
+    FPipelineState SSGIUpSamplePipelineState;
+    FPipelineState SSGIGaussianBlurPipelineState;
     uint32_t HistoryFrameCount = 0;
 };

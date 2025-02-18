@@ -58,6 +58,14 @@ FScreenSpaceGI::FScreenSpaceGI(FGraphicsDevice* const GraphicsDevice, uint32_t W
     };
     SSGIUpdateHistoryPipelineState = GraphicsDevice->CreatePipelineState(SSGIUpdateHistoryPipelineDesc);
 
+    FComputePipelineStateCreationDesc SSGIGaussianBlurPipelineDesc = FComputePipelineStateCreationDesc
+    {
+        .CsShaderPath = L"Shaders/Common/GaussianBlur.hlsl",
+        .PipelineName = L"SSGI GaussianBlur Pipeline"
+    };
+    SSGIGaussianBlurPipelineState = GraphicsDevice->CreatePipelineState(SSGIGaussianBlurPipelineDesc);
+
+
     InitSizeDependantResource(GraphicsDevice, Width, Height);
 }
 
@@ -118,7 +126,6 @@ void FScreenSpaceGI::InitSizeDependantResource(const FGraphicsDevice* const Devi
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"SSGI Resolve Texture",
     };
-
     ResolveTexture = Device->CreateTexture(ResolveTextureDesc);
 
     FTextureCreationDesc HalfTextureDesc{
@@ -129,7 +136,6 @@ void FScreenSpaceGI::InitSizeDependantResource(const FGraphicsDevice* const Devi
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"SSGI Resolve Half Texture",
     };
-
     HalfTexture = Device->CreateTexture(HalfTextureDesc);
 
     FTextureCreationDesc QuarterTextureDesc{
@@ -140,20 +146,31 @@ void FScreenSpaceGI::InitSizeDependantResource(const FGraphicsDevice* const Devi
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"SSGI Resolve Quater Texture",
     };
-
     QuarterTexture = Device->CreateTexture(QuarterTextureDesc);
+
+    FTextureCreationDesc BlurXTextureDesc{
+        .Usage = ETextureUsage::UAVTexture,
+        .Width = uint32_t(InWidth / 4.f),
+        .Height = uint32_t(InHeight / 4.f),
+        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+        .Name = L"SSGI BlurX Texture",
+    };
+    BlurXTexture = Device->CreateTexture(BlurXTextureDesc);
 }
 
-void FScreenSpaceGI::GenerateStochasticNormal(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* GBufferB, uint32_t Width, uint32_t Height)
+void FScreenSpaceGI::GenerateStochasticNormal(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* GBufferB, FTexture* GBufferC, uint32_t Width, uint32_t Height)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, GenerateStochasticNormal);
 
     GraphicsContext->AddResourceBarrier(*GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(*GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(StochasticNormalTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->ExecuteResourceBarriers();
 
     interlop::GenerateStochasticNormalRenderResource RenderResources = {
         .srcTextureIndex = GBufferB->SrvIndex,
+        .gbufferCTextureIndex = GBufferC->SrvIndex,
         .dstTextureIndex = StochasticNormalTexture.SrvIndex,
         .width = Width,
         .height = Height,
@@ -173,10 +190,6 @@ void FScreenSpaceGI::GenerateStochasticNormal(FGraphicsContext* const GraphicsCo
 void FScreenSpaceGI::RaycastDiffuse(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* HDR, FTexture* Depth, uint32_t Width, uint32_t Height)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, RaycastDiffuse);
-
-    //GraphicsContext->AddResourceBarrier(ScreenSpaceGITexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    //GraphicsContext->ExecuteResourceBarriers();
-    //GraphicsContext->ClearRenderTargetView(ScreenSpaceGITexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
 
     GraphicsContext->AddResourceBarrier(*HDR, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(*Depth, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
@@ -210,7 +223,6 @@ void FScreenSpaceGI::RaycastDiffuse(FGraphicsContext* const GraphicsContext, FSc
 void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, ResolveSSGI);
-    
     {
         GraphicsContext->AddResourceBarrier(ScreenSpaceGITexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
         GraphicsContext->AddResourceBarrier(HalfTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -252,6 +264,8 @@ void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Sc
         1);
     }
 
+    DenoiseGaussianBlur(GraphicsContext, Scene, Width, Height);
+
     {
         GraphicsContext->AddResourceBarrier(QuarterTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
         GraphicsContext->AddResourceBarrier(DenoisedScreenSpaceGITexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -264,6 +278,54 @@ void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Sc
         };
 
         GraphicsContext->SetComputePipelineState(SSGIUpSamplePipelineState);
+        GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
+
+        // shader (8,8,1)
+        GraphicsContext->Dispatch(
+            max((uint32_t)std::ceil(Width / 8.0f), 1u),
+            max((uint32_t)std::ceil(Height / 8.0f), 1u),
+        1);
+    }
+
+}
+
+void FScreenSpaceGI::DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height)
+{
+    SCOPED_NAMED_EVENT(GraphicsContext, DenoiseGaussianBlur);
+    {
+        GraphicsContext->AddResourceBarrier(QuarterTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        GraphicsContext->AddResourceBarrier(BlurXTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        GraphicsContext->ExecuteResourceBarriers();
+
+        interlop::GaussianBlurRenderResource RenderResources = {
+            .srcTextureIndex = QuarterTexture.SrvIndex,
+            .dstTextureIndex = BlurXTexture.UavIndex,
+            .dstTexelSize = {1.0f / BlurXTexture.Width, 1.0f / BlurXTexture.Height},
+            .bHorizontal = 1,
+        };
+
+        GraphicsContext->SetComputePipelineState(SSGIGaussianBlurPipelineState);
+        GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
+
+        // shader (8,8,1)
+        GraphicsContext->Dispatch(
+            max((uint32_t)std::ceil(Width / 8.0f), 1u),
+            max((uint32_t)std::ceil(Height / 8.0f), 1u),
+        1);
+    }
+    {
+        GraphicsContext->AddResourceBarrier(BlurXTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        GraphicsContext->AddResourceBarrier(QuarterTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        GraphicsContext->ExecuteResourceBarriers();
+
+        interlop::GaussianBlurRenderResource RenderResources = {
+            .srcTextureIndex = BlurXTexture.SrvIndex,
+            .dstTextureIndex = QuarterTexture.UavIndex,
+            .dstTexelSize = {1.0f / QuarterTexture.Width, 1.0f / QuarterTexture.Height},
+            .bHorizontal = 0,
+        };
+
+        GraphicsContext->SetComputePipelineState(SSGIGaussianBlurPipelineState);
         GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
 
         // shader (8,8,1)

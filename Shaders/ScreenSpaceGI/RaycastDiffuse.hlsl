@@ -144,8 +144,7 @@ FTraceResult TraceScreenSpaceRay(
 		if (SampleDepth != StartDepth)
 		{
 			float DepthDiff = SampleUVz.z - SampleDepth;
-			// bool Hit = DepthDiff < 0;
-			bool Hit = abs(DepthDiff) < CompareTolerance;
+			bool Hit = abs(DepthDiff + CompareTolerance) < CompareTolerance;
 
 			if (Hit)
 			{
@@ -155,7 +154,7 @@ FTraceResult TraceScreenSpaceRay(
 				result.hit = all(and(-1.0 < SampleUVz.xy, SampleUVz.xy < 1.0));
                 if (result.hit)
                 {
-                    result.mask = (rayLength * SampleTime);
+                    result.mask = 0.1f * rayLength / (rayLength * SampleTime);
                 }
                 return result;
 			}

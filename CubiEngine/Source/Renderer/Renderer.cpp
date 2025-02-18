@@ -111,7 +111,7 @@ void FRenderer::Render()
     if (Scene->GIMethod == GI_METHOD_SSGI)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, ScreenSpaceGI);
-        ScreenSpaceGI->GenerateStochasticNormal(GraphicsContext, Scene.get(), &DeferredGPass->GBuffer.GBufferB, Width, Height);
+        ScreenSpaceGI->GenerateStochasticNormal(GraphicsContext, Scene.get(), &DeferredGPass->GBuffer.GBufferB, &DeferredGPass->GBuffer.GBufferC, Width, Height);
         ScreenSpaceGI->RaycastDiffuse(GraphicsContext, Scene.get(), &DeferredGPass->HDRTexture, &DepthTexture, Width, Height);
         ScreenSpaceGI->Denoise(GraphicsContext, Scene.get(), Width, Height);
         ScreenSpaceGI->Resolve(GraphicsContext, Scene.get(), &DeferredGPass->GBuffer.VelocityTexture, Width, Height);
