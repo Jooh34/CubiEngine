@@ -1,6 +1,7 @@
 #include "Renderer/DeferredGPass.h"
 #include "Graphics/GraphicsDevice.h"
 #include "Graphics/Resource.h"
+#include "Graphics/Profiler.h"
 #include "Scene/Scene.h"
 #include "Renderer/ShadowDepthPass.h"
 #include "ShaderInterlop/RenderResources.hlsli"
@@ -25,6 +26,24 @@ FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Wid
     };
     
     GeometryPassPipelineState = Device->CreatePipelineState(Desc);
+    
+    FGraphicsPipelineStateCreationDesc GeometryPassLightPipelineDesc{
+        .ShaderModule =
+            {
+                .vertexShaderPath = L"Shaders/RenderPass/DeferredGPassCube.hlsl",
+                .pixelShaderPath = L"Shaders/RenderPass/DeferredGPassCube.hlsl",
+            },
+        .RtvFormats =
+            {
+                DXGI_FORMAT_R8G8B8A8_UNORM,
+                DXGI_FORMAT_R16G16B16A16_FLOAT,
+                DXGI_FORMAT_R8G8B8A8_UNORM,
+                DXGI_FORMAT_R16G16_FLOAT,
+            },
+        .RtvCount = 4,
+        .PipelineName = L"Deferred GPass Cube Pipeline",
+    };
+    GeometryPassLightPipelineState = Device->CreatePipelineState(GeometryPassLightPipelineDesc);
 
     FComputePipelineStateCreationDesc LightPassPipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -95,35 +114,50 @@ void FDeferredGPass::OnWindowResized(const FGraphicsDevice* const Device, uint32
 
 void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsContext, FTexture& DepthBuffer, uint32_t Width, uint32_t Height)
 {
-    GraphicsContext->SetGraphicsPipelineState(GeometryPassPipelineState);
-    std::array<FTexture, 4> Textures = {
-        GBuffer.GBufferA,
-        GBuffer.GBufferB,
-        GBuffer.GBufferC,
-        GBuffer.VelocityTexture,
-    };
-    GraphicsContext->SetRenderTargets(Textures, DepthBuffer);
-    GraphicsContext->SetViewport(D3D12_VIEWPORT{
-        .TopLeftX = 0.0f,
-        .TopLeftY = 0.0f,
-        .Width = static_cast<float>(Width),
-        .Height = static_cast<float>(Height),
-        .MinDepth = 0.0f,
-        .MaxDepth = 1.0f,
-        }, true);
+    {
+        SCOPED_NAMED_EVENT(GraphicsContext, DeferredGPassModel);
 
-    GraphicsContext->SetPrimitiveTopologyLayout(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    
-    // No need to clear GBuffer
-    GraphicsContext->ClearRenderTargetView(GBuffer.GBufferA, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-    GraphicsContext->ClearRenderTargetView(GBuffer.GBufferB, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-    GraphicsContext->ClearRenderTargetView(GBuffer.GBufferC, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-    //GraphicsContext->ClearRenderTargetView(GBuffer.VelocityTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-    GraphicsContext->ClearRenderTargetView(HDRTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        GraphicsContext->SetGraphicsPipelineState(GeometryPassPipelineState);
+        std::array<FTexture, 4> Textures = {
+            GBuffer.GBufferA,
+            GBuffer.GBufferB,
+            GBuffer.GBufferC,
+            GBuffer.VelocityTexture,
+        };
+        GraphicsContext->SetRenderTargets(Textures, DepthBuffer);
+        GraphicsContext->SetViewport(D3D12_VIEWPORT{
+            .TopLeftX = 0.0f,
+            .TopLeftY = 0.0f,
+            .Width = static_cast<float>(Width),
+            .Height = static_cast<float>(Height),
+            .MinDepth = 0.0f,
+            .MaxDepth = 1.0f,
+            }, true);
 
-    interlop::DeferredGPassRenderResources RenderResources{};
+        GraphicsContext->SetPrimitiveTopologyLayout(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        
+        // No need to clear GBuffer
+        GraphicsContext->ClearRenderTargetView(GBuffer.GBufferA, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        GraphicsContext->ClearRenderTargetView(GBuffer.GBufferB, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        GraphicsContext->ClearRenderTargetView(GBuffer.GBufferC, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        //GraphicsContext->ClearRenderTargetView(GBuffer.VelocityTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        GraphicsContext->ClearRenderTargetView(HDRTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
 
-    Scene->RenderModels(GraphicsContext, RenderResources);
+        interlop::DeferredGPassRenderResources RenderResources{};
+
+        Scene->RenderModels(GraphicsContext, RenderResources);
+    }
+
+    {
+        SCOPED_NAMED_EVENT(GraphicsContext, DeferredGPassLight);
+
+        GraphicsContext->SetGraphicsPipelineState(GeometryPassLightPipelineState);
+
+        // Draw Light
+        interlop::DeferredGPassCubeRenderResources RenderResources{};
+
+        Scene->RenderLightsDeferred(GraphicsContext, RenderResources);
+    }
 }
 
 void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext,
@@ -146,6 +180,7 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .height = Height,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
+        .shadowBufferIndex = Scene->GetShadowBuffer().CbvIndex,
         .bUseEnvmap = Scene->bUseEnvmap ? 1u : 0u,
         .bUseEnergyCompensation = Scene->bUseEnergyCompensation ? 1u : 0u,
         .WhiteFurnaceMethod = uint(Scene->WhiteFurnaceMethod),

@@ -12,7 +12,7 @@ FCamera::FCamera(uint32_t Width, uint32_t Height)
     FovY = Dx::XM_PIDIV4;
     AspectRatio = static_cast<float>(Width) / Height;
     NearZ = 1.f;
-    FarZ = 3000.f;
+    FarZ = 4000.f;
 
     UpdateMatrix();
 }

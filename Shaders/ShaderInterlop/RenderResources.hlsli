@@ -57,6 +57,14 @@ namespace interlop
         uint materialBufferIndex;
     };
 
+    struct DeferredGPassCubeRenderResources
+    {
+        float4x4 modelMatrix;
+        float4x4 inverseModelMatrix;
+        uint debugBufferIndex;
+        uint sceneBufferIndex;
+    };
+
     struct CopyRenderResources
     {
         uint srcTextureIndex;
@@ -97,6 +105,7 @@ namespace interlop
         uint height;
         uint sceneBufferIndex;
         uint lightBufferIndex;
+        uint shadowBufferIndex;
 
         uint bUseEnvmap;
         uint bUseEnergyCompensation;

@@ -61,23 +61,23 @@ namespace interlop
         float4x4 inverseModelMatrix;
     };
 
-    static const uint MAX_LIGHTS = 4;
-    static const uint MAX_CASCADE = 4;
+    static const uint MAX_LIGHTS = 4u;
 
     ConstantBufferStruct LightBuffer
     {
-        float4x4 lightViewProjectionMatrix[MAX_CASCADE];
         float4 lightPosition[MAX_LIGHTS];
         float4 lightColor[MAX_LIGHTS];
         float4 viewSpaceLightPosition[MAX_LIGHTS];
-        float intensity[MAX_LIGHTS];
-        float maxDistance[MAX_LIGHTS];
-
+        
+        // float4 because of struct packing (16byte alignment).
+        // radiusIntensity[0] stores the radius, while index 1 stores the intensity.
+        float4 intensityDistance[MAX_LIGHTS];
         uint numLight;
     };
     
+    static const uint MAX_CASCADE = 4;
     ConstantBufferStruct ShadowBuffer
     {
-        float4x4 lightViewProjectionMatrix;
+        float4x4 lightViewProjectionMatrix[MAX_CASCADE];
     };
 } // namespace interlop

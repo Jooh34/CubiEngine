@@ -33,5 +33,8 @@ public:
 
 private:
     FPipelineState GeometryPassPipelineState;
+    FPipelineState GeometryPassLightPipelineState;
+
     FPipelineState LightPassPipelineState;
+
 };

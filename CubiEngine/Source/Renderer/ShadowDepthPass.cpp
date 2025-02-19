@@ -57,7 +57,7 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     if (GNumCascadeShadowMap == 1)
     {
         interlop::ShadowDepthPassRenderResource RenderResources{
-            .lightViewProjectionMatrix = Scene->Light.LightBufferData.lightViewProjectionMatrix[0],
+            .lightViewProjectionMatrix = Scene->Light.ShadowBufferData.lightViewProjectionMatrix[0],
         };
 
         Scene->RenderModels(GraphicsContext, RenderResources);
@@ -104,7 +104,7 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
             GraphicsContext->SetScissorRects(scissorRect);
 
             interlop::ShadowDepthPassRenderResource RenderResources{
-                .lightViewProjectionMatrix = Scene->Light.LightBufferData.lightViewProjectionMatrix[CascadeIndex],
+                .lightViewProjectionMatrix = Scene->Light.ShadowBufferData.lightViewProjectionMatrix[CascadeIndex],
             };
 
             Scene->RenderModels(GraphicsContext, RenderResources);

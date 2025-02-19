@@ -108,6 +108,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
     ConstantBuffer<interlop::LightBuffer> lightBuffer = ResourceDescriptorHeap[renderResources.lightBufferIndex];
+    ConstantBuffer<interlop::ShadowBuffer> shadowBuffer = ResourceDescriptorHeap[renderResources.shadowBufferIndex];
 
     uint sampleBias = renderResources.sampleBias;
 
@@ -123,6 +124,8 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     
     const float4 normal = GBufferB.Sample(pointClampSampler, uv);
     const float4 aoMetalRoughness = GBufferC.Sample(pointClampSampler, uv);
+    const float3 emissive = float3(albedo.w, normal.w, aoMetalRoughness.w);
+
     float roughness = aoMetalRoughness.z;
     float metalic = aoMetalRoughness.y;
     
@@ -164,7 +167,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         // Directional Light
         uint DLIndex = 0;
         float4 lightColor = lightBuffer.lightColor[DLIndex];
-        float lightIntensity = lightBuffer.intensity[DLIndex];
+        float lightIntensity = lightBuffer.intensityDistance[DLIndex][0];
         if (lightIntensity > 0.f)
         {
             const float3 L = normalize(-lightBuffer.viewSpaceLightPosition[DLIndex].xyz);
@@ -176,7 +179,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
             const float4 worldSpacePosition = mul(float4(viewSpacePosition, 1.0f), sceneBuffer.inverseViewMatrix);
             uint cascadeIndex = getCascadeIndex(viewSpacePosition.z, sceneBuffer.nearZ, sceneBuffer.farZ, renderResources.numCascadeShadowMap);
-            const float4 lightSpacePosition = mul(worldSpacePosition, lightBuffer.lightViewProjectionMatrix[cascadeIndex]);
+            const float4 lightSpacePosition = mul(worldSpacePosition, shadowBuffer.lightViewProjectionMatrix[cascadeIndex]);
 
             const float shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex, cascadeIndex, renderResources.numCascadeShadowMap, sceneBuffer.farZ);
             const float attenuation = (1-shadow);
@@ -192,6 +195,25 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
                     cascadeIndex == 1 ? cascadeDebug : 0,
                     cascadeIndex == 2 ? cascadeDebug: 0
                 );
+            }
+        }
+
+        // Point Light
+        for (uint i=1u; i<lightBuffer.numLight; i++)
+        {
+            float4 lightColor = lightBuffer.lightColor[i];
+            float lightIntensity = lightBuffer.intensityDistance[i][0];
+            float lightDistance = lightBuffer.intensityDistance[i][1];
+            const float3 L = normalize(lightBuffer.viewSpaceLightPosition[i].xyz - viewSpacePosition);
+            float distance = length(lightBuffer.viewSpaceLightPosition[i].xyz - viewSpacePosition);
+            context.NoL = saturate(dot(N,L));
+
+            // color += float3(1.f, 1.f, 1.f);
+            if (lightIntensity > 0.f)
+            {
+                float attenuation = saturate(1.f - (distance / lightDistance));
+                float3 diffuseTerm = diffuseLambert(diffuseColor);
+                color += attenuation * lightColor.xyz * lightIntensity * context.NoL * diffuseTerm;
             }
         }
     }
@@ -216,5 +238,5 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
     }
 
-    outputTexture[dispatchThreadID.xy] = float4(color, 1.0f);
+    outputTexture[dispatchThreadID.xy] = float4(color + emissive, 1.0f);
 }

@@ -31,8 +31,7 @@ void FLight::AddLight(float Position[4], float Color[4], float Intensity, float 
         Color[3],
     };
 
-    LightBufferData.intensity[CurIndex] = Intensity;
-    LightBufferData.maxDistance[CurIndex] = MaxDistance;
+    LightBufferData.intensityDistance[CurIndex] = { Intensity, MaxDistance, 0, 0 };
 
     LightBufferData.numLight++;
 }
@@ -44,7 +43,7 @@ void UpdateDirectionallightViewProjectionMatrix(FScene* Scene, XMMATRIX ViewProj
     {
         ViewProjectionMatrix[0] = Scene->GetCamera().GetDirectionalShadowViewProjMatrix(
             Scene->Light.LightBufferData.lightPosition[DIndex],
-            Scene->Light.LightBufferData.maxDistance[DIndex],
+            Scene->Light.LightBufferData.intensityDistance[DIndex].y,
             0
         );
     }
@@ -54,7 +53,7 @@ void UpdateDirectionallightViewProjectionMatrix(FScene* Scene, XMMATRIX ViewProj
         {
             ViewProjectionMatrix[CascadeIndex] = Scene->GetCamera().GetDirectionalShadowViewProjMatrix(
                 Scene->Light.LightBufferData.lightPosition[DIndex],
-                Scene->Light.LightBufferData.maxDistance[DIndex],
+                Scene->Light.LightBufferData.intensityDistance[DIndex].y,
                 CascadeIndex
             );
         }
@@ -67,14 +66,31 @@ interlop::LightBuffer FLight::GetLightBufferWithViewUpdate(FScene* Scene, XMMATR
     {
         XMFLOAT4 LightPositionXM = LightBufferData.lightPosition[i];
 
-        XMVECTOR Vec = XMVector4Transform(Dx::XMLoadFloat4(&LightPositionXM), ViewMatrix);
-        Dx::XMStoreFloat4(&LightBufferData.viewSpaceLightPosition[i], XMVector3Normalize(Vec));
         
         if (i == 0)
         {
-            UpdateDirectionallightViewProjectionMatrix(Scene, LightBufferData.lightViewProjectionMatrix);
+            XMVECTOR Vec = XMVector4Transform(Dx::XMLoadFloat4(&LightPositionXM), ViewMatrix);
+            Dx::XMStoreFloat4(&LightBufferData.viewSpaceLightPosition[i], XMVector3Normalize(Vec));
+        }
+        else
+        {
+            XMVECTOR Pos = XMVector4Transform(Dx::XMLoadFloat4(&LightPositionXM), ViewMatrix);
+            Dx::XMStoreFloat4(&LightBufferData.viewSpaceLightPosition[i], Pos);
         }
     }
 
     return LightBufferData;
+}
+
+interlop::ShadowBuffer FLight::GetShadowBuffer(FScene* Scene)
+{
+    for (int i = 0; i < LightBufferData.numLight; i++)
+    {
+        if (i == 0)
+        {
+            UpdateDirectionallightViewProjectionMatrix(Scene, ShadowBufferData.lightViewProjectionMatrix);
+        }
+    }
+
+    return ShadowBufferData;
 }

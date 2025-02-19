@@ -16,6 +16,11 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .Name = L"Light Buffer" + i,
         });
 
+        ShadowBuffer[i] = Device->CreateBuffer<interlop::ShadowBuffer>(FBufferCreationDesc{
+            .Usage = EBufferUsage::ConstantBuffer,
+            .Name = L"Shadow Buffer" + i,
+        });
+
         DebugBuffer[i] = Device->CreateBuffer<interlop::DebugBuffer>(FBufferCreationDesc{
             .Usage = EBufferUsage::ConstantBuffer,
             .Name = L"Debug Buffer" + i,
@@ -43,7 +48,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .ModelName = L"Sponza",
         };
         
-        float LightPosition[4] = { 0.f,5.f, 0.f,1.f };
+        float LightPosition[4] = { 0.f,50.f,0.f,1.f };
         float LightColor[4] = { 1,1,1,1 };
         AddLight(LightPosition, LightColor, 1.f);
     }
@@ -115,6 +120,9 @@ void FScene::UpdateBuffers()
     const interlop::LightBuffer LightBufferData = Light.GetLightBufferWithViewUpdate(this, Camera.GetViewMatrix());
     GetLightBuffer().Update(&LightBufferData);
 
+    const interlop::ShadowBuffer ShadowBufferData = Light.GetShadowBuffer(this);
+    GetShadowBuffer().Update(&ShadowBufferData);
+    
     const interlop::DebugBuffer DebugBufferData = {
         .bUseTaa = bUseTaa ? 1u : 0u,
     };
@@ -153,6 +161,29 @@ void FScene::RenderModels(FGraphicsContext* const GraphicsContext, interlop::Sha
     for (const auto& [_, Model] : Models)
     {
         Model->Render(GraphicsContext, ShadowDepthPassRenderResource);
+    }
+}
+
+void FScene::RenderLightsDeferred(FGraphicsContext* const GraphicsContext,
+    interlop::DeferredGPassCubeRenderResources RenderResource)
+{
+    RenderResource.debugBufferIndex = GetDebugBuffer().CbvIndex;
+    RenderResource.sceneBufferIndex = GetSceneBuffer().CbvIndex;
+
+    for (uint32_t i = 1; i < Light.LightBufferData.numLight; i++)
+    {
+        const XMVECTOR translationVector = XMLoadFloat4(&Light.LightBufferData.lightPosition[i]);
+        float scale = 1.f;
+        const XMVECTOR scalingVector = { scale, scale, scale, 1.f };
+
+        const XMMATRIX modelMatrix = Dx::XMMatrixTranslationFromVector(translationVector)
+            * Dx::XMMatrixScalingFromVector(scalingVector); // no rotation
+
+        RenderResource.modelMatrix = modelMatrix;
+        RenderResource.inverseModelMatrix = XMMatrixInverse(nullptr, modelMatrix);
+
+        GraphicsContext->SetGraphicsRoot32BitConstants(&RenderResource);
+        GraphicsContext->DrawInstanced(36, 1, 0, 0);
     }
 }
 

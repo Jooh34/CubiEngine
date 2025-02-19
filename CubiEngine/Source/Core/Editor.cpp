@@ -180,8 +180,8 @@ void FEditor::RenderLightProperties(FScene* Scene)
     {
         constexpr uint32_t DirectionalLightIndex = 0u;
         
-        ImGui::SliderFloat("Intensity", &LightBuffer.intensity[DirectionalLightIndex], 0.0f, 100.0f);
-        ImGui::SliderFloat("MaxDistance", &LightBuffer.maxDistance[DirectionalLightIndex], 100.0f, 5000.0f);
+        ImGui::SliderFloat("Intensity", &LightBuffer.intensityDistance[DirectionalLightIndex].x, 0.0f, 100.0f);
+        ImGui::SliderFloat("MaxDistance", &LightBuffer.intensityDistance[DirectionalLightIndex].y, 100.0f, 5000.0f);
 
         DirectX::XMFLOAT4& Position = LightBuffer.lightPosition[DirectionalLightIndex];
 
@@ -197,6 +197,14 @@ void FEditor::RenderLightProperties(FScene* Scene)
         LightBuffer.lightColor[DirectionalLightIndex] = { Color.x, Color.y, Color.z, Color.w };
 
         ImGui::TreePop();
+    }
+
+    for (uint32_t i = 1; i < LightBuffer.numLight; i++)
+    {
+        ImGui::SliderFloat("Intensity", &LightBuffer.intensityDistance[i].x, 0.0f, 100.0f);
+        ImGui::SliderFloat("MaxDistance", &LightBuffer.intensityDistance[i].y, 100.0f, 5000.0f);
+        DirectX::XMFLOAT4& Position = LightBuffer.lightPosition[i];
+        ImGui::SliderFloat3("Light Position", &Position.x, -500, 500);
     }
     ImGui::End();
 }

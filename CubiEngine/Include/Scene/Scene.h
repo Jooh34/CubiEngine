@@ -28,8 +28,12 @@ public:
     void RenderModels(FGraphicsContext* const GraphicsContext,
         interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource);
 
+    void RenderLightsDeferred(FGraphicsContext* const GraphicsContext,
+        interlop::DeferredGPassCubeRenderResources);
+
     FBuffer& GetSceneBuffer() { return SceneBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
     FBuffer& GetLightBuffer() { return LightBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
+    FBuffer& GetShadowBuffer() { return ShadowBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
     FBuffer& GetDebugBuffer() { return DebugBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
     FCamera& GetCamera() { return Camera; }
     FCubeMap* GetEnvironmentMap() { return (WhiteFurnaceMethod == 0 || WhiteFurnaceMethod == 3) ? EnviromentMap.get() : WhiteFurnaceMap.get(); }
@@ -70,6 +74,7 @@ private:
     FCamera Camera;
     std::array<FBuffer, FRAMES_IN_FLIGHT> SceneBuffer;
     std::array<FBuffer, FRAMES_IN_FLIGHT> LightBuffer;
+    std::array<FBuffer, FRAMES_IN_FLIGHT> ShadowBuffer;
     std::array<FBuffer, FRAMES_IN_FLIGHT> DebugBuffer;
     std::unique_ptr<FCubeMap> EnviromentMap{};
     std::unique_ptr<FCubeMap> WhiteFurnaceMap{};
