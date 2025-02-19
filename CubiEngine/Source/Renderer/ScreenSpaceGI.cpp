@@ -175,6 +175,7 @@ void FScreenSpaceGI::GenerateStochasticNormal(FGraphicsContext* const GraphicsCo
         .width = Width,
         .height = Height,
         .frameCount = GFrameCount,
+        .stochasticNormalSamplingMethod = (uint32_t)Scene->StochasticNormalSamplingMethod,
     };
 
     GraphicsContext->SetComputePipelineState(GenerateStochasticNormalPipelineState);

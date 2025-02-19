@@ -190,6 +190,7 @@ namespace interlop
         uint height;
         
         uint frameCount;
+        uint stochasticNormalSamplingMethod;
     };
 
     struct RaycastDiffuseRenderResource

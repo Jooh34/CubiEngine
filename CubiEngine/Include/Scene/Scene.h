@@ -56,6 +56,7 @@ public:
     float SSGIIntensity = 1.f;
     float SSGIRayLength = 2000.f;
     int SSGINumSteps = 64;
+    int StochasticNormalSamplingMethod = 0;
 
 private:
     uint32_t Width;

@@ -21,19 +21,23 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     const float4 aoMetalRoughness = GBufferC.Sample(pointClampSampler, uv);
     float roughness = aoMetalRoughness.z;
 
-    float noise = InterleavedGradientNoise(pixel, renderResources.frameCount);
-    float2 u = float2(noise, noise);
-    // float2 u = Hammersley( dispatchThreadID.x * renderResources.height + dispatchThreadID.y, invViewport.x * invViewport.y );
+    // float noise = InterleavedGradientNoise(pixel, renderResources.frameCount);
+    // float2 u = float2(noise, noise);
+    float2 u = Hammersley( dispatchThreadID.x * renderResources.height + dispatchThreadID.y, invViewport.x * invViewport.y );
     
-    float3 CosDirNormal;
-    float NdotL;
-    float pdf;
-    ImportanceSampleCosDir(u, normal.xyz, CosDirNormal, NdotL, pdf);
-    float3 t = float3(0.0f, 0.0f, 0.0f);
-    float3 s = float3(0.0f, 0.0f, 0.0f);
-    float3 UniformNormal = tangentToWorldCoords(UniformSampleHemisphere(u), normal.xyz, s, t);
-
-    float3 stochasticNormal = roughness * UniformNormal + (1-roughness) * CosDirNormal;
+    float3 stochasticNormal;
+    if (renderResources.stochasticNormalSamplingMethod == 0)
+    {
+        float3 t = float3(0.0f, 0.0f, 0.0f);
+        float3 s = float3(0.0f, 0.0f, 0.0f);
+        stochasticNormal = tangentToWorldCoords(UniformSampleHemisphere(u), normal.xyz, s, t);
+    }
+    else
+    {
+        float NdotL;
+        float pdf;
+        ImportanceSampleCosDir(u, normal.xyz, stochasticNormal, NdotL, pdf);
+    }
 
     dstTexture[dispatchThreadID.xy] = float4(stochasticNormal, 1);
 }
