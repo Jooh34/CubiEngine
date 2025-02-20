@@ -181,6 +181,7 @@ void FScene::RenderLightsDeferred(FGraphicsContext* const GraphicsContext,
 
         RenderResource.modelMatrix = modelMatrix;
         RenderResource.inverseModelMatrix = XMMatrixInverse(nullptr, modelMatrix);
+        RenderResource.lightColor = Light.LightBufferData.lightColor[i];
 
         GraphicsContext->SetGraphicsRoot32BitConstants(&RenderResource);
         GraphicsContext->DrawInstanced(36, 1, 0, 0);

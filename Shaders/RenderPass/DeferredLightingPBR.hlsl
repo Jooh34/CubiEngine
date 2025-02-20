@@ -19,9 +19,12 @@ float3 SingleScatteringIBL(float3 F0, float2 EnvBRDF, float3 diffuseColor, float
 #define WHITE_FURNACE_METHOD_SAMPLING 1
 #define WHITE_FURNACE_METHOD_ALBEDO_ONLY
 
+#define DIFFUSE_METHOD_LAMBERTIAN 0
+#define DIFFUSE_METHOD_BURLEY 1
+
 // A Multiple-Scattering Microfacet Model for Real-Time Image-based Lighting, from Fdez-Aguera
 // https://jcgt.org/published/0008/01/03/paper.pdf
-float3 MultipleScatteringIBL(float roughness, float3 F0, float NoV, float2 EnvBRDF, float3 diffuseColor, float3 radiance, float3 irradiance)
+float3 MultipleScatteringIBL(float roughness, float3 F0, float NoV, float2 EnvBRDF, float3 albedo, float3 radiance, float3 irradiance)
 {
     float3 splat = float3(1-roughness, 1-roughness, 1-roughness);
     float3 Fr = max(splat, F0) - F0;
@@ -35,22 +38,21 @@ float3 MultipleScatteringIBL(float roughness, float3 F0, float NoV, float2 EnvBR
     float3 F_avg = F0 + (1.0 - F0) / 21.0;
     float3 FmsEms = Ems * FssEss * F_avg / (1.0 - Ems * F_avg);
     
-    float3 k_D = diffuseColor * (1.0 - FssEss - FmsEms);
+    float3 k_D = albedo * (1.0 - FssEss - FmsEms);
     
     float3 color = FssEss * radiance + (FmsEms + k_D) * irradiance;
     return color;
 }
 
-float3 WhiteFurnaceSampling(float3 V, float3 N, float roughness, float metalic, float3 diffuseColor, float3 F0, BxDFContext context, float3 energyCompensation)
+float3 WhiteFurnaceSampling(float3 V, float3 N, float roughness, float metalic, float3 albedo, float3 F0, BxDFContext context, float3 energyCompensation)
 {
     float3 color = float3(0,0,0);
-    float3 diffuseTerm = diffuseLambert(diffuseColor);
     float lightIntensity = 1.f;
 
     float3 t = float3(0.0f, 0.0f, 0.0f);
     float3 s = float3(0.0f, 0.0f, 0.0f);
 
-    uint numSample = 4096u;
+    uint numSample = 2048u;
     float invNumSample = 1.f/ numSample;
     
     for (uint i = 0u; i < numSample; ++i)
@@ -76,12 +78,28 @@ float3 WhiteFurnaceSampling(float3 V, float3 N, float roughness, float metalic, 
         }
         
         // Diffuse : Uniform Sampling
-        L = tangentToWorldCoords(UniformSampleHemisphere(Xi), N, s, t);
-        context.NoL = saturate(dot(N, L));
-        float pdf = 1 / (2*PI);
+        float NdotL;
+        float pdf;
+        ImportanceSampleCosDir(Xi, N, L, NdotL, pdf);
+        H = normalize(V+L);
+
+        context.VoH = saturate(dot(V,H));
+        context.NoH = saturate(dot(N,H));
+        context.NoL = saturate(dot(N,L));
+        context.NoV = saturate(dot(N,V));
         
         if (context.NoL > 0)
         {
+            float3 diffuseTerm;
+            if (renderResources.diffuseMethod == DIFFUSE_METHOD_LAMBERTIAN)
+            {
+                diffuseTerm = lambertianDiffuseBRDF(albedo, context.VoH, metalic);
+            }
+            else
+            {
+                diffuseTerm = Fd_Burley(context.NoV, context.NoL, saturate(dot(L,H)), roughness, albedo, context.VoH, metalic);
+            }
+
             float3 sampleColor = context.NoL * diffuseTerm;
             color += sampleColor / pdf;
         }
@@ -184,7 +202,16 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             const float shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex, cascadeIndex, renderResources.numCascadeShadowMap, sceneBuffer.farZ);
             const float attenuation = (1-shadow);
 
-            float3 diffuseTerm = diffuseLambert(diffuseColor);
+            //float3 diffuseTerm = diffuseLambert(diffuseColor);
+            float3 diffuseTerm;
+            if (renderResources.diffuseMethod == DIFFUSE_METHOD_LAMBERTIAN)
+            {
+                diffuseTerm = lambertianDiffuseBRDF(albedo.xyz, context.VoH, metalic);
+            }
+            else
+            {
+                diffuseTerm = Fd_Burley(context.NoV, context.NoL, saturate(dot(L,H)), roughness, albedo.xyz, context.VoH, metalic);
+            }
             float3 specularTerm = CookTorrenceSpecular(roughness, metalic, F0, context) * energyCompensation;
             color += attenuation * lightColor.xyz * lightIntensity * context.NoL * (diffuseTerm + max(specularTerm, float3(0,0,0)));
 
@@ -206,13 +233,16 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             float lightDistance = lightBuffer.intensityDistance[i][1];
             const float3 L = normalize(lightBuffer.viewSpaceLightPosition[i].xyz - viewSpacePosition);
             float distance = length(lightBuffer.viewSpaceLightPosition[i].xyz - viewSpacePosition);
+
+            float3 H = normalize(V+L);
+            context.VoH = saturate(dot(V,H));
+            context.NoH = saturate(dot(N,H));
             context.NoL = saturate(dot(N,L));
 
-            // color += float3(1.f, 1.f, 1.f);
             if (lightIntensity > 0.f)
             {
-                float attenuation = saturate(1.f - (distance / lightDistance));
-                float3 diffuseTerm = diffuseLambert(diffuseColor);
+                float attenuation = 1.f / (1.f + distance*0.001f + distance*distance*0.0001f);
+                float3 diffuseTerm = lambertianDiffuseBRDF(albedo.xyz, context.VoH, metalic);
                 color += attenuation * lightColor.xyz * lightIntensity * context.NoL * diffuseTerm;
             }
         }
@@ -238,5 +268,13 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
     }
 
-    outputTexture[dispatchThreadID.xy] = float4(color + emissive, 1.0f);
+    if (renderResources.WhiteFurnaceMethod == WHITE_FURNACE_METHOD_OFF)
+    {
+        if (any(emissive > 0))
+        {
+            color = emissive;
+        }
+    }
+
+    outputTexture[dispatchThreadID.xy] = float4(color, 1.0f);
 }

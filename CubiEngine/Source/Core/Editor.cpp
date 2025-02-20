@@ -130,6 +130,9 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     ImGui::Checkbox("Gamma Correction", &Scene->bGammaCorrection);
     ImGui::Checkbox("Energy Compensation", &Scene->bUseEnergyCompensation);
     ImGui::Checkbox("CSM Debug", &Scene->bCSMDebug);
+    const char* diffuseItems[] = { "Lambertian", "Disney_Burley"};
+    AddCombo("Diffuse Model", diffuseItems, IM_ARRAYSIZE(diffuseItems), Scene->DiffuseMethod);
+
 
     ImGui::End();
 }

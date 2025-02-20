@@ -4,6 +4,7 @@
 #ifdef __cplusplus
     #define uint uint32_t
     #define float2 XMFLOAT2
+    #define float4 XMFLOAT4
     #define float4x4 XMMATRIX
 #endif
 
@@ -63,6 +64,9 @@ namespace interlop
         float4x4 inverseModelMatrix;
         uint debugBufferIndex;
         uint sceneBufferIndex;
+        float2 padding;
+
+        float4 lightColor;
     };
 
     struct CopyRenderResources
@@ -111,6 +115,7 @@ namespace interlop
         uint bUseEnergyCompensation;
         uint WhiteFurnaceMethod;
         uint bCSMDebug;
+        uint diffuseMethod;
         uint sampleBias;
     };
 

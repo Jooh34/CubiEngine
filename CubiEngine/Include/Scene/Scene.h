@@ -55,12 +55,14 @@ public:
     bool bUseEnergyCompensation = true;
     bool bCSMDebug = false;
     bool bUseTaa = true;
+
+    int DiffuseMethod = 0;
     
     // SSGI
     float SSGIIntensity = 1.f;
     float SSGIRayLength = 2000.f;
     int SSGINumSteps = 64;
-    int StochasticNormalSamplingMethod = 0;
+    int StochasticNormalSamplingMethod = 1; // Cosine weighted importance sampling
 
 private:
     uint32_t Width;

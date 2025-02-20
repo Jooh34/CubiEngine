@@ -185,6 +185,7 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .bUseEnergyCompensation = Scene->bUseEnergyCompensation ? 1u : 0u,
         .WhiteFurnaceMethod = uint(Scene->WhiteFurnaceMethod),
         .bCSMDebug = Scene->bCSMDebug ? 1u : 0u,
+        .diffuseMethod = uint(Scene->DiffuseMethod),
         .sampleBias = GFrameCount,
     };
 

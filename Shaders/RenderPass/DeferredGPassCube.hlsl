@@ -99,12 +99,14 @@ struct PsOutput
 [RootSignature(BindlessRootSignature)] 
 PsOutput PsMain(VSOutput psInput) 
 {
-    float3 albedo = float3(1,1,1);
+    float3 lightColor = renderResources.lightColor.xyz;
+
+    float3 albedo = lightColor;
     float3 normal = psInput.normal;
     normal = mul(normal, psInput.viewMatrix);
     float ao = 1;
     float2 metalRoughness = float2(0,1);
-    float3 emissive = float3(1,1,1);
+    float3 emissive = lightColor;
     float2 velocity = calculateVelocity(psInput.curPosition, psInput.prevPosition);
     PsOutput output;
     packGBuffer(albedo, normal, ao, metalRoughness, emissive, velocity, output.GBufferA, output.GBufferB, output.GBufferC, output.Velocity);

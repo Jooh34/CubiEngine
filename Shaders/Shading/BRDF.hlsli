@@ -24,10 +24,9 @@ float3 F_Schlick(float3 f0, float u)
     return f + f0 * (1.0 - f);
 }
 
-// https://seblagarde.wordpress.com/wp-content/uploads/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
-float3 F_Schlick(float3 f0, float f90 , float u)
-{
-    return f0 + ( f90 - f0 ) * pow (1.f-u , 5.f);
+// https://google.github.io/filament/Filament.md.html#materialsystem/diffusebrdf
+float F_Schlick(float u, float f0, float f90) {
+    return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
 }
 
 
@@ -37,17 +36,36 @@ float3 fresnelSchlickFunctionRoughness(const float3 f0, const float vDotN, const
                     pow(1.0 - vDotN, 5.0);
 }
 
-// https://seblagarde.wordpress.com/wp-content/uploads/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
-float Fr_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
+float3 diffusekD(float3 albedo, float VoH, float metalic)
 {
-    float energyBias = lerp(0, 0.5, linearRoughness);
-    float energyFactor = lerp(1.0, 1.0/1.51, linearRoughness);
-    float fd90 = energyBias + 2.0 * LdotH*LdotH*linearRoughness;
-    float3 f0 = float3(1.f, 1.f, 1.f);
-    float lightScatter = F_Schlick(f0, fd90, NdotL).r;
-    float viewScatter = F_Schlick(f0, fd90, NdotV).r;
+    const float3 f0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo.xyz, metalic);
 
-    return lightScatter * viewScatter * energyFactor;
+    // Using cook torrance BRDF for specular lighting.
+    const float3 fresnel = F_Schlick(f0, VoH);
+
+    // Metals have kD as 0.0f, so more metalic a surface is, closes kS ~ 1 and kD ~ 0.
+    // Using lambertian model for diffuse light now.
+    float3 kD = lerp(float3(1.0f, 1.0f, 1.0f) - fresnel, float3(0.0f, 0.0f, 0.0f), metalic);
+
+    return kD;
+}
+// BRDF = kD * diffuseBRDF + kS * specularBRDF. (Note : kS + kD = 1).
+float3 lambertianDiffuseBRDF(const float3 albedo, const float VoH, float metalic)
+{
+    float3 kD = diffusekD(albedo, VoH, metalic); 
+    const float3 diffuseBRDF = diffuseLambert(albedo);
+    
+    return kD * diffuseBRDF;
+}
+
+// https://google.github.io/filament/Filament.md.html#materialsystem/diffusebrdf
+float3 Fd_Burley(float NoV, float NoL, float LoH, float roughness, float3 albedo, float VoH, float metalic) {
+    float3 kD = diffusekD(albedo, VoH, metalic); 
+
+    float f90 = 0.5 + 2.0 * roughness * LoH * LoH;
+    float lightScatter = F_Schlick(NoL, 1.0, f90);
+    float viewScatter = F_Schlick(NoV, 1.0, f90);
+    return kD * albedo * lightScatter * viewScatter * (1.0 / PI);
 }
 
 // From UnrealEngine
