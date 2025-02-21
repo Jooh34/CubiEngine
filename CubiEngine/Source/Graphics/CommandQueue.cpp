@@ -35,10 +35,19 @@ bool FCommandQueue::IsFenceComplete(const uint64_t InFenceValue) const
 
 void FCommandQueue::WaitForFenceValue(const uint64_t InFenceValue)
 {
-    if (!IsFenceComplete(InFenceValue))
+    while (!IsFenceComplete(InFenceValue))
     {
         ThrowIfFailed(Fence->SetEventOnCompletion(InFenceValue, nullptr));
     }
+    //if (!IsFenceComplete(InFenceValue))
+    //{
+    //    ThrowIfFailed(Fence->SetEventOnCompletion(InFenceValue, nullptr));
+    //}
+}
+
+void FCommandQueue::GetTimestampFrequency(UINT64* GpuFrequency)
+{
+    CommandQueue->GetTimestampFrequency(GpuFrequency);
 }
 
 void FCommandQueue::ExecuteContext(FContext* Context)

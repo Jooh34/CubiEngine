@@ -184,3 +184,23 @@ void FGraphicsContext::Dispatch(const uint32_t ThreadGroupDimX, const uint32_t T
     CommandList->Dispatch(ThreadGroupDimX, ThreadGroupDimY, ThreadGroupDimZ);
 }
 
+void FGraphicsContext::BeginQuery(FQueryHeap* Heap, D3D12_QUERY_TYPE Type, uint32_t Index)
+{
+    CommandList->BeginQuery(Heap->GetD3D12QueryHeap(), Type, Index);
+}
+
+void FGraphicsContext::EndQuery(FQueryHeap* Heap, D3D12_QUERY_TYPE Type, uint32_t Index)
+{
+    CommandList->EndQuery(Heap->GetD3D12QueryHeap(), Type, Index);
+}
+
+void FGraphicsContext::ResolveQueryData(
+    FQueryHeap* Heap,
+    D3D12_QUERY_TYPE Type,
+    UINT StartIndex,
+    UINT NumQueries,
+    UINT64 AlignedDestinationBufferOffset
+)
+{
+    CommandList->ResolveQueryData(Heap->GetD3D12QueryHeap(), Type, StartIndex, NumQueries, Heap->GetQueryReadbackBuffer(), AlignedDestinationBufferOffset);
+}

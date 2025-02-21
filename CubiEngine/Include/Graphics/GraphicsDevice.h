@@ -6,6 +6,8 @@
 #include "Graphics/GraphicsContext.h"
 #include "Graphics/ComputeContext.h"
 #include "Graphics/MipmapGenerator.h"
+#include "Graphics/Profiler.h"
+#include "Graphics/Query.h"
 
 class FMemoryAllocator;
 class FCopyContext;
@@ -51,6 +53,8 @@ public:
     
     FGraphicsContext* GetCurrentGraphicsContext() const { return PerFrameGraphicsContexts[CurrentFrameIndex].get(); }
     FTexture& GetCurrentBackBuffer() { return BackBuffers[CurrentFrameIndex]; }
+
+    FGPUProfiler& GetGPUProfiler() { return GPUProfiler; }
     
     void ExecuteAndFlushComputeContext(std::unique_ptr<FComputeContext>&& ComputeContext);
 
@@ -62,6 +66,10 @@ public:
     void GenerateMipmap(FTexture& Texture);
 
     DXGI_FORMAT GetSwapChainFormat() { return SwapchainFormat; }
+
+    void MaintainQueryHeap();
+    FQueryLocation AllocateQuery(D3D12_QUERY_TYPE Type);
+    FQueryHeap* GetTimestampQueryHeap() { return TimeStampQueryHeap.get(); }
 
 private:
     bool bInitialized = false;
@@ -112,4 +120,8 @@ private:
     mutable std::recursive_mutex ResourceMutex;
 
     std::unique_ptr<FMipmapGenerator> MipmapGenerator{};
+
+    FGPUProfiler GPUProfiler;
+
+    std::unique_ptr<FQueryHeap> TimeStampQueryHeap;
 };

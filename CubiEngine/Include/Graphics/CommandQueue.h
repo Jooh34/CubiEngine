@@ -17,6 +17,8 @@ public:
     bool IsFenceComplete(const uint64_t InFenceValue) const;
     void WaitForFenceValue(const uint64_t InFenceValue);
 
+    void GetTimestampFrequency(UINT64* GpuFrequency);
+
     void ExecuteContext(FContext* Context);
 
     void Flush();

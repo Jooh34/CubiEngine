@@ -69,6 +69,7 @@ void FRenderer::BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuff
 void FRenderer::Render()
 {
     GraphicsDevice->BeginFrame();
+    GraphicsDevice->GetGPUProfiler().BeginFrame();
 
     FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
     FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
@@ -80,6 +81,7 @@ void FRenderer::Render()
     if (ShadowDepthPass)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, ShadowDepth);
+        SCOPED_GPU_EVENT(GraphicsDevice, ShadowDepth)
 
         ShadowDepthPass->Render(GraphicsContext, Scene.get());
     }
@@ -89,11 +91,13 @@ void FRenderer::Render()
     if (DeferredGPass)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, DeferredGPass);
+        SCOPED_GPU_EVENT(GraphicsDevice, DeferredGPass);
         DeferredGPass->Render(Scene.get(), GraphicsContext, DepthTexture, Width, Height);
 
         // Render Skybox
         {
             SCOPED_NAMED_EVENT(GraphicsContext, EnvironmentMap);
+            SCOPED_GPU_EVENT(GraphicsDevice, EnvironmentMap);
             Scene->RenderEnvironmentMap(GraphicsContext, DeferredGPass->HDRTexture, DepthTexture);
         }
     }
@@ -103,6 +107,7 @@ void FRenderer::Render()
     if (DeferredGPass)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, LightPass);
+        SCOPED_GPU_EVENT(GraphicsDevice, LightPass);
 
         DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext, ShadowDepthPass.get(), DepthTexture, Width, Height);
     }
@@ -111,6 +116,7 @@ void FRenderer::Render()
     if (Scene->GIMethod == GI_METHOD_SSGI)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, ScreenSpaceGI);
+        SCOPED_GPU_EVENT(GraphicsDevice, ScreenSpaceGI);
         ScreenSpaceGI->GenerateStochasticNormal(GraphicsContext, Scene.get(), &DeferredGPass->GBuffer.GBufferB, &DeferredGPass->GBuffer.GBufferC, Width, Height);
         ScreenSpaceGI->RaycastDiffuse(GraphicsContext, Scene.get(), &DeferredGPass->HDRTexture, &DepthTexture, Width, Height);
         ScreenSpaceGI->Denoise(GraphicsContext, Scene.get(), Width, Height);
@@ -122,6 +128,7 @@ void FRenderer::Render()
     // ----- Post Process -----
     {
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
+        SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
 
         FTexture* HDR = &DeferredGPass->HDRTexture;
         FTexture* LDR = &PostProcess->LDRTexture;
@@ -129,6 +136,7 @@ void FRenderer::Render()
         if (Scene.get()->bUseTaa)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, TemporalAA);
+            SCOPED_GPU_EVENT(GraphicsDevice, TemporalAA);
 
             TemporalAA->Resolve(GraphicsContext, Scene.get(), *HDR, DeferredGPass->GBuffer.VelocityTexture, Width, Height);
             HDR = &TemporalAA->ResolveTexture;
@@ -156,6 +164,7 @@ void FRenderer::Render()
         // ----- Editor ------
         {
             SCOPED_NAMED_EVENT(GraphicsContext, Editor);
+            SCOPED_GPU_EVENT(GraphicsDevice, Editor);
 
             GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
             GraphicsContext->ExecuteResourceBarriers();
@@ -168,10 +177,13 @@ void FRenderer::Render()
         GraphicsContext->ExecuteResourceBarriers();
     }
     // ----- Post Process -----
+    GraphicsDevice->GetGPUProfiler().EndFrame();
 
     GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
     GraphicsDevice->Present();
     GraphicsDevice->EndFrame();
+    
+    GraphicsDevice->GetGPUProfiler().EndFrameAfterFence();
 
     GFrameCount++;
 }

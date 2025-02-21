@@ -58,6 +58,8 @@ set(SRC_FILES
     "Include/Graphics/MipmapGenerator.h"
     "Source/Graphics/Profiler.cpp"
     "Include/Graphics/Profiler.h"
+    "Source/Graphics/Query.cpp"
+    "Include/Graphics/Query.h"
 
     "Source/Renderer/Renderer.cpp"
     "Include/Renderer/Renderer.h"

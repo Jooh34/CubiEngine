@@ -16,9 +16,12 @@ public:
     void RenderCameraProperties(FScene* Scene);
     void RenderGIProperties(FScene* Scene);
     void RenderLightProperties(FScene* Scene);
+    void RenderGPUProfileData();
+    void RenderProfileProperties();
 
     void OnWindowResized(uint32_t Width, uint32_t Height);
 
 private:
+    FGraphicsDevice* Device;
     SDL_Window* Window;
 };

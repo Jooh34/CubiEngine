@@ -9,9 +9,11 @@
 #include <imgui.h>
 #include <imgui_impl_dx12.h>
 #include <imgui_impl_sdl2.h>
+#include <sstream>
+#include <iomanip>
 
 FEditor::FEditor(FGraphicsDevice* Device, SDL_Window* Window, uint32_t Width, uint32_t Height)
-    :Window(Window)
+    :Device(Device), Window(Window)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -27,7 +29,7 @@ FEditor::FEditor(FGraphicsDevice* Device, SDL_Window* Window, uint32_t Width, ui
     FDescriptorHandle FontDescriptorHandle = Device->GetCbvSrvUavDescriptorHeap()->GetCurrentDescriptorHandle();
 
     ImGui_ImplSDL2_InitForD3D(Window);
-    ImGui_ImplDX12_Init(Device->GetDevice(), FGraphicsDevice::FRAMES_IN_FLIGHT,
+    ImGui_ImplDX12_Init(Device->GetDevice(), FRAMES_IN_FLIGHT,
         Device->GetSwapChainFormat(),
         Device->GetCbvSrvUavDescriptorHeap()->GetDescriptorHeap(),
         FontDescriptorHandle.CpuDescriptorHandle, FontDescriptorHandle.GpuDescriptorHandle);
@@ -62,6 +64,7 @@ void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     RenderCameraProperties(Scene);
     RenderGIProperties(Scene);
     RenderLightProperties(Scene);
+    RenderProfileProperties();
 
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), GraphicsContext->GetCommandList());
@@ -209,6 +212,62 @@ void FEditor::RenderLightProperties(FScene* Scene)
         DirectX::XMFLOAT4& Position = LightBuffer.lightPosition[i];
         ImGui::SliderFloat3("Light Position", &Position.x, -500, 500);
     }
+    ImGui::End();
+}
+
+void FEditor::RenderGPUProfileData()
+{
+    std::vector<FProfileData>& GPUProfileData = Device->GetGPUProfiler().GetProfileData();
+
+    int Depth = 0;
+    for (const FProfileData& Data : GPUProfileData)
+    {
+        if (Data.bHasChildren)
+        {
+            if (Data.Name != nullptr)
+            {
+                std::ostringstream oss;
+                oss << std::fixed << std::setprecision(2) << Data.Duration;
+                std::string durationStr = oss.str();
+
+                std::string spaces(Depth*2, ' ');
+
+                std::string NameString = spaces + std::string(Data.Name) + " : " + durationStr;
+                ImGui::Text(NameString.c_str());
+
+                Depth++;
+            }
+            else
+            {
+                Depth--;
+            }
+        }
+        else
+        {
+            std::ostringstream oss;
+            oss << std::fixed << std::setprecision(2) << Data.Duration;
+            std::string durationStr = oss.str();
+
+            std::string spaces(Depth*2, ' ');
+
+            std::string NameString = spaces + std::string(Data.Name) + " : " + durationStr;
+            ImGui::Text(NameString.c_str());
+        }
+    }
+}
+
+void FEditor::RenderProfileProperties()
+{
+    ImGuiIO& io = ImGui::GetIO();
+
+    float W = 300.0f;
+    float H = 200.0f;
+
+    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - W, 600));
+    ImGui::SetNextWindowSize(ImVec2(W, H), ImGuiCond_Once);
+    
+    ImGui::Begin("Profile");
+    RenderGPUProfileData();
     ImGui::End();
 }
 

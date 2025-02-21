@@ -5,6 +5,7 @@
 #include "Graphics/PipelineState.h"
 
 class FGraphicsDevice;
+class FQueryHeap;
 
 class FGraphicsContext : public FContext
 {
@@ -43,6 +44,10 @@ public:
     void CopyResource(ID3D12Resource* const Destination, ID3D12Resource* const Source) const;
 
     void Dispatch(const uint32_t ThreadGroupDimX, const uint32_t ThreadGroupDimY, const uint32_t ThreadGroupDimZ);
+
+    void BeginQuery(FQueryHeap* Heap, D3D12_QUERY_TYPE Type, uint32_t Index);
+    void EndQuery(FQueryHeap* Heap, D3D12_QUERY_TYPE Type, uint32_t Index);
+    void ResolveQueryData(FQueryHeap* Heap, D3D12_QUERY_TYPE Type, UINT StartIndex, UINT NumQueries, UINT64 AlignedDestinationBufferOffset = 0);
 
 private:
     FGraphicsDevice* Device;

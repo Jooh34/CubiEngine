@@ -7,12 +7,14 @@
 
 FGraphicsDevice::FGraphicsDevice(const uint32_t Width, const uint32_t Height,
     const DXGI_FORMAT SwapchainFormat, const HWND WindowHandle)
-    : SwapchainFormat(SwapchainFormat), WindowHandle(WindowHandle)
+    : SwapchainFormat(SwapchainFormat), WindowHandle(WindowHandle), GPUProfiler(this)
 {
     InitDeviceResources();
     InitSwapchainResources(Width, Height);
 
     MipmapGenerator = std::make_unique<FMipmapGenerator>(this);
+
+    TimeStampQueryHeap = std::make_unique<FQueryHeap>(this, D3D12_QUERY_TYPE_TIMESTAMP, D3D12_QUERY_HEAP_TYPE_TIMESTAMP);;
 }
 
 FGraphicsDevice::~FGraphicsDevice()
@@ -314,6 +316,22 @@ std::unique_ptr<FComputeContext> FGraphicsDevice::GetComputeContext()
 void FGraphicsDevice::GenerateMipmap(FTexture& Texture)
 {
     MipmapGenerator->GenerateMipmap(Texture);
+}
+
+void FGraphicsDevice::MaintainQueryHeap()
+{
+    TimeStampQueryHeap->Maintain();
+}
+
+FQueryLocation FGraphicsDevice::AllocateQuery(D3D12_QUERY_TYPE Type)
+{
+    uint32_t Index = TimeStampQueryHeap->AllocateQuery();
+
+    return FQueryLocation(
+        TimeStampQueryHeap.get(),
+        Index,
+        Type
+    );
 }
 
 void FGraphicsDevice::InitDeviceResources()
@@ -653,6 +671,7 @@ void FGraphicsDevice::CreateBackBufferRTVs()
 
 void FGraphicsDevice::BeginFrame()
 {
+    MaintainQueryHeap();
     PerFrameGraphicsContexts[CurrentFrameIndex]->Reset();
 }
 

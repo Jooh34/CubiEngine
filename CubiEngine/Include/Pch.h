@@ -75,6 +75,7 @@ constexpr uint32_t GPreFilteredCubeMapTextureDimension = 1024u;
 constexpr uint32_t GBRDFLutTextureDimension = 32u;
 
 inline uint32_t GFrameCount = 0;
+static constexpr uint32_t FRAMES_IN_FLIGHT = 3u;
 
 constexpr uint32_t GShadowDepthDimension = 4096u;
 constexpr uint32_t GNumCascadeShadowMap = 1;
