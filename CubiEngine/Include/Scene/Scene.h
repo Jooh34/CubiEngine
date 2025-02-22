@@ -15,8 +15,10 @@ class FScene
 public:
     FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height);
     ~FScene();
-    
+
     void GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height);
+    void HandleMaxTickRate();
+
     void UpdateBuffers();
     void AddModel(const FModelCreationDesc& Desc);
     void AddLight(float Position[4], float Color[4], float Intensity = 1.f) { Light.AddLight(Position, Color, Intensity); }
@@ -41,6 +43,7 @@ public:
         FTexture& Target, const FTexture& DepthBuffer);
 
     FLight Light;
+    float CPUFrameMsTime = 0;
 
     // UI control
     std::vector<std::string> DebugVisualizeList;
@@ -54,10 +57,13 @@ public:
     bool bUseEnvmap = true;
     bool bUseEnergyCompensation = true;
     bool bCSMDebug = false;
-    bool bUseTaa = true;
 
     int DiffuseMethod = 0;
     
+    // Debug
+    int MaxFPS = 60;
+    bool bUseTaa = true;
+
     // SSGI
     float SSGIIntensity = 1.f;
     float SSGIRayLength = 2000.f;
@@ -80,4 +86,6 @@ private:
     std::array<FBuffer, FRAMES_IN_FLIGHT> DebugBuffer;
     std::unique_ptr<FCubeMap> EnviromentMap{};
     std::unique_ptr<FCubeMap> WhiteFurnaceMap{};
+
+    std::chrono::high_resolution_clock::time_point PrevTime;
 };

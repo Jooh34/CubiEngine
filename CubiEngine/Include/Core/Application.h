@@ -31,4 +31,6 @@ private:
     std::unique_ptr<FGraphicsDevice> GraphicsDevice;
     FRenderer* D3DRenderer;
     FInput Input;
+
+    std::chrono::high_resolution_clock::time_point PrevTime;
 };

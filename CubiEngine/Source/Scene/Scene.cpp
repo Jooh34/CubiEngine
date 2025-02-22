@@ -1,9 +1,13 @@
 #include "Scene/Scene.h"
 #include "Graphics/GraphicsDevice.h"
+#include <thread>
 
 FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     : Device(Device), Camera(Width, Height)
 {
+    std::chrono::high_resolution_clock Clock{};
+    PrevTime = Clock.now();
+
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++)
     {
         SceneBuffer[i] = Device->CreateBuffer<interlop::SceneBuffer>(FBufferCreationDesc{
@@ -94,9 +98,34 @@ void FScene::GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t H
 {
     this->Width = Width;
     this->Height = Height;
+    
+    HandleMaxTickRate();
+
     Camera.Update(DeltaTime, Input, Width, Height);
 
     UpdateBuffers();
+}
+
+void FScene::HandleMaxTickRate()
+{
+    std::chrono::high_resolution_clock Clock{};
+    std::chrono::high_resolution_clock::time_point CurTime = Clock.now();
+
+    const float DeltaTime = std::chrono::duration<double, std::milli>(CurTime - PrevTime).count();
+    
+    float MsMax = (1000.f / MaxFPS);
+    if (DeltaTime < MsMax)
+    {
+        float MilliSleep = (MsMax - DeltaTime);
+
+        auto WakeUpTime = PrevTime + std::chrono::duration<double, std::milli>(MsMax-0.5f);
+        std::this_thread::sleep_until(WakeUpTime);
+    }
+
+    CurTime = Clock.now();
+    CPUFrameMsTime = std::chrono::duration<double, std::milli>(CurTime - PrevTime).count();
+
+    PrevTime = CurTime;
 }
 
 void FScene::UpdateBuffers()

@@ -64,7 +64,7 @@ void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     RenderCameraProperties(Scene);
     RenderGIProperties(Scene);
     RenderLightProperties(Scene);
-    RenderProfileProperties();
+    RenderProfileProperties(Scene);
 
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), GraphicsContext->GetCommandList());
@@ -232,7 +232,7 @@ void FEditor::RenderGPUProfileData()
 
                 std::string spaces(Depth*2, ' ');
 
-                std::string NameString = spaces + std::string(Data.Name) + " : " + durationStr;
+                std::string NameString = spaces + std::string(Data.Name) + " : " + durationStr + "ms";
                 ImGui::Text(NameString.c_str());
 
                 Depth++;
@@ -250,13 +250,13 @@ void FEditor::RenderGPUProfileData()
 
             std::string spaces(Depth*2, ' ');
 
-            std::string NameString = spaces + std::string(Data.Name) + " : " + durationStr;
+            std::string NameString = spaces + std::string(Data.Name) + " : " + durationStr + "ms";
             ImGui::Text(NameString.c_str());
         }
     }
 }
 
-void FEditor::RenderProfileProperties()
+void FEditor::RenderProfileProperties(FScene* Scene)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -267,6 +267,12 @@ void FEditor::RenderProfileProperties()
     ImGui::SetNextWindowSize(ImVec2(W, H), ImGuiCond_Once);
     
     ImGui::Begin("Profile");
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(2) << Scene->CPUFrameMsTime;
+    std::string durationStr = oss.str();
+    std::string NameString = "CPU : " + durationStr + "ms";
+    ImGui::Text(NameString.c_str());
+
     RenderGPUProfileData();
     ImGui::End();
 }

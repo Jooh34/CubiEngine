@@ -17,7 +17,7 @@ public:
     void RenderGIProperties(FScene* Scene);
     void RenderLightProperties(FScene* Scene);
     void RenderGPUProfileData();
-    void RenderProfileProperties();
+    void RenderProfileProperties(FScene* Scene);
 
     void OnWindowResized(uint32_t Width, uint32_t Height);
 

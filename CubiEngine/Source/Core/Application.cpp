@@ -17,6 +17,8 @@ extern "C"
 Application::Application(const std::string& Title)
     : WindowTitle(Title)
 {
+    std::chrono::high_resolution_clock Clock{};
+    PrevTime = Clock.now();
 }
 
 Application::~Application()
@@ -59,7 +61,6 @@ bool Application::Init(uint32_t Width, uint32_t Height)
 void Application::Run()
 {
     std::chrono::high_resolution_clock Clock{};
-    std::chrono::high_resolution_clock::time_point PrevTime = Clock.now();
 
     while (IsRunning)
     {
