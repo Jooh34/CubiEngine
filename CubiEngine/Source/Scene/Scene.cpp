@@ -32,7 +32,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     }
     
     // Directional Light
-    float LightPosition[4] = { 1,-1,0,0 };
+    float LightPosition[4] = { 0,-1,-0.4,0 };
     float LightColor[4] = { 1,1,1,1 };
     AddLight(LightPosition, LightColor);
 
@@ -52,7 +52,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .ModelName = L"Sponza",
         };
         
-        float LightPosition[4] = { 0.f,50.f,0.f,1.f };
+        float LightPosition[4] = { 0.f,100.f,0.f,1.f };
         float LightColor[4] = { 1,1,1,1 };
         AddLight(LightPosition, LightColor, 1.f);
     }

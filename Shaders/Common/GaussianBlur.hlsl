@@ -21,7 +21,7 @@ void CsMain( uint3 dispatchThreadID : SV_DispatchThreadID)
     bool horizontal = bool(renderResources.bHorizontal);
 
     float3 result = srcTexture.Sample(pointClampSampler, uvCoords).rgb * weight[0];
-    for(int i = 1; i < 5; ++i)
+    for(int i = 0; i < 5; ++i)
     {
         float2 offset = horizontal ? float2(texelSize.x * i, 0) : float2(0, texelSize.y * i);
         result += srcTexture.Sample(pointClampSampler, uvCoords + offset).rgb * weight[i];

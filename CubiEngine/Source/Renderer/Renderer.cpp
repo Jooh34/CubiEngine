@@ -95,6 +95,7 @@ void FRenderer::Render()
         DeferredGPass->Render(Scene.get(), GraphicsContext, DepthTexture, Width, Height);
 
         // Render Skybox
+        if (Scene->bUseEnvmap)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, EnvironmentMap);
             SCOPED_GPU_EVENT(GraphicsDevice, EnvironmentMap);

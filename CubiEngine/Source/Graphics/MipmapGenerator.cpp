@@ -27,6 +27,9 @@ void FMipmapGenerator::GenerateMipmap(FTexture& Texture)
     std::unique_ptr<FComputeContext> Context = Device->GetComputeContext();
     Context->Reset();
 
+    Context->AddResourceBarrier(Texture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    Context->ExecuteResourceBarriers();
+
     // Generate each mip level.
     for (uint32_t srcMipLevel = 0; srcMipLevel < ResourceDesc.MipLevels - 1u; srcMipLevel++)
     {
@@ -34,21 +37,6 @@ void FMipmapGenerator::GenerateMipmap(FTexture& Texture)
         uint32_t dstWidth = Texture.Width >> dstMipLevel;
         uint32_t dstHeight = Texture.Height >> dstMipLevel;
         bool IsSRGB = FTexture::IsSRGB(ResourceDesc.Format);
-
-        D3D12_RESOURCE_BARRIER SrcBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
-            Texture.Allocation.Resource.Get(),
-            Texture.ResourceState,
-            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-            srcMipLevel);
-        Context->AddResourceBarrier(SrcBarrier);
-
-        D3D12_RESOURCE_BARRIER DstBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
-            Texture.Allocation.Resource.Get(),
-            Texture.ResourceState,
-            D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-            dstMipLevel);
-        Context->AddResourceBarrier(DstBarrier);
-        Context->ExecuteResourceBarriers();
 
         const interlop::GenerateMipmapResource Resource = {
             .srcMipSrvIndex = Texture.SrvIndex,
