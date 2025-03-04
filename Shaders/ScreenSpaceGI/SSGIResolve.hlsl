@@ -21,15 +21,10 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float3 sceneColor = sceneTexture.Sample(pointClampSampler, uv).xyz;
     float3 historyColor = historyTexture.Sample(pointClampSampler, prevUV).xyz;
     
-    float3 nearColor0 = sceneTexture.Sample(pointClampSampler, uv, int2(1, 0)).xyz;
-    float3 nearColor1 = sceneTexture.Sample(pointClampSampler, uv, int2(0, 1)).xyz;
-    float3 nearColor2 = sceneTexture.Sample(pointClampSampler, uv, int2(-1, 0)).xyz;
-    float3 nearColor3 = sceneTexture.Sample(pointClampSampler, uv, int2(0, -1)).xyz;
-    
-    float3 boxMin = min(sceneColor, min(nearColor0, min(nearColor1, min(nearColor2, nearColor3))));
-    float3 boxMax = max(sceneColor, max(nearColor0, max(nearColor1, max(nearColor2, nearColor3))));;
+    //float3 boxMin = min(sceneColor, min(nearColor0, min(nearColor1, min(nearColor2, nearColor3))));
+    //float3 boxMax = max(sceneColor, max(nearColor0, max(nearColor1, max(nearColor2, nearColor3))));;
 
-    historyColor = clamp(historyColor, boxMin, boxMax);
+    //historyColor = clamp(historyColor, boxMin, boxMax);
 
     float modulationFactor = 0.9;
     float3 color = lerp(sceneColor, historyColor, modulationFactor);

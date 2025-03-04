@@ -221,6 +221,7 @@ namespace interlop
 
         uint numSteps;
         float ssgiIntensity;
+        float compareToleranceScale;
     };
 
     struct CompositionSSGIRenderResource

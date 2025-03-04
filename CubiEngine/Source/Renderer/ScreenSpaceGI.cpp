@@ -209,6 +209,7 @@ void FScreenSpaceGI::RaycastDiffuse(FGraphicsContext* const GraphicsContext, FSc
         .rayLength = Scene->SSGIRayLength,
         .numSteps = (uint32_t)Scene->SSGINumSteps,
         .ssgiIntensity = Scene->SSGIIntensity,
+        .compareToleranceScale = Scene->CompareToleranceScale,
     };
 
     GraphicsContext->SetComputePipelineState(RaycastDiffusePipelineState);

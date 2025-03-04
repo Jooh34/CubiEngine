@@ -164,6 +164,7 @@ void FEditor::RenderGIProperties(FScene* Scene)
     ImGui::SliderFloat("SSGI Intensity", &Scene->SSGIIntensity, 0.0f, 10.0f);
     ImGui::SliderFloat("SSGI RayLength", &Scene->SSGIRayLength, 0.0f, 3000.0f);
     ImGui::SliderInt("SSGI NumSteps", &Scene->SSGINumSteps, 1, 256);
+    ImGui::SliderFloat("SSGI CompareToleranceScale", &Scene->CompareToleranceScale, 1.f, 30.f);
     
     const char* sampleingMethodItems[] = { "UniformSampleHemisphere", "ImportanceSampleCosDir" };
     AddCombo("Sampling Method", sampleingMethodItems, IM_ARRAYSIZE(sampleingMethodItems), Scene->StochasticNormalSamplingMethod);

@@ -120,7 +120,7 @@ FTraceResult TraceScreenSpaceRay(
 
 	const float CompareTolerance = abs(RayDepthScreen.z - RayStartScreen.z) * Step * CompareToleranceScale;
 
-	float SampleTime = Step;
+	float SampleTime = Step*3;
 
 	float FirstHitTime = -1.0;
 
@@ -144,7 +144,7 @@ FTraceResult TraceScreenSpaceRay(
 		if (SampleDepth != StartDepth)
 		{
 			float DepthDiff = SampleUVz.z - SampleDepth;
-			bool Hit = abs(DepthDiff + CompareTolerance) < CompareTolerance;
+			bool Hit = abs(DepthDiff) < CompareTolerance;
 
 			if (Hit)
 			{
@@ -201,8 +201,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     int NumSteps = renderResources.numSteps;
     float ssgiIntensity = renderResources.ssgiIntensity;
 
-    FTraceResult result = TraceScreenSpaceRay(depthTexture, viewSpacePosition, normal, RayLength, sceneBuffer.projectionMatrix, 2.f, NumSteps);
-    // dstTexture[dispatchThreadID.xy] = float4(result.hit?1.f:0.f, result.hitUV, 1.f);
+    FTraceResult result = TraceScreenSpaceRay(depthTexture, viewSpacePosition, normal, RayLength, sceneBuffer.projectionMatrix, renderResources.compareToleranceScale, NumSteps);
     if (!result.hit)
     {
 		dstTexture[dispatchThreadID.xy] = float4(0, 0, 0, 1);

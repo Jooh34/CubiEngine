@@ -69,6 +69,7 @@ public:
     float SSGIRayLength = 2000.f;
     int SSGINumSteps = 64;
     int StochasticNormalSamplingMethod = 1; // Cosine weighted importance sampling
+    float CompareToleranceScale = 10.f;
 
 private:
     uint32_t Width;
