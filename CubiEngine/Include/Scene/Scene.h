@@ -50,8 +50,8 @@ public:
     int DebugVisualizeIndex = 0;
     int WhiteFurnaceMethod = 0;
     int GIMethod = 0;
+    int ToneMappingMethod = 3;
 
-    bool bToneMapping = true;
     bool bGammaCorrection = true;
 
     bool bUseEnvmap = true;
@@ -70,6 +70,11 @@ public:
     int SSGINumSteps = 64;
     int StochasticNormalSamplingMethod = 1; // Cosine weighted importance sampling
     float CompareToleranceScale = 10.f;
+
+    // auto exposure
+    float HistogramLogMin = -8.f;
+    float HistogramLogMax = 4.f;
+    float TimeCoeff = 0.5f;
 
 private:
     uint32_t Width;

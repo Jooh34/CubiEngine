@@ -87,6 +87,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     DebugVisualizeList.push_back(std::string("StochasticNormal"));
     DebugVisualizeList.push_back(std::string("ScreenSpaceGI"));
     DebugVisualizeList.push_back(std::string("DenoisedScreenSpaceGITexture"));
+    DebugVisualizeList.push_back(std::string("QuarterTexture"));
     DebugVisualizeList.push_back(std::string("SSGIHistory"));
 }
 

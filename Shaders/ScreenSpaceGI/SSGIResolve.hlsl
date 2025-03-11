@@ -20,7 +20,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     float3 sceneColor = sceneTexture.Sample(pointClampSampler, uv).xyz;
     float3 historyColor = historyTexture.Sample(pointClampSampler, prevUV).xyz;
-    
+
     //float3 boxMin = min(sceneColor, min(nearColor0, min(nearColor1, min(nearColor2, nearColor3))));
     //float3 boxMax = max(sceneColor, max(nearColor0, max(nearColor1, max(nearColor2, nearColor3))));;
 

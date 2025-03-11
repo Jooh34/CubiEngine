@@ -15,12 +15,11 @@ public:
     void OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
 
     void Tonemapping(FGraphicsContext* const GraphicsContext, FScene* Scene,
-        FTexture& SrcTexture, uint32_t Width, uint32_t Height);
+        FTexture& SrcTexture, FTexture& LDRTexture, uint32_t Width, uint32_t Height);
 
     void DebugVisualize(FGraphicsContext* const GraphicsContext, FTexture& SrcTexture, FTexture& TargetTexture, uint32_t Width, uint32_t Height);
 
     FPipelineState TonemappingPipelineState;
-    FTexture LDRTexture;
 
     FPipelineState DebugVisualizePipeline;
     FPipelineState DebugVisualizeDepthPipeline;

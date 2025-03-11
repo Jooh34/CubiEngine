@@ -79,6 +79,8 @@ set(SRC_FILES
     "Include/Renderer/TemporalAA.h"
     "Source/Renderer/ScreenSpaceGI.cpp"
     "Include/Renderer/ScreenSpaceGI.h"
+    "Source/Renderer/EyeAdaptationPass.cpp"
+    "Include/Renderer/EyeAdaptationPass.h"
 )
 
 add_executable(CubiEngine ${SRC_FILES} "Main.cpp")

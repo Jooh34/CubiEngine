@@ -10,25 +10,16 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32
 {
     Scene = std::make_unique<FScene>(GraphicsDevice, Width, Height);
 
-    FTextureCreationDesc DepthTextureDesc = {
-        .Usage = ETextureUsage::DepthStencil,
-        .Width = Width,
-        .Height = Height,
-        .Format = DXGI_FORMAT_D32_FLOAT,
-        .InitialState = D3D12_RESOURCE_STATE_DEPTH_WRITE,
-        .Name = L"Depth Texture",
-    };
-
-    DepthTexture = GraphicsDevice->CreateTexture(DepthTextureDesc);
-
     DeferredGPass = std::make_unique<FDeferredGPass>(GraphicsDevice, Width, Height);
     DebugPass = std::make_unique<FDebugPass>(GraphicsDevice, Width, Height);
     PostProcess = std::make_unique<FPostProcess>(GraphicsDevice, Width, Height);
     TemporalAA = std::make_unique<FTemporalAA>(GraphicsDevice, Width, Height);
     ShadowDepthPass = std::make_unique<FShadowDepthPass>(GraphicsDevice);
     ScreenSpaceGI = std::make_unique<FScreenSpaceGI>(GraphicsDevice, Width, Height);
-
+    EyeAdaptationPass = std::make_unique<FEyeAdaptationPass>(GraphicsDevice, Width, Height);
     Editor = std::make_unique<FEditor>(GraphicsDevice, Window, Width, Height);
+
+    InitSizeDependantResource(GraphicsDevice, Width, Height);
 }
 
 FRenderer::~FRenderer()
@@ -132,7 +123,7 @@ void FRenderer::Render()
         SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
 
         FTexture* HDR = &DeferredGPass->HDRTexture;
-        FTexture* LDR = &PostProcess->LDRTexture;
+        FTexture* LDR = &LDRTexture;
         
         if (Scene.get()->bUseTaa)
         {
@@ -145,7 +136,14 @@ void FRenderer::Render()
             TemporalAA->UpdateHistory(GraphicsContext, Scene.get(), Width, Height);
         }
 
-        PostProcess->Tonemapping(GraphicsContext, Scene.get(), *HDR, Width, Height);
+        {
+            SCOPED_NAMED_EVENT(GraphicsContext, EyeAdaptation);
+            EyeAdaptationPass->GenerateHistogram(GraphicsContext, Scene.get(), HDR, Width, Height);
+            EyeAdaptationPass->CalculateAverageLuminance(GraphicsContext, Scene.get(), Width, Height);
+            EyeAdaptationPass->ToneMapping(GraphicsContext, Scene.get(), HDR, LDR, Width, Height);
+        }
+
+        // PostProcess->Tonemapping(GraphicsContext, Scene.get(), *HDR, Width, Height);
 
         // ----- Vis Debug -----
         {
@@ -196,6 +194,18 @@ void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
     Width = InWidth;
     Height = InHeight;
 
+    DeferredGPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+    DebugPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+    PostProcess->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+    TemporalAA->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+    ScreenSpaceGI->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+    Editor->OnWindowResized(Width, Height);
+
+    InitSizeDependantResource(GraphicsDevice, InWidth, InHeight);
+}
+
+void FRenderer::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+{
     FTextureCreationDesc DepthTextureDesc = {
         .Usage = ETextureUsage::DepthStencil,
         .Width = Width,
@@ -206,13 +216,17 @@ void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
     };
 
     DepthTexture = GraphicsDevice->CreateTexture(DepthTextureDesc);
-    
-    DeferredGPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
-    DebugPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
-    PostProcess->OnWindowResized(GraphicsDevice, InWidth, InHeight);
-    TemporalAA->OnWindowResized(GraphicsDevice, InWidth, InHeight);
-    ScreenSpaceGI->OnWindowResized(GraphicsDevice, InWidth, InHeight);
-    Editor->OnWindowResized(Width, Height);
+
+    FTextureCreationDesc LDRTextureDesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_R10G10B10A2_UNORM,
+        .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+        .Name = L"LDR Texture",
+    };
+
+    LDRTexture = GraphicsDevice->CreateTexture(LDRTextureDesc);
 }
 
 FTexture* FRenderer::GetDebugVisualizeTexture(FScene* Scene)
@@ -254,6 +268,10 @@ FTexture* FRenderer::GetDebugVisualizeTexture(FScene* Scene)
     else if (Name.compare("SSGIHistory") == 0)
     {
         return &ScreenSpaceGI->HistoryTexture;
+    }
+    else if (Name.compare("QuarterTexture") == 0)
+    {
+        return &ScreenSpaceGI->QuarterTexture;
     }
     else if (Name.compare("DenoisedScreenSpaceGITexture") == 0)
     {

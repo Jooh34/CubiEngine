@@ -40,6 +40,13 @@ FAllocation FMemoryAllocator::CreateBufferResourceAllocation(const FBufferCreati
             bCpuVisible = false;
         }
         break;
+        case EBufferUsage::StructuredBufferUAV:
+        {
+            ResourceState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+            HeapType = D3D12_HEAP_TYPE_DEFAULT;
+            bCpuVisible = false;
+        }
+        break;
     };
 
     const D3D12MA::ALLOCATION_DESC AllocationDesc = { .HeapType = HeapType };

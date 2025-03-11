@@ -8,6 +8,7 @@
 #include "Renderer/TemporalAA.h"
 #include "Renderer/ShadowDepthPass.h"
 #include "Renderer/ScreenSpaceGI.h"
+#include "Renderer/EyeAdaptationPass.h"
 
 class FInput;
 class FEditor;
@@ -23,6 +24,7 @@ public:
     void BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer, FTexture& DepthTexture);
     void Render();
     void OnWindowResized(uint32_t InWidth, uint32_t InHeight);
+    void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
     FGraphicsDevice* GetGraphicsDevice() { return GraphicsDevice; }
 
 private:
@@ -34,6 +36,8 @@ private:
     uint32_t Height{};
     FTexture DepthTexture;
 
+    FTexture LDRTexture;
+
     std::unique_ptr<FScene> Scene;
     std::unique_ptr<FDeferredGPass> DeferredGPass;
     std::unique_ptr<FDebugPass> DebugPass;
@@ -41,6 +45,7 @@ private:
     std::unique_ptr<FPostProcess> PostProcess;
     std::unique_ptr<FShadowDepthPass> ShadowDepthPass;
     std::unique_ptr<FScreenSpaceGI> ScreenSpaceGI;
+    std::unique_ptr<FEyeAdaptationPass> EyeAdaptationPass;
 
     std::unique_ptr<FEditor> Editor;
 };

@@ -24,8 +24,10 @@ void CsMain( uint3 dispatchThreadID : SV_DispatchThreadID)
     for(int i = 0; i < 5; ++i)
     {
         float2 offset = horizontal ? float2(texelSize.x * i, 0) : float2(0, texelSize.y * i);
-        result += srcTexture.Sample(pointClampSampler, uvCoords + offset).rgb * weight[i];
-        result += srcTexture.Sample(pointClampSampler, uvCoords - offset).rgb * weight[i];
+        float2 uv = uvCoords + offset;
+        
+        result += srcTexture.Sample(pointClampSampler, uv).rgb * weight[i];
+        result += srcTexture.Sample(pointClampSampler, uv).rgb * weight[i];
     }
 
     dstTexture[coord] = float4(result, 1.f);

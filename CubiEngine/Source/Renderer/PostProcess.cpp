@@ -32,16 +32,6 @@ FPostProcess::FPostProcess(FGraphicsDevice* const GraphicsDevice, uint32_t Width
 
 void FPostProcess::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
 {
-    FTextureCreationDesc TextureDesc{
-        .Usage = ETextureUsage::RenderTarget,
-        .Width = InWidth,
-        .Height = InHeight,
-        .Format = DXGI_FORMAT_R10G10B10A2_UNORM,
-        .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-        .Name = L"LDR Texture",
-    };
-
-    LDRTexture = Device->CreateTexture(TextureDesc);
 }
 
 void FPostProcess::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
@@ -50,7 +40,7 @@ void FPostProcess::OnWindowResized(const FGraphicsDevice* const Device, uint32_t
 }
 
 void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext, FScene* Scene,
-    FTexture& HDRTexture, uint32_t Width, uint32_t Height)
+    FTexture& HDRTexture, FTexture& LDRTexture, uint32_t Width, uint32_t Height)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, Tonemapping);
 
@@ -62,7 +52,7 @@ void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext, FScene* 
         .dstTextureIndex = LDRTexture.UavIndex,
         .width = Width,
         .height = Height,
-        .bToneMapping = Scene->bToneMapping,
+        .toneMappingMethod = (uint)Scene->ToneMappingMethod,
         .bGammaCorrection = Scene->bGammaCorrection,
     };
 
@@ -87,13 +77,12 @@ void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FText
     {
         interlop::DebugVisualizeDepthRenderResources RenderResources = {
             .srcTextureIndex = SrcTexture.SrvIndex,
-            .dstTextureIndex = LDRTexture.UavIndex,
+            .dstTextureIndex = TargetTexture.UavIndex,
         };
 
         GraphicsContext->SetComputePipelineState(DebugVisualizeDepthPipeline);
         GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
 
-        // shader (8,8,6)
         GraphicsContext->Dispatch(
             max((uint32_t)std::ceil(Width / 8.0f), 1u),
             max((uint32_t)std::ceil(Height / 8.0f), 1u),
@@ -109,7 +98,6 @@ void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FText
         GraphicsContext->SetComputePipelineState(DebugVisualizePipeline);
         GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
 
-        // shader (8,8,6)
         GraphicsContext->Dispatch(
             max((uint32_t)std::ceil(Width / 8.0f), 1u),
             max((uint32_t)std::ceil(Height / 8.0f), 1u),

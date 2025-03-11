@@ -9,7 +9,7 @@ FCamera::FCamera(uint32_t Width, uint32_t Height)
     Yaw = 0.f;
     Roll = 0.f;
 
-    FovY = Dx::XM_PIDIV4;
+    FovY = 45.f;
     AspectRatio = static_cast<float>(Width) / Height;
     NearZ = 1.f;
     FarZ = 4000.f;
@@ -89,7 +89,9 @@ void FCamera::UpdateMatrix()
     PrevViewMatrix = ViewMatrix;
     PrevProjMatrix = ProjMatrix;
     ViewMatrix = XMMatrixLookAtLH(CamPositionXMV, CamTarget, WorldUpVector);
-    ProjMatrix = XMMatrixPerspectiveFovLH(FovY, AspectRatio, NearZ, FarZ);
+    
+    float RadianFovY = FovY * (M_PI / 180.f);
+    ProjMatrix = XMMatrixPerspectiveFovLH(RadianFovY, AspectRatio, NearZ, FarZ);
 
     // https://iolite-engine.com/blog_posts/reverse_z_cheatsheet
     XMMATRIX M_I = {

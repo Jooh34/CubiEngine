@@ -187,6 +187,7 @@ enum class EBufferUsage
     IndexBuffer,
     StructuredBuffer,
     ConstantBuffer,
+    StructuredBufferUAV
 };
 
 struct FBufferCreationDesc

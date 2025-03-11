@@ -120,7 +120,7 @@ FTraceResult TraceScreenSpaceRay(
 
 	const float CompareTolerance = abs(RayDepthScreen.z - RayStartScreen.z) * Step * CompareToleranceScale;
 
-	float SampleTime = Step*3;
+	float SampleTime = Step*3; // start bias
 
 	float FirstHitTime = -1.0;
 
@@ -209,6 +209,11 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 	else
 	{
 		float3 hitColor = sceneColorTexture.Sample(pointClampSampler, result.hitUV).xyz;
+
+		// why ?
+		if (isnan(hitColor.x) || isnan(hitColor.y) || isnan(hitColor.z)) {
+			hitColor = float3(0, 0, 0);
+		}
 		dstTexture[dispatchThreadID.xy] = float4(hitColor * ssgiIntensity, 1.f);
 	}
 }

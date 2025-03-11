@@ -82,8 +82,9 @@ namespace interlop
         uint width;
         uint height;
 
-        uint bToneMapping;
+        uint toneMappingMethod;
         uint bGammaCorrection;
+        uint averageLuminanceBufferIndex;
     };
 
     struct PBRRenderResources
@@ -129,6 +130,8 @@ namespace interlop
     {
         uint srcTextureIndex;
         uint dstTextureIndex;
+        uint srcWidth;
+        uint srcHeight;
     };
 
     struct DebugVisualizeDepthRenderResources
@@ -254,5 +257,23 @@ namespace interlop
         float2 dstTexelSize;
 
         uint bHorizontal;
+    };
+
+    struct GenerateHistogramRenderResource
+    {
+        uint sceneTextureIndex;
+        uint histogramBufferIndex;
+        float minLogLuminance;
+        float inverseLogLuminanceRange;
+    };
+
+    struct CalculateAverageLuminanceRenderResource
+    {
+        uint histogramBufferIndex;
+        uint averageLuminanceBufferIndex;
+        float minLogLuminance;
+        float logLumRange;
+        float timeCoeff;
+        uint numPixels;
     };
 }

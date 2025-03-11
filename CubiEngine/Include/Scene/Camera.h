@@ -38,6 +38,7 @@ public:
 
     float FarZ;
     float NearZ;
+    float FovY;
 
 private:
     float MovementSpeed{};
@@ -60,7 +61,6 @@ private:
     XMMATRIX PrevProjMatrix{};
 
     // Projection Matrix
-    float FovY;
     float AspectRatio;
 
     static constexpr XMVECTOR WorldFront = XMVECTOR{ 0.0f, 0.0f, 1.0f, 0.0f };

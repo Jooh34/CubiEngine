@@ -113,6 +113,8 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     
     AddCombo("Debug Visualize", Scene->DebugVisualizeList, Scene->DebugVisualizeList.size(), Scene->DebugVisualizeIndex);
     const char* wfItems[] = { "Off", "Sampling", "IBL", "Albedo only"};
+    ImGui::SliderInt("Max FPS", &Scene->MaxFPS, 30, 144);
+
     AddCombo("White Furnace Method", wfItems, IM_ARRAYSIZE(wfItems), Scene->WhiteFurnaceMethod);
     /*if (ImGui::BeginCombo("White Furnace Method", wfItems[Scene->WhiteFurnaceMethod]))
     {
@@ -127,9 +129,11 @@ void FEditor::RenderDebugProperties(FScene* Scene)
         }
         ImGui::EndCombo();
     }*/
+    
+    const char* toneMappingItems[] = {"Off", "Reinhard", "ReinhardModifed", "ACES"};
+    AddCombo("Tone Mapping Method", toneMappingItems, IM_ARRAYSIZE(toneMappingItems), Scene->ToneMappingMethod);
 
     ImGui::Checkbox("TAA", &Scene->bUseTaa);
-    ImGui::Checkbox("Tone Mapping", &Scene->bToneMapping);
     ImGui::Checkbox("Gamma Correction", &Scene->bGammaCorrection);
     ImGui::Checkbox("Energy Compensation", &Scene->bUseEnergyCompensation);
     ImGui::Checkbox("CSM Debug", &Scene->bCSMDebug);
@@ -144,11 +148,24 @@ void FEditor::RenderCameraProperties(FScene* Scene)
 {
     ImGui::SetNextWindowPos(ImVec2(0, 200));
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
+
     ImGui::Begin("Camera Properties");
     
-    ImGui::InputFloat3("Camera Position", &Scene->GetCamera().GetCameraPosition().x);
+    if (ImGui::TreeNode("Auto Exposure"))
+    {
+        ImGui::SliderFloat("HistogramLogMin", &Scene->HistogramLogMin, -10.f, 0.f);
+        ImGui::SliderFloat("HistogramLogMax", &Scene->HistogramLogMax, 0.f, 10.f);
+        ImGui::SliderFloat("Time Coeff", &Scene->TimeCoeff, 0.0f, 1.0f);
+        ImGui::TreePop();
+    }
 
-    ImGui::SliderFloat("Far Clip Distance", &Scene->GetCamera().FarZ, 10.0f, 5000.0f);
+    if (ImGui::TreeNode("Camera"))
+    {
+        ImGui::InputFloat3("Camera Position", &Scene->GetCamera().GetCameraPosition().x);
+        ImGui::SliderFloat("Fov", &Scene->GetCamera().FovY, 30.0f, 120.0f);
+        ImGui::SliderFloat("Far Clip Distance", &Scene->GetCamera().FarZ, 10.0f, 5000.0f);
+        ImGui::TreePop();
+    }
 
     ImGui::End();
 }

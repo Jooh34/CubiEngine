@@ -557,8 +557,13 @@ FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationD
     const uint32_t NumberComponents = Data.size() == 0 ? 1 : static_cast<uint32_t>(Data.size());
     uint32_t SizeInBytes = NumberComponents * sizeof(T);
 
-    const FResourceCreationDesc ResourceCreationDesc =
+    FResourceCreationDesc ResourceCreationDesc =
         FResourceCreationDesc::CreateBufferResourceCreationDesc(SizeInBytes);
+
+    if (BufferCreationDesc.Usage == EBufferUsage::StructuredBufferUAV)
+    {
+        ResourceCreationDesc.ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
 
     Buffer.Allocation = MemoryAllocator->CreateBufferResourceAllocation(BufferCreationDesc, ResourceCreationDesc);
     Buffer.SizeInBytes = SizeInBytes;
@@ -574,9 +579,12 @@ FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationD
             .Usage = EBufferUsage::UploadBuffer,
             .Name = L"Upload buffer - " + std::wstring(BufferCreationDesc.Name),
         };
+        
+        FResourceCreationDesc UploadResourceCreationDesc =
+            FResourceCreationDesc::CreateBufferResourceCreationDesc(SizeInBytes);
 
         FAllocation UploadAllocation =
-            MemoryAllocator->CreateBufferResourceAllocation(UploadBufferCreationDesc, ResourceCreationDesc);
+            MemoryAllocator->CreateBufferResourceAllocation(UploadBufferCreationDesc, UploadResourceCreationDesc);
 
         UploadAllocation.Update(Data.data(), SizeInBytes);
 
@@ -592,7 +600,7 @@ FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationD
     }
 
     // Create relevant descriptor's.
-    if (BufferCreationDesc.Usage == EBufferUsage::StructuredBuffer)
+    if (BufferCreationDesc.Usage == EBufferUsage::StructuredBuffer || BufferCreationDesc.Usage == EBufferUsage::StructuredBufferUAV)
     {
         const FSrvCreationDesc SrvCreationDesc = {
             .SrvDesc =
@@ -624,6 +632,28 @@ FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationD
         Buffer.CbvIndex = CreateCbv(CbvCreationDesc);
     }
 
+    if (BufferCreationDesc.Usage == EBufferUsage::StructuredBufferUAV)
+    {
+        const FUavCreationDesc UavCreationDesc = {
+            .UavDesc =
+                {
+                    .Format = DXGI_FORMAT_UNKNOWN,
+                    .ViewDimension = D3D12_UAV_DIMENSION_BUFFER,
+                    .Buffer =
+                        {
+                            .FirstElement = 0u,
+                            .NumElements = static_cast<UINT>(Data.size()),
+                            .StructureByteStride = static_cast<UINT>(sizeof(T)),
+                            .CounterOffsetInBytes = 0u,
+                            .Flags = D3D12_BUFFER_UAV_FLAG_NONE,
+                        },
+                },
+        };
+
+        Buffer.UavIndex = CreateUav(UavCreationDesc, Buffer.Allocation.Resource.Get());
+    }
+
+
     return Buffer;
 }
 
@@ -632,8 +662,10 @@ FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationD
         const FBufferCreationDesc& BufferCreationDesc, const std::span<const TYPE> Data) const; \
 
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::MaterialBuffer)
+CREATE_BUFFER_TEMPLATE_FUNC(XMFLOAT4)
 CREATE_BUFFER_TEMPLATE_FUNC(XMFLOAT3)
 CREATE_BUFFER_TEMPLATE_FUNC(XMFLOAT2)
+CREATE_BUFFER_TEMPLATE_FUNC(UINT)
 CREATE_BUFFER_TEMPLATE_FUNC(uint16_t)
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::TransformBuffer)
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::DebugBuffer)

@@ -224,7 +224,7 @@ void FScreenSpaceGI::RaycastDiffuse(FGraphicsContext* const GraphicsContext, FSc
 
 void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height)
 {
-    SCOPED_NAMED_EVENT(GraphicsContext, ResolveSSGI);
+    SCOPED_NAMED_EVENT(GraphicsContext, Denoise);
     {
         GraphicsContext->AddResourceBarrier(ScreenSpaceGITexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
         GraphicsContext->AddResourceBarrier(HalfTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -266,7 +266,7 @@ void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Sc
         1);
     }
 
-    DenoiseGaussianBlur(GraphicsContext, Scene, Width, Height);
+    //DenoiseGaussianBlur(GraphicsContext, Scene, Width, Height);
 
     {
         GraphicsContext->AddResourceBarrier(QuarterTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);

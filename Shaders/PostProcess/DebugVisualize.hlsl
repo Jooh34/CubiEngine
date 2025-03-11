@@ -13,5 +13,14 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     Texture2D<float4> srcTexture = ResourceDescriptorHeap[renderResources.srcTextureIndex];
     RWTexture2D<float4> dstTexture = ResourceDescriptorHeap[renderResources.dstTextureIndex];
     
-    dstTexture[dispatchThreadID.xy] = srcTexture[dispatchThreadID.xy];
+    float dstWidth, dstHeight;
+    dstTexture.GetDimensions(dstWidth, dstHeight);
+    
+    uint2 coord = dispatchThreadID.xy;
+    float2 texelSize = float2(1.f/dstWidth, 1.f/dstHeight);
+    float2 uvCoords = texelSize * (coord + 0.5);
+
+    float4 color = srcTexture.Sample(linearClampSampler, uvCoords);
+
+    dstTexture[dispatchThreadID.xy] = color;
 }
