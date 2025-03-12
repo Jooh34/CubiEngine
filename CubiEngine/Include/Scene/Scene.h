@@ -63,6 +63,7 @@ public:
     // Debug
     int MaxFPS = 60;
     bool bUseTaa = true;
+    bool bUseShadow = true;
 
     // SSGI
     float SSGIIntensity = 1.f;

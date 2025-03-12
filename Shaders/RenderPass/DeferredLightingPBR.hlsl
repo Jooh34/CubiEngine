@@ -127,6 +127,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
     ConstantBuffer<interlop::LightBuffer> lightBuffer = ResourceDescriptorHeap[renderResources.lightBufferIndex];
     ConstantBuffer<interlop::ShadowBuffer> shadowBuffer = ResourceDescriptorHeap[renderResources.shadowBufferIndex];
+    ConstantBuffer<interlop::DebugBuffer> debugBuffer = ResourceDescriptorHeap[renderResources.debugBufferIndex];
 
     uint sampleBias = renderResources.sampleBias;
 
@@ -199,7 +200,11 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             uint cascadeIndex = getCascadeIndex(viewSpacePosition.z, sceneBuffer.nearZ, sceneBuffer.farZ, renderResources.numCascadeShadowMap);
             const float4 lightSpacePosition = mul(worldSpacePosition, shadowBuffer.lightViewProjectionMatrix[cascadeIndex]);
 
-            const float shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex, cascadeIndex, renderResources.numCascadeShadowMap, sceneBuffer.farZ);
+            float shadow = 0.f;
+            if (debugBuffer.bUseShadow)
+            {
+                shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex, cascadeIndex, renderResources.numCascadeShadowMap, sceneBuffer.farZ);
+            }
             const float attenuation = (1-shadow);
 
             //float3 diffuseTerm = diffuseLambert(diffuseColor);

@@ -31,7 +31,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     historyColor = clamp(historyColor, boxMin, boxMax);
 
-    float modulationFactor = 0.9;
+    float modulationFactor = 0.9f;
     float3 color = lerp(sceneColor, historyColor, modulationFactor);
     if (renderResources.historyFrameCount < 1)
     {

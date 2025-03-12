@@ -25,7 +25,8 @@ namespace interlop
     ConstantBufferStruct DebugBuffer
     {
         uint bUseTaa;
-        float3 padding;
+        uint bUseShadow;
+        float2 padding;
     };
 
     ConstantBufferStruct SceneBuffer

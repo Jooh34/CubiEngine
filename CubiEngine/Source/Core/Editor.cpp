@@ -134,6 +134,7 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     AddCombo("Tone Mapping Method", toneMappingItems, IM_ARRAYSIZE(toneMappingItems), Scene->ToneMappingMethod);
 
     ImGui::Checkbox("TAA", &Scene->bUseTaa);
+    ImGui::Checkbox("Shadow", &Scene->bUseShadow);
     ImGui::Checkbox("Gamma Correction", &Scene->bGammaCorrection);
     ImGui::Checkbox("Energy Compensation", &Scene->bUseEnergyCompensation);
     ImGui::Checkbox("CSM Debug", &Scene->bCSMDebug);

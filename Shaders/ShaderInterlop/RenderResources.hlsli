@@ -111,6 +111,7 @@ namespace interlop
         uint sceneBufferIndex;
         uint lightBufferIndex;
         uint shadowBufferIndex;
+        uint debugBufferIndex;
 
         uint bUseEnvmap;
         uint bUseEnergyCompensation;
