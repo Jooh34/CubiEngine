@@ -203,7 +203,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             float shadow = 0.f;
             if (debugBuffer.bUseShadow)
             {
-                shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex, cascadeIndex, renderResources.numCascadeShadowMap, sceneBuffer.farZ);
+                shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex, cascadeIndex, renderResources.numCascadeShadowMap, sceneBuffer.farZ, shadowBuffer.shadowBias);
             }
             const float attenuation = (1-shadow);
 

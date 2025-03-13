@@ -1,5 +1,34 @@
 #include "Scene/Camera.h"
 
+static const int MAX_HALTON_SEQUENCE = 16;
+static const XMFLOAT2 HALTON_SEQUENCE[MAX_HALTON_SEQUENCE] = {
+    XMFLOAT2(0.5f, 0.333333f),
+    XMFLOAT2(0.25f, 0.666667f),
+    XMFLOAT2(0.75f, 0.111111f),
+    XMFLOAT2(0.125f, 0.444444f),
+    XMFLOAT2(0.625f, 0.777778f),
+    XMFLOAT2(0.375f, 0.222222f),
+    XMFLOAT2(0.875f, 0.555556f),
+    XMFLOAT2(0.0625f, 0.888889f),
+    XMFLOAT2(0.5625f, 0.037037f),
+    XMFLOAT2(0.3125f, 0.37037f),
+    XMFLOAT2(0.8125f, 0.703704f),
+    XMFLOAT2(0.1875f, 0.148148f),
+    XMFLOAT2(0.6875f, 0.481482f),
+    XMFLOAT2(0.4375f, 0.814815f),
+    XMFLOAT2(0.9375f, 0.259259f),
+    XMFLOAT2(0.03125f, 0.592593f)
+};
+XMFLOAT2 GetHaltonJitterOffset(uint32_t FrameIndex, float ScreenWidth, float ScreenHeight)
+{
+    XMFLOAT2 jitter = HALTON_SEQUENCE[FrameIndex % MAX_HALTON_SEQUENCE];
+
+    jitter.x -= 0.5f;
+    jitter.y -= 0.5f;
+
+    return XMFLOAT2(jitter.x / ScreenWidth, jitter.y / ScreenHeight);
+}
+
 FCamera::FCamera(uint32_t Width, uint32_t Height)
 {
     CamPosition = { 0.f,5.f,-30.f,1.f };
@@ -13,15 +42,20 @@ FCamera::FCamera(uint32_t Width, uint32_t Height)
     AspectRatio = static_cast<float>(Width) / Height;
     NearZ = 1.f;
     FarZ = 4000.f;
+    
+    this->Width = Width;
+    this->Height = Height;
 
-    UpdateMatrix();
+    UpdateMatrix(false);
 }
 
-void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height)
+void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height, bool bApplyTAAJitter)
 {
     CamPositionXMV = XMLoadFloat4(&CamPosition);
 
     AspectRatio = static_cast<float>(Width) / Height;
+    this->Width = Width;
+    this->Height = Height;
 
     XMVECTOR MoveVector = XMVECTOR{ 0.f, 0.f, 0.f, 0.f };
 
@@ -72,10 +106,10 @@ void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t He
 
     XMStoreFloat4(&CamPosition, CamPositionXMV);
 
-    UpdateMatrix();
+    UpdateMatrix(bApplyTAAJitter);
 }
 
-void FCamera::UpdateMatrix()
+void FCamera::UpdateMatrix(bool bApplyTAAJitter)
 {
     const XMMATRIX RotationMatrix = XMMatrixRotationRollPitchYaw(Pitch, Yaw, Roll);
 
@@ -101,6 +135,19 @@ void FCamera::UpdateMatrix()
         0.0f,  0.0f,  1.0f,  1.0f
     };
     ProjMatrix = XMMatrixMultiply(ProjMatrix, M_I); // ReversedZ
+    
+    if (bApplyTAAJitter)
+    {
+        XMFLOAT2 JitterOffset_Current = GetHaltonJitterOffset(GFrameCount, Width, Height);
+
+        XMMATRIX JitterMatrix = {
+            1.0f,  0.0f,  0.0f, JitterOffset_Current.x,
+            0.0f,  1.0f,  0.0f, JitterOffset_Current.y,
+            0.0f,  0.0f,  1.0f, 0.0f,
+            0.0f,  0.0f,  0.0f, 1.0f
+        };
+        ProjMatrix = XMMatrixMultiply(ProjMatrix, JitterMatrix);
+    }
 }
 
 XMMATRIX FCamera::CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Focus, XMVECTOR FrustumCorners[], float MaxZ)

@@ -64,6 +64,7 @@ void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     RenderCameraProperties(Scene);
     RenderGIProperties(Scene);
     RenderLightProperties(Scene);
+    RenderShadowProperties(Scene);
     RenderProfileProperties(Scene);
 
     ImGui::Render();
@@ -134,10 +135,8 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     AddCombo("Tone Mapping Method", toneMappingItems, IM_ARRAYSIZE(toneMappingItems), Scene->ToneMappingMethod);
 
     ImGui::Checkbox("TAA", &Scene->bUseTaa);
-    ImGui::Checkbox("Shadow", &Scene->bUseShadow);
     ImGui::Checkbox("Gamma Correction", &Scene->bGammaCorrection);
     ImGui::Checkbox("Energy Compensation", &Scene->bUseEnergyCompensation);
-    ImGui::Checkbox("CSM Debug", &Scene->bCSMDebug);
     const char* diffuseItems[] = { "Lambertian", "Disney_Burley"};
     AddCombo("Diffuse Model", diffuseItems, IM_ARRAYSIZE(diffuseItems), Scene->DiffuseMethod);
 
@@ -231,6 +230,20 @@ void FEditor::RenderLightProperties(FScene* Scene)
         DirectX::XMFLOAT4& Position = LightBuffer.lightPosition[i];
         ImGui::SliderFloat3("Light Position", &Position.x, -500, 500);
     }
+    ImGui::End();
+}
+
+void FEditor::RenderShadowProperties(FScene* Scene)
+{
+    ImGui::SetNextWindowPos(ImVec2(0, 800));
+    ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
+
+    ImGui::Begin("Shadow Properties");
+
+    ImGui::Checkbox("Shadow", &Scene->bUseShadow);
+    ImGui::Checkbox("CSM Debug", &Scene->bCSMDebug);
+    ImGui::InputFloat("Shadow Bias", &Scene->ShadowBias, 0.0001, 0.01, "%.5f");
+
     ImGui::End();
 }
 

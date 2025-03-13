@@ -297,6 +297,7 @@ float3 tangentToWorldCoords(float3 v, float3 n, float3 s, float3 t)
     return s * v.x + t * v.y + n * v.z;
 }
 
+// not used currently.
 float4 ApplyTAAJittering(float4 clipspacePosition, uint FrameCount, float2 ViewportDimensions)
 {
 	int idx = FrameCount % MAX_HALTON_SEQUENCE;

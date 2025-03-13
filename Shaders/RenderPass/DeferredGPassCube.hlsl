@@ -61,7 +61,6 @@ void GetCubeVertex(uint vertexID, out float3 outPosition, out float3 outNormal)
 VSOutput VsMain(uint vertexID : SV_VertexID) 
 {
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
-    ConstantBuffer<interlop::DebugBuffer> debugBuffer = ResourceDescriptorHeap[renderResources.debugBufferIndex];
     float4x4 modelMatrix = renderResources.modelMatrix;
     float4x4 inverseModelMatrix = renderResources.inverseModelMatrix;
 
@@ -74,10 +73,6 @@ VSOutput VsMain(uint vertexID : SV_VertexID)
 
     VSOutput output;
     float4 clipspacePosition = mul(float4(worldPos, 1.0f), mvpMatrix);
-    if (debugBuffer.bUseTaa)
-    {
-        clipspacePosition = ApplyTAAJittering(clipspacePosition, sceneBuffer.frameCount, float2(sceneBuffer.width, sceneBuffer.height));
-    }
     output.position = clipspacePosition;
     output.curPosition = clipspacePosition;
     output.prevPosition = mul(float4(worldPos, 1.0f), prevMvpMatrix);

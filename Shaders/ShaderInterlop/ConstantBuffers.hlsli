@@ -80,5 +80,7 @@ namespace interlop
     ConstantBufferStruct ShadowBuffer
     {
         float4x4 lightViewProjectionMatrix[MAX_CASCADE];
+        float shadowBias;
+        float3 padding;
     };
 } // namespace interlop

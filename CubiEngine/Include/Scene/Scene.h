@@ -56,14 +56,17 @@ public:
 
     bool bUseEnvmap = true;
     bool bUseEnergyCompensation = true;
-    bool bCSMDebug = false;
 
     int DiffuseMethod = 0;
     
     // Debug
     int MaxFPS = 60;
     bool bUseTaa = true;
+
+    // Shadow
     bool bUseShadow = true;
+    bool bCSMDebug = false;
+    float ShadowBias = 1e-4f;
 
     // SSGI
     float SSGIIntensity = 1.f;

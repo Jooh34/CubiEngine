@@ -55,11 +55,10 @@ float pcf(float3 surfacePosition, float NoL, uint shadowDepthTextureIndex, float
     return shadow / 16.f;
 }
 
-float calculateShadow(float4 lightSpacPosition, float NoL, uint shadowDepthTextureIndex, uint cascadeIndex, uint numCascadeShadowMap, float farZ)
+float calculateShadow(float4 lightSpacPosition, float NoL, uint shadowDepthTextureIndex, uint cascadeIndex, uint numCascadeShadowMap, float farZ, float shadowBias)
 {
-    float baseBias = (farZ * 1e-7f);
+    float baseBias = (farZ * shadowBias) / 1000.f;
     float bias = max(baseBias * (1.0f - NoL), baseBias/10.f);
-    bias = 0.f;
     
     // Do perspective divide
     float3 surfacePosition = lightSpacPosition.xyz / lightSpacPosition.w;

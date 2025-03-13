@@ -102,7 +102,7 @@ void FScene::GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t H
     
     HandleMaxTickRate();
 
-    Camera.Update(DeltaTime, Input, Width, Height);
+    Camera.Update(DeltaTime, Input, Width, Height, bUseTaa);
 
     UpdateBuffers();
 }
@@ -150,7 +150,8 @@ void FScene::UpdateBuffers()
     const interlop::LightBuffer LightBufferData = Light.GetLightBufferWithViewUpdate(this, Camera.GetViewMatrix());
     GetLightBuffer().Update(&LightBufferData);
 
-    const interlop::ShadowBuffer ShadowBufferData = Light.GetShadowBuffer(this);
+    interlop::ShadowBuffer ShadowBufferData = Light.GetShadowBuffer(this);
+    ShadowBufferData.shadowBias = ShadowBias;
     GetShadowBuffer().Update(&ShadowBufferData);
     
     const interlop::DebugBuffer DebugBufferData = {

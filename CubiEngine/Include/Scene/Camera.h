@@ -7,8 +7,8 @@ class FCamera
 public:
     FCamera(uint32_t Width, uint32_t Height);
     
-    void Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height);
-    void UpdateMatrix();
+    void Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height, bool bApplyTAAJitter);
+    void UpdateMatrix(bool bApplyTAAJitter);
 
     void SetCamPosition(float X, float Y, float Z)
     {
@@ -41,6 +41,8 @@ public:
     float FovY;
 
 private:
+    uint32_t Width;
+    uint32_t Height;
     float MovementSpeed{};
     float RotationSpeed{};
 

@@ -16,6 +16,7 @@ public:
     void RenderCameraProperties(FScene* Scene);
     void RenderGIProperties(FScene* Scene);
     void RenderLightProperties(FScene* Scene);
+    void RenderShadowProperties(FScene* Scene);
     void RenderGPUProfileData();
     void RenderProfileProperties(FScene* Scene);
 
