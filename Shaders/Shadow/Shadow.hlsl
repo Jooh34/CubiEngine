@@ -3,16 +3,11 @@
 #define SHADOW_FILTER_NONE 0
 #define SHADOW_FILTER_PCF 1
 
-uint getCascadeIndex(float viewSpacePositionZ, float nearZ, float farZ, uint numCascade)
+uint getCascadeIndex(float depth, float nearZ, float farZ, uint numCascade, float4 distanceCSM)
 {
-    float distanceZ = farZ - nearZ;
-    float ratioZ = (viewSpacePositionZ-nearZ) / distanceZ;
-    float ratioCascade = 1.f / numCascade;
-
-    for (int i=0; i<numCascade; i++)
+    for (int i=0; i<numCascade-1; i++)
     {
-        float maxZ = ratioCascade * (i+1);
-        if (ratioZ < maxZ)
+        if (distanceCSM[i+1] > depth)
         {
             return i;
         }
@@ -66,10 +61,11 @@ float calculateShadow(float4 lightSpacPosition, float NoL, uint shadowDepthTextu
     // Convert x and y coord from [-1, 1] range to [0, 1].
     surfacePosition.x = surfacePosition.x * 0.5f + 0.5f;
     surfacePosition.y = surfacePosition.y * -0.5f + 0.5f;
-    float2 topLeft = float2(0.f, 0.f);
-    float width, height;
-    Texture2D<float> shadowDepthTexture = ResourceDescriptorHeap[shadowDepthTextureIndex];
-    shadowDepthTexture.GetDimensions(width, height);
+    
+    int gridX = cascadeIndex % 2;  // 0, 1 (가로 방향)
+    int gridY = cascadeIndex / 2;  // 0, 1 (세로 방향)
+
+    float2 topLeft = float2(gridX * 0.5f, gridY * 0.5f);
 
     if (numCascadeShadowMap > 1)
     {
@@ -78,16 +74,16 @@ float calculateShadow(float4 lightSpacPosition, float NoL, uint shadowDepthTextu
 
         if (cascadeIndex == 1)
         {
-            topLeft.x = width / 2.f;
+            topLeft.x = 0.5f;
         }
         else if (cascadeIndex == 2)
         {
-            topLeft.y = height / 2.f;
+            topLeft.y = 0.5f;
         }
         else if (cascadeIndex == 3)
         {
-            topLeft.x = width / 2.f; 
-            topLeft.y = height / 2.f;
+            topLeft.x = 0.5f; 
+            topLeft.y = 0.5f;
         }
 
         surfacePosition.x += topLeft.x;

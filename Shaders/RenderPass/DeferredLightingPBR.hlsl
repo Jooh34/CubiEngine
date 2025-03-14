@@ -197,7 +197,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             context.NoL = saturate(dot(N,L));
 
             const float4 worldSpacePosition = mul(float4(viewSpacePosition, 1.0f), sceneBuffer.inverseViewMatrix);
-            uint cascadeIndex = getCascadeIndex(viewSpacePosition.z, sceneBuffer.nearZ, sceneBuffer.farZ, renderResources.numCascadeShadowMap);
+            uint cascadeIndex = getCascadeIndex(viewSpacePosition.z, sceneBuffer.nearZ, sceneBuffer.farZ, renderResources.numCascadeShadowMap, shadowBuffer.distanceCSM);
             const float4 lightSpacePosition = mul(worldSpacePosition, shadowBuffer.lightViewProjectionMatrix[cascadeIndex]);
 
             float shadow = 0.f;
@@ -224,8 +224,8 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             {
                 float cascadeDebug = 0.1f;
                 color += float3(cascadeIndex == 0 ? cascadeDebug : 0,
-                    cascadeIndex == 1 ? cascadeDebug : 0,
-                    cascadeIndex == 2 ? cascadeDebug: 0
+                    cascadeIndex == 1 || cascadeIndex == 3? cascadeDebug : 0,
+                    cascadeIndex == 2 || cascadeIndex == 3? cascadeDebug : 0
                 );
             }
         }

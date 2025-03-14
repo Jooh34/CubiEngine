@@ -102,7 +102,7 @@ void FScene::GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t H
     
     HandleMaxTickRate();
 
-    Camera.Update(DeltaTime, Input, Width, Height, bUseTaa);
+    Camera.Update(DeltaTime, Input, Width, Height, bUseTaa, CSMExponentialFactor);
 
     UpdateBuffers();
 }

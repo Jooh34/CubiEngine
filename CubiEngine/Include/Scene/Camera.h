@@ -7,7 +7,7 @@ class FCamera
 public:
     FCamera(uint32_t Width, uint32_t Height);
     
-    void Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height, bool bApplyTAAJitter);
+    void Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height, bool bApplyTAAJitter, float CSMExponentialFactor);
     void UpdateMatrix(bool bApplyTAAJitter);
 
     void SetCamPosition(float X, float Y, float Z)
@@ -32,9 +32,10 @@ public:
     XMVECTOR GetCameraPositionXMV() const { return CamPositionXMV; }
     
     XMMATRIX CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Focus, XMVECTOR FrustumCorners[], float MaxZ);
+    float GetDepthRaito(int CascadeIndex, float* OutLinearRatio = nullptr);
     void GetShadowBoundingBox(XMFLOAT3& Center, XMVECTOR FrustumCorners[], int CascadeIndex, XMMATRIX InverseViewProj);
 
-    XMMATRIX GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightPosition, float MaxDistance, int CascadeIndex);
+    XMMATRIX GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightPosition, float MaxDistance, int CascadeIndex, float& NearDistance);
 
     float FarZ;
     float NearZ;
@@ -68,4 +69,7 @@ private:
     static constexpr XMVECTOR WorldFront = XMVECTOR{ 0.0f, 0.0f, 1.0f, 0.0f };
     static constexpr XMVECTOR WorldRight = XMVECTOR{ 1.0f, 0.0f, 0.0f, 0.0f };
     static constexpr XMVECTOR WorldUp = XMVECTOR{ 0.0f, 1.0f, 0.0f, 0.0f };
+
+    // Shadow
+    float CSMExponentialFactor = 0.8;
 };

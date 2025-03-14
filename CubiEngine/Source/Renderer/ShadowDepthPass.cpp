@@ -68,24 +68,12 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
         {
             float ViewportWidth = ShadowDepthTexture.Width / 2.f;
             float ViewportHeight = ShadowDepthTexture.Height / 2.f;
-            float TopLeftX = 0.f;
-            float TopLeftY = 0.f;
-            if (CascadeIndex == 0)
-            {
-                TopLeftX = 0.f; TopLeftY = 0.f;
-            }
-            else if (CascadeIndex == 1)
-            {
-                TopLeftX = ViewportWidth; TopLeftY = 0.f;
-            }
-            else if (CascadeIndex == 2)
-            {
-                TopLeftX = 0.f; TopLeftY = ViewportHeight;
-            }
-            else if (CascadeIndex == 3)
-            {
-                TopLeftX = ViewportWidth; TopLeftY = ViewportHeight;
-            }
+
+            int gridX = CascadeIndex % 2;  // 0, 1 (가로 방향)
+            int gridY = CascadeIndex / 2;  // 0, 1 (세로 방향)
+
+            float TopLeftX = gridX * ViewportWidth;
+            float TopLeftY = gridY * ViewportHeight;
 
             GraphicsContext->SetViewport(D3D12_VIEWPORT{
                 .TopLeftX = TopLeftX,
@@ -101,6 +89,10 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
             scissorRect.top = static_cast<LONG>(TopLeftY);
             scissorRect.right = static_cast<LONG>(TopLeftX + ViewportWidth);
             scissorRect.bottom = static_cast<LONG>(TopLeftY + ViewportHeight);
+            //scissorRect.left = 0; 
+            //scissorRect.top = 0;
+            //scissorRect.right = static_cast<LONG>(ShadowDepthTexture.Width);
+            //scissorRect.bottom = static_cast<LONG>(ShadowDepthTexture.Height);
             GraphicsContext->SetScissorRects(scissorRect);
 
             interlop::ShadowDepthPassRenderResource RenderResources{

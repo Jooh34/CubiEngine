@@ -78,4 +78,4 @@ inline uint32_t GFrameCount = 0;
 static constexpr uint32_t FRAMES_IN_FLIGHT = 3u;
 
 constexpr uint32_t GShadowDepthDimension = 4096u;
-constexpr uint32_t GNumCascadeShadowMap = 1;
+constexpr uint32_t GNumCascadeShadowMap = 4;

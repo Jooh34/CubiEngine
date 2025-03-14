@@ -36,26 +36,36 @@ void FLight::AddLight(float Position[4], float Color[4], float Intensity, float 
     LightBufferData.numLight++;
 }
 
-void UpdateDirectionallightViewProjectionMatrix(FScene* Scene, XMMATRIX ViewProjectionMatrix[])
+void UpdateDirectionallightViewProjectionMatrix(FScene* Scene, XMMATRIX ViewProjectionMatrix[], XMFLOAT4& DistanceCSM)
 {
     int DIndex = 0;
     if (GNumCascadeShadowMap == 1)
     {
+        float NearDistance;
+
         ViewProjectionMatrix[0] = Scene->GetCamera().GetDirectionalShadowViewProjMatrix(
             Scene->Light.LightBufferData.lightPosition[DIndex],
             Scene->Light.LightBufferData.intensityDistance[DIndex].y,
-            0
+            0,
+            NearDistance
         );
+        DistanceCSM.x = NearDistance;
+
     }
     else
     {
         for (int CascadeIndex = 0; CascadeIndex < GNumCascadeShadowMap; CascadeIndex++)
         {
+            float NearDistance;
             ViewProjectionMatrix[CascadeIndex] = Scene->GetCamera().GetDirectionalShadowViewProjMatrix(
                 Scene->Light.LightBufferData.lightPosition[DIndex],
                 Scene->Light.LightBufferData.intensityDistance[DIndex].y,
-                CascadeIndex
+                CascadeIndex,
+                NearDistance
             );
+            
+            float* f = reinterpret_cast<float*>(&DistanceCSM);
+            f[CascadeIndex] = NearDistance;
         }
     }
 }
@@ -88,7 +98,7 @@ interlop::ShadowBuffer FLight::GetShadowBuffer(FScene* Scene)
     {
         if (i == 0)
         {
-            UpdateDirectionallightViewProjectionMatrix(Scene, ShadowBufferData.lightViewProjectionMatrix);
+            UpdateDirectionallightViewProjectionMatrix(Scene, ShadowBufferData.lightViewProjectionMatrix, ShadowBufferData.distanceCSM);
         }
     }
 

@@ -243,6 +243,7 @@ void FEditor::RenderShadowProperties(FScene* Scene)
     ImGui::Checkbox("Shadow", &Scene->bUseShadow);
     ImGui::Checkbox("CSM Debug", &Scene->bCSMDebug);
     ImGui::InputFloat("Shadow Bias", &Scene->ShadowBias, 0.0001, 0.01, "%.5f");
+    ImGui::InputFloat("CSM Exponential Factor", &Scene->CSMExponentialFactor, 0.01, 0.1);
 
     ImGui::End();
 }

@@ -1,4 +1,5 @@
 #include "Scene/Camera.h"
+#include <cmath>
 
 static const int MAX_HALTON_SEQUENCE = 16;
 static const XMFLOAT2 HALTON_SEQUENCE[MAX_HALTON_SEQUENCE] = {
@@ -49,7 +50,7 @@ FCamera::FCamera(uint32_t Width, uint32_t Height)
     UpdateMatrix(false);
 }
 
-void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height, bool bApplyTAAJitter)
+void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height, bool bApplyTAAJitter, float CSMExponentialFactor)
 {
     CamPositionXMV = XMLoadFloat4(&CamPosition);
 
@@ -105,6 +106,9 @@ void FCamera::Update(float DeltaTime, FInput* Input, uint32_t Width, uint32_t He
     Yaw += YawVector;
 
     XMStoreFloat4(&CamPosition, CamPositionXMV);
+    
+    // Shadow
+    this->CSMExponentialFactor = CSMExponentialFactor;
 
     UpdateMatrix(bApplyTAAJitter);
 }
@@ -193,16 +197,37 @@ XMMATRIX FCamera::CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR
     return XMMatrixMultiply(ViewMatrix, OrthoMatrix);
 }
 
+float FCamera::GetDepthRaito(int CascadeIndex, float* OutLinearRatio)
+{
+    if (CascadeIndex == 0)
+    {
+        if (OutLinearRatio) *OutLinearRatio = 0.f;
+        return 1.f;
+    }
+    if (CascadeIndex == GNumCascadeShadowMap)
+    {
+        if (OutLinearRatio) *OutLinearRatio = 1.f;
+        return 0.f;
+    }
+
+    float Ratio = 1.f - pow(CSMExponentialFactor, CascadeIndex);
+    if (OutLinearRatio) *OutLinearRatio = Ratio;
+
+    float Depth = FarZ - NearZ;
+    XMVECTOR DepthVector = XMVector3TransformCoord(XMVectorSet(0, 0, Depth * Ratio, 1), GetProjMatrix());
+
+    return Dx::XMVectorGetZ(DepthVector) / Dx::XMVectorGetW(DepthVector);
+}
+
 void FCamera::GetShadowBoundingBox(XMFLOAT3& Center, XMVECTOR FrustumCorners[], int CascadeIndex, XMMATRIX InverseViewProj)
 {
-    float FarRatio = float(CascadeIndex + 1) / GNumCascadeShadowMap;
-    float NearRatio = float(CascadeIndex) / GNumCascadeShadowMap;
+    float FarRatio = GetDepthRaito(CascadeIndex + 1);
+    float NearRatio = GetDepthRaito(CascadeIndex);
 
     for (int j = 0; j < 4; j++)
     {
-        XMVECTOR direction = XMVectorSubtract(FrustumCorners[j + 4], FrustumCorners[j]);
-        FrustumCorners[j] = XMVectorAdd(FrustumCorners[j], XMVectorScale(direction, NearRatio));
-        FrustumCorners[j + 4] = XMVectorAdd(FrustumCorners[j], XMVectorScale(direction, FarRatio));
+        FrustumCorners[j] = Dx::XMVectorSetZ(FrustumCorners[j], NearRatio);
+        FrustumCorners[j+4] = Dx::XMVectorSetZ(FrustumCorners[j + 4], FarRatio);
     }
 
     XMVECTOR FrustumCenter = XMVectorSet(0, 0, 0, 0);
@@ -216,7 +241,7 @@ void FCamera::GetShadowBoundingBox(XMFLOAT3& Center, XMVECTOR FrustumCorners[], 
     XMStoreFloat3(&Center, FrustumCenter);
 }
 
-XMMATRIX FCamera::GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightDirection, float MaxDistance, int CascadeIndex)
+XMMATRIX FCamera::GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightDirection, float MaxDistance, int CascadeIndex, float& NearDistance)
 {
     XMFLOAT3 CameraVFCenter;
     XMVECTOR FrustumCorners[8] = {
@@ -228,6 +253,14 @@ XMMATRIX FCamera::GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightDirect
 
     XMMATRIX InvViewProjMatrix = XMMatrixInverse(nullptr, GetViewProjMatrix());
     GetShadowBoundingBox(CameraVFCenter, FrustumCorners, CascadeIndex, InvViewProjMatrix);
+
+    //float NearRatio = 1.f - 1.f / (pow(10, CascadeIndex));
+    //XMVECTOR DepthVector = XMVector3TransformCoord(XMVectorSet(0, 0, 1- NearRatio, 1), GetProjMatrix());
+    //NearDistance = Dx::XMVectorGetZ(DepthVector) / Dx::XMVectorGetW(DepthVector);
+    float NearLinearRatio;
+    GetDepthRaito(CascadeIndex, &NearLinearRatio);
+    float Depth = FarZ - NearZ;
+    NearDistance = NearLinearRatio * Depth;
     
     XMMATRIX LightViewProjectionMatrix = CalculateLightViewProjMatrix(XMLoadFloat4(&LightDirection), XMLoadFloat3(&CameraVFCenter), FrustumCorners, MaxDistance);
     return LightViewProjectionMatrix;
