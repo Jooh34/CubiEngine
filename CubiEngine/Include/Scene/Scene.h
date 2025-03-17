@@ -66,8 +66,8 @@ public:
     // Shadow
     bool bUseShadow = true;
     bool bCSMDebug = false;
-    float CSMExponentialFactor = 0.85f;
-    float ShadowBias = 1e-4f;
+    float CSMExponentialFactor = 0.8f;
+    float ShadowBias = 1e-5f;
 
     // SSGI
     float SSGIIntensity = 1.f;

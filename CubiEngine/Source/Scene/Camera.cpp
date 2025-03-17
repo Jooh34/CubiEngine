@@ -145,10 +145,10 @@ void FCamera::UpdateMatrix(bool bApplyTAAJitter)
         XMFLOAT2 JitterOffset_Current = GetHaltonJitterOffset(GFrameCount, Width, Height);
 
         XMMATRIX JitterMatrix = {
-            1.0f,  0.0f,  0.0f, JitterOffset_Current.x,
-            0.0f,  1.0f,  0.0f, JitterOffset_Current.y,
+            1.0f,  0.0f,  0.0f, 0.0f,
+            0.0f,  1.0f,  0.0f, 0.0f,
             0.0f,  0.0f,  1.0f, 0.0f,
-            0.0f,  0.0f,  0.0f, 1.0f
+            JitterOffset_Current.x,  JitterOffset_Current.y,  0.0f, 1.0f
         };
         ProjMatrix = XMMatrixMultiply(ProjMatrix, JitterMatrix);
     }
