@@ -48,10 +48,14 @@ public:
     // UI control
     std::vector<std::string> DebugVisualizeList;
     int DebugVisualizeIndex = 0;
+    float VisualizeDebugMin = 0.f;
+    float VisualizeDebugMax = 1.f;
+
     int WhiteFurnaceMethod = 0;
     int GIMethod = 0;
     int ToneMappingMethod = 3;
 
+    bool bUseBloom = true;
     bool bGammaCorrection = true;
 
     bool bUseEnvmap = true;

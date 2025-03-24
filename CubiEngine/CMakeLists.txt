@@ -10,6 +10,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/Bin/Release)
 set(SRC_FILES
     "Include/Pch.h"
     "Include/Utils.h"
+    "Include/CubiMath.h"
 
     "Source/Core/Application.cpp"
     "Include/Core/Application.h"
@@ -81,6 +82,8 @@ set(SRC_FILES
     "Include/Renderer/ScreenSpaceGI.h"
     "Source/Renderer/EyeAdaptationPass.cpp"
     "Include/Renderer/EyeAdaptationPass.h"
+    "Source/Renderer/BloomPass.cpp"
+    "Include/Renderer/BloomPass.h"
 )
 
 add_executable(CubiEngine ${SRC_FILES} "Main.cpp")

@@ -17,6 +17,7 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32
     ShadowDepthPass = std::make_unique<FShadowDepthPass>(GraphicsDevice);
     ScreenSpaceGI = std::make_unique<FScreenSpaceGI>(GraphicsDevice, Width, Height);
     EyeAdaptationPass = std::make_unique<FEyeAdaptationPass>(GraphicsDevice, Width, Height);
+    BloomPass = std::make_unique<FBloomPass>(GraphicsDevice, Width, Height);
     Editor = std::make_unique<FEditor>(GraphicsDevice, Window, Width, Height);
 
     InitSizeDependantResource(GraphicsDevice, Width, Height);
@@ -140,7 +141,18 @@ void FRenderer::Render()
             SCOPED_NAMED_EVENT(GraphicsContext, EyeAdaptation);
             EyeAdaptationPass->GenerateHistogram(GraphicsContext, Scene.get(), HDR, Width, Height);
             EyeAdaptationPass->CalculateAverageLuminance(GraphicsContext, Scene.get(), Width, Height);
-            EyeAdaptationPass->ToneMapping(GraphicsContext, Scene.get(), HDR, LDR, Width, Height);
+        }
+        
+        if (Scene->bUseBloom)
+        {
+            SCOPED_NAMED_EVENT(GraphicsContext, Bloom);
+            BloomPass->AddBloomPass(GraphicsContext, Scene.get(), HDR);
+        }
+
+        {
+            SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
+            EyeAdaptationPass->ToneMapping(GraphicsContext, Scene.get(), HDR, LDR,
+                Scene->bUseBloom ? &BloomPass->BloomResultTexture : nullptr, Width, Height);
         }
 
         // PostProcess->Tonemapping(GraphicsContext, Scene.get(), *HDR, Width, Height);
@@ -150,7 +162,7 @@ void FRenderer::Render()
             FTexture* SelectedTexture = GetDebugVisualizeTexture(Scene.get());
             if (SelectedTexture != nullptr)
             {
-                PostProcess->DebugVisualize(GraphicsContext, *SelectedTexture, *LDR, Width, Height);
+                PostProcess->DebugVisualize(GraphicsContext, Scene.get(), *SelectedTexture, *LDR, Width, Height);
             }
         }
         // ----- Vis Debug -----
@@ -276,6 +288,38 @@ FTexture* FRenderer::GetDebugVisualizeTexture(FScene* Scene)
     else if (Name.compare("DenoisedScreenSpaceGITexture") == 0)
     {
         return &ScreenSpaceGI->DenoisedScreenSpaceGITexture;
+    }
+    else if (Name.compare("DownSampledSceneTexture 1/2") == 0)
+    {
+        return &BloomPass->DownSampledSceneTextures[0];
+    }
+    else if (Name.compare("DownSampledSceneTexture 1/4") == 0)
+    {
+        return &BloomPass->DownSampledSceneTextures[1];
+    }
+    else if (Name.compare("DownSampledSceneTexture 1/8") == 0)
+    {
+        return &BloomPass->DownSampledSceneTextures[2];
+    }
+    else if (Name.compare("DownSampledSceneTexture 1/16") == 0)
+    {
+        return &BloomPass->DownSampledSceneTextures[3];
+    }
+    else if (Name.compare("BloomYTexture 1/4") == 0)
+    {
+        return &BloomPass->BloomYTextures[1];
+    }
+    else if (Name.compare("BloomYTexture 1/8") == 0)
+    {
+        return &BloomPass->BloomYTextures[2];
+    }
+    else if (Name.compare("BloomYTexture 1/16") == 0)
+    {
+        return &BloomPass->BloomYTextures[3];
+    }
+    else if (Name.compare("BloomResultTexture") == 0)
+    {
+        return &BloomPass->BloomResultTexture;
     }
     else
     {

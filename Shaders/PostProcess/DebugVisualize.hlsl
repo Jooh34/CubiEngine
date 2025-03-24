@@ -22,5 +22,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     float4 color = srcTexture.Sample(linearClampSampler, uvCoords);
 
+    color = (color - renderResources.visDebugMin) / (renderResources.visDebugMax - renderResources.visDebugMin);
+
     dstTexture[dispatchThreadID.xy] = color;
 }

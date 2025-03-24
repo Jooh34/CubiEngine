@@ -89,6 +89,14 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     DebugVisualizeList.push_back(std::string("DenoisedScreenSpaceGITexture"));
     DebugVisualizeList.push_back(std::string("QuarterTexture"));
     DebugVisualizeList.push_back(std::string("SSGIHistory"));
+    DebugVisualizeList.push_back(std::string("DownSampledSceneTexture 1/2"));
+    DebugVisualizeList.push_back(std::string("DownSampledSceneTexture 1/4"));
+    DebugVisualizeList.push_back(std::string("DownSampledSceneTexture 1/8"));
+    DebugVisualizeList.push_back(std::string("DownSampledSceneTexture 1/16"));
+    DebugVisualizeList.push_back(std::string("BloomYTexture 1/4"));
+    DebugVisualizeList.push_back(std::string("BloomYTexture 1/8"));
+    DebugVisualizeList.push_back(std::string("BloomYTexture 1/16"));
+    DebugVisualizeList.push_back(std::string("BloomResultTexture"));
 }
 
 FScene::~FScene()
@@ -214,6 +222,7 @@ void FScene::RenderLightsDeferred(FGraphicsContext* const GraphicsContext,
         RenderResource.modelMatrix = modelMatrix;
         RenderResource.inverseModelMatrix = XMMatrixInverse(nullptr, modelMatrix);
         RenderResource.lightColor = Light.LightBufferData.lightColor[i];
+        RenderResource.intensityDistance = Light.LightBufferData.intensityDistance[i];
 
         GraphicsContext->SetGraphicsRoot32BitConstants(&RenderResource);
         GraphicsContext->DrawInstanced(36, 1, 0, 0);

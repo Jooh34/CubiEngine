@@ -79,3 +79,5 @@ static constexpr uint32_t FRAMES_IN_FLIGHT = 3u;
 
 constexpr uint32_t GShadowDepthDimension = 4096u;
 constexpr uint32_t GNumCascadeShadowMap = 4;
+
+#define MAX_GAUSSIAN_KERNEL_SIZE 64

@@ -14,7 +14,7 @@ public:
 
     void GenerateHistogram(FGraphicsContext* GraphicsContext, FScene* Scene, FTexture* HDR, uint32_t Width, uint32_t Height);
     void CalculateAverageLuminance(FGraphicsContext* GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height);
-    void ToneMapping(FGraphicsContext* GraphicsContext, FScene* Scene, FTexture* HDRTexture, FTexture* LDRTexture, uint32_t Width, uint32_t Height);
+    void ToneMapping(FGraphicsContext* GraphicsContext, FScene* Scene, FTexture* HDRTexture, FTexture* LDRTexture, FTexture* BloomTexture, uint32_t Width, uint32_t Height);
 
 private:
     FPipelineState GenerateHistogramPipelineState;

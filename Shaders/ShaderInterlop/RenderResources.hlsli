@@ -67,6 +67,7 @@ namespace interlop
         float2 padding;
 
         float4 lightColor;
+        float4 intensityDistance;
     };
 
     struct CopyRenderResources
@@ -79,6 +80,7 @@ namespace interlop
     {
         uint srcTextureIndex;
         uint dstTextureIndex;
+        uint bloomTextureIndex;
         uint width;
         uint height;
 
@@ -133,6 +135,9 @@ namespace interlop
         uint dstTextureIndex;
         uint srcWidth;
         uint srcHeight;
+
+        float visDebugMin;
+        float visDebugMax;
     };
 
     struct DebugVisualizeDepthRenderResources
@@ -237,7 +242,7 @@ namespace interlop
         uint height;
     };
 
-    struct DownSampleResource
+    struct DownSampleRenderResource
     {
         uint srcTextureIndex;
         uint dstTextureIndex;
@@ -258,6 +263,21 @@ namespace interlop
         float2 dstTexelSize;
 
         uint bHorizontal;
+    };
+
+    static const uint MAX_GAUSSIAN_KERNEL_SIZE_DIV_4 = 16u;
+    struct GaussianBlurWRenderResource
+    {
+        uint srcTextureIndex;
+        uint dstTextureIndex;
+        float2 dstTexelSize;
+    
+        uint additiveTextureIndex;
+        uint bHorizontal;
+        uint kernelSize;
+        float padding;
+
+        float4 weights[MAX_GAUSSIAN_KERNEL_SIZE_DIV_4];
     };
 
     struct GenerateHistogramRenderResource

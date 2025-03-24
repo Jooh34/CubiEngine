@@ -87,6 +87,11 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
         TextureCreationDesc.Width = Width;
         TextureCreationDesc.Height = Height;
     }
+    else
+    {
+        Width = TextureCreationDesc.Width;
+        Height = TextureCreationDesc.Height;
+    }
     // TODO: handle another usage
     
     FTexture Texture{};

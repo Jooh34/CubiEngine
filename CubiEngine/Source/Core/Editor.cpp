@@ -114,6 +114,8 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     
     AddCombo("Debug Visualize", Scene->DebugVisualizeList, Scene->DebugVisualizeList.size(), Scene->DebugVisualizeIndex);
     const char* wfItems[] = { "Off", "Sampling", "IBL", "Albedo only"};
+    ImGui::SliderFloat("VisDebugMin", &Scene->VisualizeDebugMin, 0.f, 1.f);
+    ImGui::SliderFloat("VisDebugMax", &Scene->VisualizeDebugMax, 0.f, 1.f);
     ImGui::SliderInt("Max FPS", &Scene->MaxFPS, 30, 144);
 
     AddCombo("White Furnace Method", wfItems, IM_ARRAYSIZE(wfItems), Scene->WhiteFurnaceMethod);
@@ -135,6 +137,7 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     AddCombo("Tone Mapping Method", toneMappingItems, IM_ARRAYSIZE(toneMappingItems), Scene->ToneMappingMethod);
 
     ImGui::Checkbox("TAA", &Scene->bUseTaa);
+    ImGui::Checkbox("Bloom", &Scene->bUseBloom);
     ImGui::Checkbox("Gamma Correction", &Scene->bGammaCorrection);
     ImGui::Checkbox("Energy Compensation", &Scene->bUseEnergyCompensation);
     const char* diffuseItems[] = { "Lambertian", "Disney_Burley"};

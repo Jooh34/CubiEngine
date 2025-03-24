@@ -66,7 +66,7 @@ void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext, FScene* 
     1);
 }
 
-void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FTexture& SrcTexture, FTexture& TargetTexture, uint32_t Width, uint32_t Height)
+void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture& SrcTexture, FTexture& TargetTexture, uint32_t Width, uint32_t Height)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, DebugVisualize);
 
@@ -93,6 +93,8 @@ void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FText
         interlop::DebugVisualizeRenderResources RenderResources = {
             .srcTextureIndex = SrcTexture.SrvIndex,
             .dstTextureIndex = TargetTexture.UavIndex,
+            .visDebugMin = Scene->VisualizeDebugMin,
+            .visDebugMax = Scene->VisualizeDebugMax,
         };
 
         GraphicsContext->SetComputePipelineState(DebugVisualizePipeline);

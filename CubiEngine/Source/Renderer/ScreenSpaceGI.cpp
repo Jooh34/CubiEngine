@@ -230,7 +230,7 @@ void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Sc
         GraphicsContext->AddResourceBarrier(HalfTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
         GraphicsContext->ExecuteResourceBarriers();
 
-        interlop::DownSampleResource RenderResources = {
+        interlop::DownSampleRenderResource RenderResources = {
             .srcTextureIndex = ScreenSpaceGITexture.SrvIndex,
             .dstTextureIndex = HalfTexture.UavIndex,
             .dstTexelSize = {1.0f / HalfTexture.Width, 1.0f / HalfTexture.Height},
@@ -250,7 +250,7 @@ void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Sc
         GraphicsContext->AddResourceBarrier(QuarterTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
         GraphicsContext->ExecuteResourceBarriers();
 
-        interlop::DownSampleResource RenderResources = {
+        interlop::DownSampleRenderResource RenderResources = {
             .srcTextureIndex = HalfTexture.SrvIndex,
             .dstTextureIndex = QuarterTexture.UavIndex,
             .dstTexelSize = {1.0f / QuarterTexture.Width, 1.0f / QuarterTexture.Height},
@@ -266,7 +266,7 @@ void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Sc
         1);
     }
 
-    //DenoiseGaussianBlur(GraphicsContext, Scene, Width, Height);
+    DenoiseGaussianBlur(GraphicsContext, Scene, Width, Height);
 
     {
         GraphicsContext->AddResourceBarrier(QuarterTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
@@ -319,7 +319,7 @@ void FScreenSpaceGI::DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext
         GraphicsContext->AddResourceBarrier(BlurXTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
         GraphicsContext->AddResourceBarrier(QuarterTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
         GraphicsContext->ExecuteResourceBarriers();
-
+        
         interlop::GaussianBlurRenderResource RenderResources = {
             .srcTextureIndex = BlurXTexture.SrvIndex,
             .dstTextureIndex = QuarterTexture.UavIndex,

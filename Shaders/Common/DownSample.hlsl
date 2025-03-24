@@ -4,7 +4,7 @@
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-ConstantBuffer<interlop::DownSampleResource> renderResources : register(b0);
+ConstantBuffer<interlop::DownSampleRenderResource> renderResources : register(b0);
 
 [RootSignature(BindlessRootSignature)][numthreads(8, 8, 1)]
 void CsMain( uint3 dispatchThreadID : SV_DispatchThreadID)

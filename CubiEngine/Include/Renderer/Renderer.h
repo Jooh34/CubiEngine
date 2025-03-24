@@ -9,6 +9,7 @@
 #include "Renderer/ShadowDepthPass.h"
 #include "Renderer/ScreenSpaceGI.h"
 #include "Renderer/EyeAdaptationPass.h"
+#include "Renderer/BloomPass.h"
 
 class FInput;
 class FEditor;
@@ -46,6 +47,7 @@ private:
     std::unique_ptr<FShadowDepthPass> ShadowDepthPass;
     std::unique_ptr<FScreenSpaceGI> ScreenSpaceGI;
     std::unique_ptr<FEyeAdaptationPass> EyeAdaptationPass;
+    std::unique_ptr<FBloomPass> BloomPass;
 
     std::unique_ptr<FEditor> Editor;
 };

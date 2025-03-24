@@ -2,6 +2,7 @@
 #include "RootSignature/BindlessRS.hlsli"
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
+#include "Utils.hlsli"
 
 ConstantBuffer<interlop::TonemappingRenderResources> renderResources : register(b0);
 
@@ -42,6 +43,12 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     
     float averageLuminance = averageLuminanceBuffer[0].x;
     float4 color = srcTexture.Sample(pointClampSampler, uv);
+    
+    if (renderResources.bloomTextureIndex != INVALID_INDEX)
+    {
+        Texture2D<float4> bloomTexture = ResourceDescriptorHeap[renderResources.bloomTextureIndex];
+        color.xyz = color.xyz + bloomTexture.Sample(pointClampSampler, uv).xyz;
+    }
 
     color = color / (9.6 * averageLuminance);
 

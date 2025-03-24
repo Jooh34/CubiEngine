@@ -23,6 +23,8 @@ public:
     void AddResourceBarrier(FTexture& Texture, const D3D12_RESOURCE_STATES NewState);
     void AddResourceBarrier(D3D12_RESOURCE_BARRIER& Barrier);
 
+    void AddUAVBarrier(FTexture& Texture);
+
     void ExecuteResourceBarriers();
     void BeginEvent(const char* Name);
     void EndEvent(const char* Name);

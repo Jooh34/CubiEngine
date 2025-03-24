@@ -95,13 +95,14 @@ struct PsOutput
 PsOutput PsMain(VSOutput psInput) 
 {
     float3 lightColor = renderResources.lightColor.xyz;
-
-    float3 albedo = lightColor;
+    float intensity = renderResources.intensityDistance.x;
+    
+    float3 albedo = lightColor * intensity;
     float3 normal = psInput.normal;
     normal = mul(normal, psInput.viewMatrix);
     float ao = 1;
     float2 metalRoughness = float2(0,1);
-    float3 emissive = lightColor;
+    float3 emissive = lightColor * intensity;
     float2 velocity = calculateVelocity(psInput.curPosition, psInput.prevPosition);
     PsOutput output;
     packGBuffer(albedo, normal, ao, metalRoughness, emissive, velocity, output.GBufferA, output.GBufferB, output.GBufferC, output.Velocity);

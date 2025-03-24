@@ -93,16 +93,22 @@ void FEyeAdaptationPass::CalculateAverageLuminance(FGraphicsContext* GraphicsCon
 }
 
 void FEyeAdaptationPass::ToneMapping(FGraphicsContext* GraphicsContext, FScene* Scene,
-    FTexture* HDRTexture, FTexture* LDRTexture, uint32_t Width, uint32_t Height)
+    FTexture* HDRTexture, FTexture* LDRTexture, FTexture* BloomTexture, uint32_t Width, uint32_t Height)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, EyeAdaptationTonemapping);
 
     GraphicsContext->AddResourceBarrier(*LDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(*HDRTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    if (BloomTexture)
+    {
+        GraphicsContext->AddResourceBarrier(*BloomTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    }
     GraphicsContext->ExecuteResourceBarriers();
 
     interlop::TonemappingRenderResources RenderResources = {
         .srcTextureIndex = HDRTexture->SrvIndex,
         .dstTextureIndex = LDRTexture->UavIndex,
+        .bloomTextureIndex = BloomTexture ? BloomTexture->SrvIndex : INVALID_INDEX_U32,
         .width = Width,
         .height = Height,
         .toneMappingMethod = (uint)Scene->ToneMappingMethod,

@@ -17,7 +17,7 @@ public:
     void Tonemapping(FGraphicsContext* const GraphicsContext, FScene* Scene,
         FTexture& SrcTexture, FTexture& LDRTexture, uint32_t Width, uint32_t Height);
 
-    void DebugVisualize(FGraphicsContext* const GraphicsContext, FTexture& SrcTexture, FTexture& TargetTexture, uint32_t Width, uint32_t Height);
+    void DebugVisualize(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture& SrcTexture, FTexture& TargetTexture, uint32_t Width, uint32_t Height);
 
     FPipelineState TonemappingPipelineState;
 
