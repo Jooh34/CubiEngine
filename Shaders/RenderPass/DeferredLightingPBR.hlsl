@@ -28,6 +28,7 @@ float3 MultipleScatteringIBL(float roughness, float3 F0, float NoV, float2 EnvBR
 {
     float3 splat = float3(1-roughness, 1-roughness, 1-roughness);
     float3 Fr = max(splat, F0) - F0;
+
     float3 k_S = F0 + Fr * pow(1.0 - NoV, 5.0);
 
     float3 FssEss = k_S * EnvBRDF.x + EnvBRDF.y;
@@ -36,7 +37,7 @@ float3 MultipleScatteringIBL(float roughness, float3 F0, float NoV, float2 EnvBR
     float Ess = EnvBRDF.x + EnvBRDF.y;
     float Ems = (1.0 - Ess);
     float3 F_avg = F0 + (1.0 - F0) / 21.0;
-    float3 FmsEms = Ems * FssEss * F_avg / (1.0 - Ems * F_avg);
+    float3 FmsEms = Ems * FssEss * F_avg / (1.0 - Ems * F_avg + EPS);
     
     float3 k_D = albedo * (1.0 - FssEss - FmsEms);
     
@@ -160,7 +161,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     const float3 N = normal.xyz;
     
     BxDFContext context = (BxDFContext)0;
-    context.NoV = saturate(dot(N,V)) + 1e-5; 
+    context.NoV = saturate(dot(N,V)); 
 
     float3 color = float3(0,0,0);
 
