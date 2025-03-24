@@ -677,6 +677,7 @@ CREATE_BUFFER_TEMPLATE_FUNC(interlop::DebugBuffer)
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::SceneBuffer)
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::LightBuffer)
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::ShadowBuffer)
+CREATE_BUFFER_TEMPLATE_FUNC(interlop::SSAOKernelBuffer)
 
 void FGraphicsDevice::CreateBackBufferRTVs()
 {

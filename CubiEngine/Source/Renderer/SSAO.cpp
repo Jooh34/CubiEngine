@@ -1,0 +1,104 @@
+#include "Renderer/SSAO.h"
+#include "Graphics/Profiler.h"
+#include "Graphics/GraphicsDevice.h"
+#include "Scene/Scene.h"
+#include "CubiMath.h"
+#include "ShaderInterlop/RenderResources.hlsli"
+
+FSSAO::FSSAO(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
+{
+    SSAOKernelBuffer = GraphicsDevice->CreateBuffer<interlop::SSAOKernelBuffer>(FBufferCreationDesc{
+        .Usage = EBufferUsage::ConstantBuffer,
+        .Name = L"SSAO Kernel Buffer",
+    });
+    GenerateSSAOKernel();
+
+    FComputePipelineStateCreationDesc SSAOPipelineDesc = FComputePipelineStateCreationDesc
+    {
+        .CsShaderPath = L"Shaders/SSAO/SSAO.hlsl",
+        .PipelineName = L"SSAO Pipeline"
+    };
+    SSAOPipelineState = GraphicsDevice->CreatePipelineState(SSAOPipelineDesc);
+
+    InitSizeDependantResource(GraphicsDevice, Width, Height);
+}
+
+void FSSAO::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+{
+    InitSizeDependantResource(Device, InWidth, InHeight);
+}
+
+void FSSAO::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+{
+    SSAOTexture = Device->CreateTexture(FTextureCreationDesc{
+        .Usage = ETextureUsage::UAVTexture,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_D32_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+        .Name = L"SSAO Texture",
+    });
+}
+
+void FSSAO::GenerateSSAOKernel()
+{
+    int KernelSize = 64;
+    float RndFloats[MAX_SSAO_KERNEL_SIZE * 3];
+    CreateRandomFloats(RndFloats, KernelSize * 3);
+    
+    interlop::SSAOKernelBuffer SSAOKernelBufferData{};
+
+    for (int i = 0; i < KernelSize; i++)
+    {
+        XMVECTOR Sample = XMVectorSet(
+            RndFloats[i * 3] * 2.0f - 1.0f,
+            RndFloats[i * 3 + 1] * 2.0f - 1.0f,
+            RndFloats[i * 3 + 2],
+            1.0f
+        );
+
+        Sample = XMVector3Normalize(Sample);
+
+        // https://learnopengl.com/Advanced-Lighting/SSAO
+        float scale = (float)i / 64.0;
+        scale = std::lerp(0.1f, 1.0f, scale * scale);
+        XMVECTOR Scaled = XMVectorScale(Sample, scale);
+
+        // save
+        XMStoreFloat4(&SSAOKernelBufferData.kernel[i], Scaled);
+    }
+
+    SSAOKernelBuffer.Update(&SSAOKernelBufferData);
+}
+
+void FSSAO::AddSSAOPass(FGraphicsContext* GraphicsContext, FScene* Scene,
+    FTexture* GBufferB, FTexture* DepthTexture)
+{
+    SCOPED_NAMED_EVENT(GraphicsContext, SSAO);
+
+    GraphicsContext->AddResourceBarrier(*GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(*DepthTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SSAOTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->ExecuteResourceBarriers();
+
+    interlop::SSAORenderResource RenderResources = {
+        .GBufferBIndex = GBufferB->SrvIndex,
+        .depthTextureIndex = DepthTexture->SrvIndex,
+        .dstTextureIndex = SSAOTexture.UavIndex,
+        .SSAOKernelBufferIndex = SSAOKernelBuffer.CbvIndex,
+        .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
+        .frameCount = GFrameCount,
+        .kernelSize = (uint)Scene->SSAOKernelSize,
+        .kernelRadius = Scene->SSAOKernelRadius,
+        .depthBias = Scene->SSAODepthBias,
+    };
+
+    GraphicsContext->SetComputePipelineState(SSAOPipelineState);
+    GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
+
+    // shader (8,8,1)
+    GraphicsContext->Dispatch(
+        max((uint32_t)std::ceil(SSAOTexture.Width / 8.0f), 1u),
+        max((uint32_t)std::ceil(SSAOTexture.Height / 8.0f), 1u),
+    1);
+}

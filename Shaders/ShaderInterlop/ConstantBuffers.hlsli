@@ -84,4 +84,11 @@ namespace interlop
         float shadowBias;
         float3 padding;
     };
+
+    static const uint MAX_SSAO_KERNEL_SIZE_HLSL = 64;
+    ConstantBufferStruct SSAOKernelBuffer
+    {
+        float4 kernel[MAX_SSAO_KERNEL_SIZE_HLSL];
+    };
+
 } // namespace interlop

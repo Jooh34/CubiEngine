@@ -97,6 +97,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     DebugVisualizeList.push_back(std::string("BloomYTexture 1/8"));
     DebugVisualizeList.push_back(std::string("BloomYTexture 1/16"));
     DebugVisualizeList.push_back(std::string("BloomResultTexture"));
+    DebugVisualizeList.push_back(std::string("SSAO Texture"));
 }
 
 FScene::~FScene()

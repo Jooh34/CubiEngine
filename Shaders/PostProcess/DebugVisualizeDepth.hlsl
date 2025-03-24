@@ -13,14 +13,13 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     Texture2D<float> srcTexture = ResourceDescriptorHeap[renderResources.srcTextureIndex];
     RWTexture2D<float4> dstTexture = ResourceDescriptorHeap[renderResources.dstTextureIndex];
 
-    float2 srcDimension = float2(0.0f, 0.0f);
-    srcTexture.GetDimensions(srcDimension.x, srcDimension.y);
-
     float2 dstDimension = float2(0.0f, 0.0f);
     dstTexture.GetDimensions(dstDimension.x, dstDimension.y);
-    
     float2 invViewport = float2(1.f/(float)dstDimension.x, 1.f/(float)dstDimension.y);
     const float2 uv = (dispatchThreadID.xy + 0.5f) * invViewport;
+    
+    float depth = srcTexture.Sample(linearClampSampler, uv);
+    depth = (depth - renderResources.visDebugMin) / (renderResources.visDebugMax - renderResources.visDebugMin);
 
-    dstTexture[dispatchThreadID.xy] = srcTexture.Sample(linearClampSampler, uv);
+    dstTexture[dispatchThreadID.xy] = depth;
 }

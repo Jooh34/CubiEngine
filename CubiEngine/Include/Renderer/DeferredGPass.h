@@ -26,7 +26,7 @@ public:
         FTexture& DepthBuffer, uint32_t Width, uint32_t Height);
 
     void RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext,
-        FShadowDepthPass* ShadowDepthPass, FTexture& DepthTexture, uint32_t Width, uint32_t Height);
+        FShadowDepthPass* ShadowDepthPass, FTexture& DepthTexture, FTexture* SSAOTexture, uint32_t Width, uint32_t Height);
 
     FGBuffer GBuffer;
     FTexture HDRTexture;

@@ -78,6 +78,8 @@ void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FScen
         interlop::DebugVisualizeDepthRenderResources RenderResources = {
             .srcTextureIndex = SrcTexture.SrvIndex,
             .dstTextureIndex = TargetTexture.UavIndex,
+            .visDebugMin = Scene->VisualizeDebugMin,
+            .visDebugMax = Scene->VisualizeDebugMax,
         };
 
         GraphicsContext->SetComputePipelineState(DebugVisualizeDepthPipeline);

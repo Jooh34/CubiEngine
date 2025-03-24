@@ -105,6 +105,7 @@ namespace interlop
         uint envMipCount;
 
         uint shadowDepthTextureIndex;
+        uint ssaoTextureIndex;
 
         uint outputTextureIndex;
 
@@ -144,6 +145,8 @@ namespace interlop
     {
         uint srcTextureIndex;
         uint dstTextureIndex;
+        float visDebugMin;
+        float visDebugMax;
     };
 
     struct GenerateMipmapResource
@@ -296,5 +299,20 @@ namespace interlop
         float logLumRange;
         float timeCoeff;
         uint numPixels;
+    };
+
+    struct SSAORenderResource
+    {
+        uint GBufferBIndex;
+        uint depthTextureIndex;
+        uint dstTextureIndex;
+        uint SSAOKernelBufferIndex;
+
+        uint sceneBufferIndex;
+        uint frameCount;
+        uint kernelSize;
+        float kernelRadius;
+
+        float depthBias;
     };
 }

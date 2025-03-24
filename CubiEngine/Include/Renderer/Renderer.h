@@ -10,6 +10,7 @@
 #include "Renderer/ScreenSpaceGI.h"
 #include "Renderer/EyeAdaptationPass.h"
 #include "Renderer/BloomPass.h"
+#include "Renderer/SSAO.h"
 
 class FInput;
 class FEditor;
@@ -48,6 +49,7 @@ private:
     std::unique_ptr<FScreenSpaceGI> ScreenSpaceGI;
     std::unique_ptr<FEyeAdaptationPass> EyeAdaptationPass;
     std::unique_ptr<FBloomPass> BloomPass;
+    std::unique_ptr<FSSAO> SSAOPass;
 
     std::unique_ptr<FEditor> Editor;
 };

@@ -18,6 +18,8 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32
     ScreenSpaceGI = std::make_unique<FScreenSpaceGI>(GraphicsDevice, Width, Height);
     EyeAdaptationPass = std::make_unique<FEyeAdaptationPass>(GraphicsDevice, Width, Height);
     BloomPass = std::make_unique<FBloomPass>(GraphicsDevice, Width, Height);
+    SSAOPass = std::make_unique<FSSAO>(GraphicsDevice, Width, Height);
+
     Editor = std::make_unique<FEditor>(GraphicsDevice, Window, Width, Height);
 
     InitSizeDependantResource(GraphicsDevice, Width, Height);
@@ -96,13 +98,28 @@ void FRenderer::Render()
     }
     // ----- Deferred GPass ----
 
+    // ----- Screen Space Ambient Occlusion -----
+    if (Scene->bUseSSAO)
+    {
+        SCOPED_NAMED_EVENT(GraphicsContext, SSAO);
+        SCOPED_GPU_EVENT(GraphicsDevice, SSAO);
+
+        SSAOPass->AddSSAOPass(GraphicsContext, Scene.get(), &DeferredGPass->GBuffer.GBufferB, &DepthTexture);
+    }
+    // ----- Screen Space Ambient Occlusion -----
+
     // ----- Deferred Lighting Pass -----
     if (DeferredGPass)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, LightPass);
         SCOPED_GPU_EVENT(GraphicsDevice, LightPass);
-
-        DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext, ShadowDepthPass.get(), DepthTexture, Width, Height);
+        
+        FTexture* SSAOTexture = nullptr;
+        if (Scene->bUseSSAO)
+        {
+            SSAOTexture = &SSAOPass->SSAOTexture;
+        }
+        DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext, ShadowDepthPass.get(), DepthTexture, SSAOTexture, Width, Height);
     }
     // ----- Deferred Lighting Pass -----
 
@@ -211,6 +228,8 @@ void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
     PostProcess->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     TemporalAA->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     ScreenSpaceGI->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+    BloomPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+    SSAOPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     Editor->OnWindowResized(Width, Height);
 
     InitSizeDependantResource(GraphicsDevice, InWidth, InHeight);
@@ -320,6 +339,10 @@ FTexture* FRenderer::GetDebugVisualizeTexture(FScene* Scene)
     else if (Name.compare("BloomResultTexture") == 0)
     {
         return &BloomPass->BloomResultTexture;
+    }
+    else if (Name.compare("SSAO Texture") == 0)
+    {
+        return &SSAOPass->SSAOTexture;
     }
     else
     {

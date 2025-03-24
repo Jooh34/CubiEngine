@@ -58,7 +58,7 @@ public:
     bool bUseBloom = true;
     bool bGammaCorrection = true;
 
-    bool bUseEnvmap = true;
+    bool bUseEnvmap = false;
     bool bUseEnergyCompensation = true;
 
     int DiffuseMethod = 0;
@@ -72,6 +72,12 @@ public:
     bool bCSMDebug = false;
     float CSMExponentialFactor = 0.8f;
     float ShadowBias = 1e-5f;
+    
+    // SSAO
+    bool bUseSSAO = true;
+    int SSAOKernelSize = 64;
+    float SSAOKernelRadius = 1.f;
+    float SSAODepthBias = 1e-6f;
 
     // SSGI
     float SSGIIntensity = 1.f;

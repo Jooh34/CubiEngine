@@ -179,16 +179,29 @@ void FEditor::RenderGIProperties(FScene* Scene)
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
     ImGui::Begin("GI Properties");
 
-    const char* giItems[] = { "Off", "SSGI" };
-    AddCombo("GI Method", giItems, IM_ARRAYSIZE(giItems), Scene->GIMethod);
-    ImGui::SliderFloat("SSGI Intensity", &Scene->SSGIIntensity, 0.0f, 10.0f);
-    ImGui::SliderFloat("SSGI RayLength", &Scene->SSGIRayLength, 0.0f, 3000.0f);
-    ImGui::SliderInt("SSGI NumSteps", &Scene->SSGINumSteps, 1, 256);
-    ImGui::SliderFloat("SSGI CompareToleranceScale", &Scene->CompareToleranceScale, 1.f, 30.f);
-    
-    const char* sampleingMethodItems[] = { "UniformSampleHemisphere", "ImportanceSampleCosDir" };
-    AddCombo("Sampling Method", sampleingMethodItems, IM_ARRAYSIZE(sampleingMethodItems), Scene->StochasticNormalSamplingMethod);
+    if (ImGui::TreeNode("SSAO"))
+    {
+        ImGui::Checkbox("Use SSAO", &Scene->bUseSSAO);
+        ImGui::SliderInt("SSAO Kernel Size", &Scene->SSAOKernelSize, 8, 64);
+        ImGui::SliderFloat("SSAO Kernel Radius", &Scene->SSAOKernelRadius, 0.1f, 5.0f);
+        ImGui::InputFloat("SSAO Depth Bias", &Scene->SSAODepthBias, 1e-6, 1e-5, "%.6f");
+        ImGui::TreePop();
+    }
 
+    if (ImGui::TreeNode("SSGI"))
+    {
+        const char* giItems[] = { "Off", "SSGI" };
+        AddCombo("GI Method", giItems, IM_ARRAYSIZE(giItems), Scene->GIMethod);
+        ImGui::SliderFloat("SSGI Intensity", &Scene->SSGIIntensity, 0.0f, 10.0f);
+        ImGui::SliderFloat("SSGI RayLength", &Scene->SSGIRayLength, 0.0f, 3000.0f);
+        ImGui::SliderInt("SSGI NumSteps", &Scene->SSGINumSteps, 1, 256);
+        ImGui::SliderFloat("SSGI CompareToleranceScale", &Scene->CompareToleranceScale, 1.f, 30.f);
+
+        const char* sampleingMethodItems[] = { "UniformSampleHemisphere", "ImportanceSampleCosDir" };
+        AddCombo("Sampling Method", sampleingMethodItems, IM_ARRAYSIZE(sampleingMethodItems), Scene->StochasticNormalSamplingMethod);
+        ImGui::TreePop();
+    }
+    
     ImGui::End();
 }
 

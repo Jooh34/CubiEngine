@@ -161,7 +161,7 @@ void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const Graphic
 }
 
 void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext,
-    FShadowDepthPass* ShadowDepthPass, FTexture& DepthTexture, uint32_t Width, uint32_t Height)
+    FShadowDepthPass* ShadowDepthPass, FTexture& DepthTexture, FTexture* SSAOTexture, uint32_t Width, uint32_t Height)
 {
     interlop::PBRRenderResources RenderResources = {
         .numCascadeShadowMap = GNumCascadeShadowMap,
@@ -175,6 +175,7 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .envIrradianceTextureIndex = Scene->GetEnvironmentMap()->IrradianceCubemapTexture.SrvIndex,
         .envMipCount = Scene->GetEnvironmentMap()->GetMipCount(),
         .shadowDepthTextureIndex = ShadowDepthPass->GetShadowDepthTexture().SrvIndex,
+        .ssaoTextureIndex = SSAOTexture ? SSAOTexture->SrvIndex : INVALID_INDEX_U32,
         .outputTextureIndex = HDRTexture.UavIndex,
         .width = Width,
         .height = Height,
@@ -196,6 +197,10 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
     GraphicsContext->AddResourceBarrier(GBuffer.GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(ShadowDepthPass->GetShadowDepthTexture(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(HDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    if (SSAOTexture)
+    {
+        GraphicsContext->AddResourceBarrier(*SSAOTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    }
     GraphicsContext->ExecuteResourceBarriers();
 
     GraphicsContext->SetComputePipelineState(LightPassPipelineState);

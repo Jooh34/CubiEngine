@@ -27,7 +27,7 @@ XMFLOAT2 GetHaltonJitterOffset(uint32_t FrameIndex, float ScreenWidth, float Scr
     jitter.x -= 0.5f;
     jitter.y -= 0.5f;
 
-    return XMFLOAT2(jitter.x / ScreenWidth, jitter.y / ScreenHeight);
+    return XMFLOAT2(jitter.x / (ScreenWidth*2.f), jitter.y / (ScreenHeight*2.f));
 }
 
 FCamera::FCamera(uint32_t Width, uint32_t Height)
@@ -254,9 +254,6 @@ XMMATRIX FCamera::GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightDirect
     XMMATRIX InvViewProjMatrix = XMMatrixInverse(nullptr, GetViewProjMatrix());
     GetShadowBoundingBox(CameraVFCenter, FrustumCorners, CascadeIndex, InvViewProjMatrix);
 
-    //float NearRatio = 1.f - 1.f / (pow(10, CascadeIndex));
-    //XMVECTOR DepthVector = XMVector3TransformCoord(XMVectorSet(0, 0, 1- NearRatio, 1), GetProjMatrix());
-    //NearDistance = Dx::XMVectorGetZ(DepthVector) / Dx::XMVectorGetW(DepthVector);
     float NearLinearRatio;
     GetDepthRaito(CascadeIndex, &NearLinearRatio);
     float Depth = FarZ - NearZ;
