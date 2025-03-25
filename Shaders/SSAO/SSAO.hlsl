@@ -58,14 +58,21 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     {
         // get sample position
         float3 sampleVector = normalize(mul(kernelBuffer.kernel[i].xyz, TBN));
-        float3 samplePos = worldSpacePosition.xyz + sampleVector * kernelRadius; 
+        float3 samplePos = viewSpacePosition + sampleVector * kernelRadius;
 
-        const float4 clipspacePosition = mul(float4(samplePos, 1.0f), sceneBuffer.viewProjectionMatrix);
+        const float4 clipspacePosition = mul(float4(samplePos, 1.0f), sceneBuffer.projectionMatrix);
         float3 clipXYZ = clipspacePosition.xyz / clipspacePosition.w;
         float2 peekUV = ClipToUV(clipXYZ.xy);
 
-        float SampleDepth = depthTexture.Sample(pointClampSampler, peekUV);
-        occlusion += (SampleDepth >= clipXYZ.z + depthBias) ? 1.0f : 0.0f;
+        float sampleDepth = depthTexture.Sample(pointClampSampler, peekUV);
+        float3 sampleDepthViewSpace = viewSpaceCoordsFromDepthBuffer(sampleDepth, peekUV, sceneBuffer.inverseProjectionMatrix);
+
+        float rangeCheck = 1.f;
+        if (renderResources.bUseRangeCheck)
+        {
+            rangeCheck = smoothstep(0.0, 1.0, kernelRadius / abs(samplePos.z - sampleDepthViewSpace.z));
+        }
+        occlusion += (sampleDepth >= clipXYZ.z + depthBias ? 1.0 : 0.0) * rangeCheck;
     }
 
     occlusion /= kernelSize;

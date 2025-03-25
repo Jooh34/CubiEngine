@@ -314,5 +314,6 @@ namespace interlop
         float kernelRadius;
 
         float depthBias;
+        uint bUseRangeCheck;
     };
 }

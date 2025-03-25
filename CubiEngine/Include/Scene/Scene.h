@@ -76,8 +76,9 @@ public:
     // SSAO
     bool bUseSSAO = true;
     int SSAOKernelSize = 64;
-    float SSAOKernelRadius = 1.f;
+    float SSAOKernelRadius = 4.f;
     float SSAODepthBias = 1e-6f;
+    bool SSAOUseRangeCheck = true;
 
     // SSGI
     float SSGIIntensity = 1.f;

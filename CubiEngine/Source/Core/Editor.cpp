@@ -183,8 +183,9 @@ void FEditor::RenderGIProperties(FScene* Scene)
     {
         ImGui::Checkbox("Use SSAO", &Scene->bUseSSAO);
         ImGui::SliderInt("SSAO Kernel Size", &Scene->SSAOKernelSize, 8, 64);
-        ImGui::SliderFloat("SSAO Kernel Radius", &Scene->SSAOKernelRadius, 0.1f, 5.0f);
+        ImGui::SliderFloat("SSAO Kernel Radius", &Scene->SSAOKernelRadius, 1.f, 10.0f);
         ImGui::InputFloat("SSAO Depth Bias", &Scene->SSAODepthBias, 1e-6, 1e-5, "%.6f");
+        ImGui::Checkbox("SSAO Range Check", &Scene->SSAOUseRangeCheck);
         ImGui::TreePop();
     }
 

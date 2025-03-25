@@ -91,6 +91,7 @@ void FSSAO::AddSSAOPass(FGraphicsContext* GraphicsContext, FScene* Scene,
         .kernelSize = (uint)Scene->SSAOKernelSize,
         .kernelRadius = Scene->SSAOKernelRadius,
         .depthBias = Scene->SSAODepthBias,
+        .bUseRangeCheck = Scene->SSAOUseRangeCheck ? 1u : 0u,
     };
 
     GraphicsContext->SetComputePipelineState(SSAOPipelineState);
