@@ -144,7 +144,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     
     const float4 normal = GBufferB.Sample(pointClampSampler, uv);
     const float4 aoMetalRoughness = GBufferC.Sample(pointClampSampler, uv);
-    const float3 emissive = float3(albedo.w, normal.w, aoMetalRoughness.w);
+    const float emissiveIntensity = normal.w;
 
     float roughness = aoMetalRoughness.z;
     float metalic = aoMetalRoughness.y;
@@ -288,9 +288,9 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     if (renderResources.WhiteFurnaceMethod == WHITE_FURNACE_METHOD_OFF)
     {
-        if (any(emissive > 0))
+        if (emissiveIntensity > 0)
         {
-            color = emissive;
+            color = albedo.xyz * emissiveIntensity;
         }
     }
 

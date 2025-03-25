@@ -81,9 +81,12 @@ public:
     ~GPUProfileScopedObject();
 };
 
-
-#define SCOPED_NAMED_EVENT(GraphicsContext, NAME)\
-    PIXScopedEventObject Event_##NAME = PIXScopedEventObject(GraphicsContext->GetCommandList(), PIX_COLOR(255, 255, 255), #NAME);
+#if ENABLE_PIX_EVENT
+    #define SCOPED_NAMED_EVENT(GraphicsContext, NAME)\
+        PIXScopedEventObject Event_##NAME = PIXScopedEventObject(GraphicsContext->GetCommandList(), PIX_COLOR(255, 255, 255), #NAME);
+#else
+    #define SCOPED_NAMED_EVENT(GraphicsContext, NAME)
+#endif
 
 #define SCOPED_GPU_EVENT(Device, NAME)\
     GPUProfileScopedObject GPUProfileEvent_##NAME = GPUProfileScopedObject(Device, #NAME);

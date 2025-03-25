@@ -47,6 +47,7 @@ void FRenderer::BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuff
         GraphicsContext->AddResourceBarrier(GBuffer.GBufferA, D3D12_RESOURCE_STATE_RENDER_TARGET);
         GraphicsContext->AddResourceBarrier(GBuffer.GBufferB, D3D12_RESOURCE_STATE_RENDER_TARGET);
         GraphicsContext->AddResourceBarrier(GBuffer.GBufferC, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(GBuffer.VelocityTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
         GraphicsContext->AddResourceBarrier(DeferredGPass->HDRTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
     }
     GraphicsContext->AddResourceBarrier(DepthTexture, D3D12_RESOURCE_STATE_DEPTH_WRITE);

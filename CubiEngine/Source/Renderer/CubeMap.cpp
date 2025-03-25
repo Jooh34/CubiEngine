@@ -5,7 +5,7 @@
 
 FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : Device(Device)
 {
-    const FTexture EquirectangularTexture = Device->CreateTexture(FTextureCreationDesc{
+    FTexture EquirectangularTexture = Device->CreateTexture(FTextureCreationDesc{
         .Usage = ETextureUsage::HDRTextureFromPath,
         .Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
         .MipLevels = MipCount,
@@ -52,6 +52,7 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
     ComputeContext->Reset();
 
     ComputeContext->AddResourceBarrier(CubeMapTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    ComputeContext->AddResourceBarrier(EquirectangularTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     ComputeContext->ExecuteResourceBarriers();
     ComputeContext->SetComputeRootSignatureAndPipeline(ConvertEquirectToCubeMapPipelineState);
     
@@ -71,9 +72,6 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
         ComputeContext->Dispatch(numGroups, numGroups, 6u);
     }
    
-    ComputeContext->AddResourceBarrier(CubeMapTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    ComputeContext->ExecuteResourceBarriers();
-
     Device->ExecuteAndFlushComputeContext(std::move(ComputeContext));
 
     GeneratePrefilteredCubemap(Desc, MipCount);
@@ -102,6 +100,7 @@ void FCubeMap::GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint
     std::unique_ptr<FComputeContext> ComputeContext = Device->GetComputeContext();
     ComputeContext->Reset();
 
+    ComputeContext->AddResourceBarrier(CubeMapTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     ComputeContext->AddResourceBarrier(PrefilteredCubemapTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     ComputeContext->ExecuteResourceBarriers();
     ComputeContext->SetComputeRootSignatureAndPipeline(PrefilterPipelineState);

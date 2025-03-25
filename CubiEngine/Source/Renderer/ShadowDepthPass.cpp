@@ -32,8 +32,10 @@ FShadowDepthPass::FShadowDepthPass(FGraphicsDevice* const Device)
 
 void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
 {
-    uint32_t DIndex = 0u;
-    
+    GraphicsContext->AddResourceBarrier(ShadowDepthTexture, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    GraphicsContext->ExecuteResourceBarriers();
+    GraphicsContext->ClearDepthStencilView(ShadowDepthTexture);
+
     GraphicsContext->SetGraphicsPipelineState(ShadowDepthPassPipelineState);
     GraphicsContext->SetRenderTargetDepthOnly(ShadowDepthTexture);
     GraphicsContext->SetViewport(D3D12_VIEWPORT{
@@ -52,7 +54,6 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     });
 
     GraphicsContext->SetPrimitiveTopologyLayout(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    GraphicsContext->ClearDepthStencilView(ShadowDepthTexture);
 
     if (GNumCascadeShadowMap == 1)
     {

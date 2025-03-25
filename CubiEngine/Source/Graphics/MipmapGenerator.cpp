@@ -66,16 +66,10 @@ void FMipmapGenerator::GenerateMipmap(FTexture& Texture)
                 max((uint32_t)std::ceil(dstHeight / 8.0f), 1u),
                 1);
         }
+
+        Context->AddUAVBarrier(Texture);
+        Context->ExecuteResourceBarriers();
     }
-    
-    // process last one
-    D3D12_RESOURCE_BARRIER SrcBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
-        Texture.Allocation.Resource.Get(),
-        Texture.ResourceState,
-        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-        ResourceDesc.MipLevels - 1);
-    Context->AddResourceBarrier(SrcBarrier);
-    Context->ExecuteResourceBarriers();
 
     Device->ExecuteAndFlushComputeContext(std::move(Context));
 }

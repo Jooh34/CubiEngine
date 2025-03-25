@@ -57,8 +57,10 @@ using Dx::XMVectorMin;
 using Dx::XMVectorMax;
 
 #ifdef _DEBUG
+#define ENABLE_PIX_EVENT 1
 constexpr bool DEBUG_MODE = true;
 #else
+#define ENABLE_PIX_EVENT 0
 constexpr bool DEBUG_MODE = false;
 #endif
 
