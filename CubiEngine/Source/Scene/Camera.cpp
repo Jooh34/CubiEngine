@@ -27,7 +27,7 @@ XMFLOAT2 GetHaltonJitterOffset(uint32_t FrameIndex, float ScreenWidth, float Scr
     jitter.x -= 0.5f;
     jitter.y -= 0.5f;
 
-    return XMFLOAT2(jitter.x / (ScreenWidth*2.f), jitter.y / (ScreenHeight*2.f));
+    return XMFLOAT2(jitter.x / (ScreenWidth), jitter.y / (ScreenHeight));
 }
 
 FCamera::FCamera(uint32_t Width, uint32_t Height)

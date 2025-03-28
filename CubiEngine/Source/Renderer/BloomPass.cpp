@@ -2,6 +2,7 @@
 #include "Graphics/GraphicsDevice.h"
 #include "Graphics/Profiler.h"
 #include "CubiMath.h"
+#include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
 
@@ -90,15 +91,6 @@ void FBloomPass::InitSizeDependantResource(const FGraphicsDevice* const Device, 
 void FBloomPass::AddBloomPass(FGraphicsContext* GraphicsContext, FScene* Scene, FTexture* HDR)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, BloomPass);
-    
-    // from UnrealEngine5
-    float BloomTint[BLOOM_MAX_STEP] = {
-        //0.346f,
-        0.138f,
-        0.047f,
-        0.016f,
-        0.006f,
-    };
 
     DownSampleSceneTexture(GraphicsContext, HDR);
 
@@ -170,10 +162,10 @@ void FBloomPass::AddBloomPass(FGraphicsContext* GraphicsContext, FScene* Scene, 
         };
         for (int i = 0; i < MAX_GAUSSIAN_KERNEL_SIZE/4; i++)
         {
-            RenderResourcesY.weights[i] = XMFLOAT4(GaussianBlurWeight[i * 4] * BloomTint[BloomIndex],
-                GaussianBlurWeight[i * 4+1] * BloomTint[BloomIndex],
-                GaussianBlurWeight[i * 4+2] * BloomTint[BloomIndex],
-                GaussianBlurWeight[i * 4+3] * BloomTint[BloomIndex]
+            RenderResourcesY.weights[i] = XMFLOAT4(GaussianBlurWeight[i * 4] * Scene->BloomTint[BloomIndex],
+                GaussianBlurWeight[i * 4+1] * Scene->BloomTint[BloomIndex],
+                GaussianBlurWeight[i * 4+2] * Scene->BloomTint[BloomIndex],
+                GaussianBlurWeight[i * 4+3] * Scene->BloomTint[BloomIndex]
             );
         }
 
@@ -187,7 +179,7 @@ void FBloomPass::AddBloomPass(FGraphicsContext* GraphicsContext, FScene* Scene, 
         1);
 
         // downscale kernel
-        KernelSize = KernelSize / 1.5f;
+        KernelSize = KernelSize / 2.f;
     }
 }
 

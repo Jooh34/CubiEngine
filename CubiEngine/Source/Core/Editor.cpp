@@ -64,7 +64,7 @@ void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     RenderCameraProperties(Scene);
     RenderGIProperties(Scene);
     RenderLightProperties(Scene);
-    RenderShadowProperties(Scene);
+    RenderPostProcessProperties(Scene);
     RenderProfileProperties(Scene);
 
     ImGui::Render();
@@ -132,13 +132,7 @@ void FEditor::RenderDebugProperties(FScene* Scene)
         }
         ImGui::EndCombo();
     }*/
-    
-    const char* toneMappingItems[] = {"Off", "Reinhard", "ReinhardModifed", "ACES"};
-    AddCombo("Tone Mapping Method", toneMappingItems, IM_ARRAYSIZE(toneMappingItems), Scene->ToneMappingMethod);
 
-    ImGui::Checkbox("TAA", &Scene->bUseTaa);
-    ImGui::Checkbox("Bloom", &Scene->bUseBloom);
-    ImGui::Checkbox("Gamma Correction", &Scene->bGammaCorrection);
     ImGui::Checkbox("Energy Compensation", &Scene->bUseEnergyCompensation);
     const char* diffuseItems[] = { "Lambertian", "Disney_Burley"};
     AddCombo("Diffuse Model", diffuseItems, IM_ARRAYSIZE(diffuseItems), Scene->DiffuseMethod);
@@ -239,28 +233,45 @@ void FEditor::RenderLightProperties(FScene* Scene)
 
         ImGui::TreePop();
     }
-
+    
     for (uint32_t i = 1; i < LightBuffer.numLight; i++)
     {
-        ImGui::SliderFloat("Intensity", &LightBuffer.intensityDistance[i].x, 0.0f, 100.0f);
-        ImGui::SliderFloat("MaxDistance", &LightBuffer.intensityDistance[i].y, 100.0f, 5000.0f);
-        DirectX::XMFLOAT4& Position = LightBuffer.lightPosition[i];
-        ImGui::SliderFloat3("Light Position", &Position.x, -500, 500);
+        if (ImGui::TreeNode(("Point Light " + std::to_string(i)).c_str()))
+        {
+            ImGui::SliderFloat("Intensity", &LightBuffer.intensityDistance[i].x, 0.0f, 100.0f);
+            ImGui::SliderFloat("MaxDistance", &LightBuffer.intensityDistance[i].y, 100.0f, 5000.0f);
+            DirectX::XMFLOAT4& Position = LightBuffer.lightPosition[i];
+            ImGui::SliderFloat3("Light Position", &Position.x, -500, 500);
+
+            ImGui::TreePop();
+        }
     }
+
+    if (ImGui::TreeNode("Shadow"))
+    {
+        ImGui::Checkbox("Shadow", &Scene->bUseShadow);
+        ImGui::Checkbox("CSM Debug", &Scene->bCSMDebug);
+        ImGui::InputFloat("Shadow Bias", &Scene->ShadowBias, 0.00001, 0.0001, "%.5f");
+        ImGui::InputFloat("CSM Exponential Factor", &Scene->CSMExponentialFactor, 0.01, 0.1);
+
+        ImGui::TreePop();
+    }
+
     ImGui::End();
 }
 
-void FEditor::RenderShadowProperties(FScene* Scene)
+void FEditor::RenderPostProcessProperties(FScene* Scene)
 {
     ImGui::SetNextWindowPos(ImVec2(0, 800));
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
+    ImGui::Begin("PostProcess Properties");
 
-    ImGui::Begin("Shadow Properties");
-
-    ImGui::Checkbox("Shadow", &Scene->bUseShadow);
-    ImGui::Checkbox("CSM Debug", &Scene->bCSMDebug);
-    ImGui::InputFloat("Shadow Bias", &Scene->ShadowBias, 0.00001, 0.0001, "%.5f");
-    ImGui::InputFloat("CSM Exponential Factor", &Scene->CSMExponentialFactor, 0.01, 0.1);
+    const char* toneMappingItems[] = { "Off", "Reinhard", "ReinhardModifed", "ACES" };
+    AddCombo("Tone Mapping Method", toneMappingItems, IM_ARRAYSIZE(toneMappingItems), Scene->ToneMappingMethod);
+    ImGui::Checkbox("TAA", &Scene->bUseTaa);
+    ImGui::Checkbox("Gamma Correction", &Scene->bGammaCorrection);
+    ImGui::Checkbox("Bloom", &Scene->bUseBloom);
+    ImGui::InputFloat4("Bloom Tint", &Scene->BloomTint[0], "%.4f");
 
     ImGui::End();
 }

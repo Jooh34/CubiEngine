@@ -65,11 +65,11 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float2 peekUV = ClipToUV(clipXYZ.xy);
 
         float sampleDepth = depthTexture.Sample(pointClampSampler, peekUV);
-        float3 sampleDepthViewSpace = viewSpaceCoordsFromDepthBuffer(sampleDepth, peekUV, sceneBuffer.inverseProjectionMatrix);
 
         float rangeCheck = 1.f;
         if (renderResources.bUseRangeCheck)
         {
+            float3 sampleDepthViewSpace = viewSpaceCoordsFromDepthBuffer(sampleDepth, peekUV, sceneBuffer.inverseProjectionMatrix);
             rangeCheck = smoothstep(0.0, 1.0, kernelRadius / abs(samplePos.z - sampleDepthViewSpace.z));
         }
         occlusion += (sampleDepth >= clipXYZ.z + depthBias ? 1.0 : 0.0) * rangeCheck;

@@ -46,26 +46,21 @@ public:
     float CPUFrameMsTime = 0;
 
     // UI control
+
+    // Debug
     std::vector<std::string> DebugVisualizeList;
     int DebugVisualizeIndex = 0;
     float VisualizeDebugMin = 0.f;
     float VisualizeDebugMax = 1.f;
 
     int WhiteFurnaceMethod = 0;
-    int GIMethod = 0;
-    int ToneMappingMethod = 3;
-
-    bool bUseBloom = true;
-    bool bGammaCorrection = true;
 
     bool bUseEnvmap = false;
     bool bUseEnergyCompensation = true;
 
     int DiffuseMethod = 0;
     
-    // Debug
     int MaxFPS = 60;
-    bool bUseTaa = true;
 
     // Shadow
     bool bUseShadow = true;
@@ -81,11 +76,21 @@ public:
     bool SSAOUseRangeCheck = true;
 
     // SSGI
+    int GIMethod = 0;
+
     float SSGIIntensity = 1.f;
     float SSGIRayLength = 2000.f;
     int SSGINumSteps = 64;
     int StochasticNormalSamplingMethod = 1; // Cosine weighted importance sampling
     float CompareToleranceScale = 10.f;
+
+    // PostProcess
+    int ToneMappingMethod = 3;
+    bool bUseTaa = true;
+    bool bGammaCorrection = true;
+
+    bool bUseBloom = true;
+    float BloomTint[4] = { 0.1f, 0.040f, 0.020f, 0.010f };
 
     // auto exposure
     float HistogramLogMin = -8.f;

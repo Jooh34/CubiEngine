@@ -157,6 +157,8 @@ void FRenderer::Render()
 
         {
             SCOPED_NAMED_EVENT(GraphicsContext, EyeAdaptation);
+            SCOPED_GPU_EVENT(GraphicsDevice, EyeAdaptation);
+
             EyeAdaptationPass->GenerateHistogram(GraphicsContext, Scene.get(), HDR, Width, Height);
             EyeAdaptationPass->CalculateAverageLuminance(GraphicsContext, Scene.get(), Width, Height);
         }
@@ -164,11 +166,13 @@ void FRenderer::Render()
         if (Scene->bUseBloom)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, Bloom);
+            SCOPED_GPU_EVENT(GraphicsDevice, Bloom);
             BloomPass->AddBloomPass(GraphicsContext, Scene.get(), HDR);
         }
 
         {
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
+            SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);
             EyeAdaptationPass->ToneMapping(GraphicsContext, Scene.get(), HDR, LDR,
                 Scene->bUseBloom ? &BloomPass->BloomResultTexture : nullptr, Width, Height);
         }
@@ -177,6 +181,8 @@ void FRenderer::Render()
 
         // ----- Vis Debug -----
         {
+            SCOPED_NAMED_EVENT(GraphicsContext, DebugVisualize);
+            SCOPED_GPU_EVENT(GraphicsDevice, DebugVisualize);
             FTexture* SelectedTexture = GetDebugVisualizeTexture(Scene.get());
             if (SelectedTexture != nullptr)
             {
