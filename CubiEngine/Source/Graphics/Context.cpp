@@ -39,6 +39,11 @@ void FContext::AddUAVBarrier(FTexture& Texture)
     ResourceBarriers.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(Texture.GetResource()));
 }
 
+void FContext::AddUAVBarrier(FBuffer& Buffer)
+{
+    ResourceBarriers.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(Buffer.Allocation.Resource.Get()));
+}
+
 void FContext::ExecuteResourceBarriers()
 {
     if (ResourceBarriers.size() == 0) return;

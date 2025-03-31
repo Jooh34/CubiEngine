@@ -24,6 +24,7 @@ public:
     void AddResourceBarrier(D3D12_RESOURCE_BARRIER& Barrier);
 
     void AddUAVBarrier(FTexture& Texture);
+    void AddUAVBarrier(FBuffer& Buffer);
 
     void ExecuteResourceBarriers();
     void BeginEvent(const char* Name);
