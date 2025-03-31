@@ -68,6 +68,9 @@ void FEyeAdaptationPass::GenerateHistogram(FGraphicsContext* GraphicsContext, FS
         max((uint32_t)std::ceil(Width / 16.0f), 1u),
         max((uint32_t)std::ceil(Height / 16.0f), 1u),
     1);
+
+    GraphicsContext->AddUAVBarrier(HistogramBuffer);
+    GraphicsContext->ExecuteResourceBarriers();
 }
 
 void FEyeAdaptationPass::CalculateAverageLuminance(FGraphicsContext* GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height)
