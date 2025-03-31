@@ -116,7 +116,7 @@ void FEyeAdaptationPass::ToneMapping(FGraphicsContext* GraphicsContext, FScene* 
         .height = Height,
         .toneMappingMethod = (uint)Scene->ToneMappingMethod,
         .bGammaCorrection = Scene->bGammaCorrection,
-        .averageLuminanceBufferIndex = AverageLuminanceBuffer.SrvIndex,
+        .averageLuminanceBufferIndex = Scene->bUseEyeAdaptation ? AverageLuminanceBuffer.SrvIndex : INVALID_INDEX_U32,
     };
 
     GraphicsContext->SetComputePipelineState(EyeAdaptationTonemappingPipelineState);

@@ -78,13 +78,6 @@ float CastScreenSpaceShadowRay(
 }
 */
 
-float2 ClipToUV(float2 ClipXY)
-{
-    float2 uv = ClipXY*0.5f+0.5f;
-    uv.y = 1.f - uv.y;
-    return uv;
-}
-
 FTraceResult TraceScreenSpaceRay(
     Texture2D<float> depthTexture,
     float3 rayOrigin,
@@ -132,15 +125,6 @@ FTraceResult TraceScreenSpaceRay(
 		float3 SampleUVz = RayStartUVz + RayStepUVz * SampleTime;
 		float SampleDepth = depthTexture.Sample(pointClampSampler, ClipToUV(SampleUVz.xy));
 
-        // if (i==0)
-        // {
-        //     SampleUVz = RayStartUVz + RayStepUVz * 30 * SampleTime;
-        //     result.hit = true;
-        //     result.hitUV = SampleUVz.xy*0.5f+0.5f;
-        //     result.hitUV.y = 1.f-result.hitUV.y;
-        //     return result;
-        // }
-
 		if (SampleDepth != StartDepth)
 		{
 			float DepthDiff = SampleUVz.z - SampleDepth;
@@ -154,7 +138,7 @@ FTraceResult TraceScreenSpaceRay(
 				result.hit = all(and(-1.0 < SampleUVz.xy, SampleUVz.xy < 1.0));
                 if (result.hit)
                 {
-                    result.mask = 0.1f * rayLength / (rayLength * SampleTime);
+                    result.mask = rayLength / (rayLength * SampleTime);
                 }
                 return result;
 			}
@@ -166,13 +150,33 @@ FTraceResult TraceScreenSpaceRay(
     return result;
 }
 
+void GenerateStochasticNormal(const float3 normal, float2 u, out float3 stochasticNormal, out float pdf)
+{
+    if (renderResources.stochasticNormalSamplingMethod == 0)
+    {
+        float3 t = float3(0.0f, 0.0f, 0.0f);
+        float3 s = float3(0.0f, 0.0f, 0.0f);
+        stochasticNormal = tangentToWorldCoords(UniformSampleHemisphere(u), normal.xyz, s, t);
+		pdf = 1.f / (2*PI);
+    }
+    else if (renderResources.stochasticNormalSamplingMethod == 1)
+	{
+        float NdotL;
+        ImportanceSampleCosDir(u, normal.xyz, stochasticNormal, NdotL, pdf);
+    }
+	else
+	{
+		ConcentricSampleDisk(u, normal, stochasticNormal, pdf);
+	}
+}
+
 [RootSignature(BindlessRootSignature)]
 [numthreads(8, 8, 1)]
 void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     Texture2D<float4> sceneColorTexture = ResourceDescriptorHeap[renderResources.sceneColorTextureIndex];
     Texture2D<float> depthTexture = ResourceDescriptorHeap[renderResources.depthTextureIndex];
-    Texture2D<float4> stochasticNormalTexture = ResourceDescriptorHeap[renderResources.stochasticNormalTextureIndex];
+    Texture2D<float4> GBufferBTexture = ResourceDescriptorHeap[renderResources.GBufferBTextureIndex];
     RWTexture2D<float4> dstTexture = ResourceDescriptorHeap[renderResources.dstTextureIndex];
 
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
@@ -182,38 +186,37 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     const float2 uv = (dispatchThreadID.xy + 0.5f) * invViewport; 
     const float2 pixel = (dispatchThreadID.xy + 0.5f);
 
-    const float3 normal = stochasticNormalTexture.Sample(pointClampSampler, uv).xyz;
-    const float depth = depthTexture.Sample(pointClampSampler, uv);
+	float3 normal = GBufferBTexture.Sample(pointClampSampler, uv).xyz;
 
+    const float depth = depthTexture.Sample(pointClampSampler, uv);
     float3 viewSpacePosition = viewSpaceCoordsFromDepthBuffer(depth, uv, sceneBuffer.inverseProjectionMatrix);
-    
-    // FTraceResult TraceScreenSpaceRay(
-    //     Texture2D<float> depthTexture,
-    //     float3 rayOrigin,
-    //     float3 rayDirection,
-    //     float length,
-    //     float4x4 projectionMatrix,
-    //     float CompareToleranceScale,
-    //     int NumSteps
-    // )
 
     float RayLength = renderResources.rayLength;
     int NumSteps = renderResources.numSteps;
     float ssgiIntensity = renderResources.ssgiIntensity;
 
-    FTraceResult result = TraceScreenSpaceRay(depthTexture, viewSpacePosition, normal, RayLength, sceneBuffer.projectionMatrix, renderResources.compareToleranceScale, NumSteps);
-    if (!result.hit)
-    {
-		dstTexture[dispatchThreadID.xy] = float4(0, 0, 0, 1);
-    }
-	else
-	{
-		float3 hitColor = sceneColorTexture.Sample(pointClampSampler, result.hitUV).xyz;
+	float3 radiance = float3(0,0,0);
+	int numSample = renderResources.numSamples;
+	if (numSample <= 0) numSample = 1;
 
-		// why ?
-		if (isnan(hitColor.x) || isnan(hitColor.y) || isnan(hitColor.z)) {
-			hitColor = float3(0, 0, 0);
+	for (int i=0; i<numSample; i++)
+	{
+		float3 stochasticNormal;
+		float pdf;
+		float noise = InterleavedGradientNoiseByIntel(dispatchThreadID.xy, renderResources.frameCount*numSample+i);
+		float2 u = float2(noise, noise);
+
+		GenerateStochasticNormal(normal, u, stochasticNormal, pdf);
+
+		FTraceResult result = TraceScreenSpaceRay(depthTexture, viewSpacePosition, stochasticNormal, RayLength, sceneBuffer.projectionMatrix, renderResources.compareToleranceScale, NumSteps);
+		if (result.hit)
+		{
+			float3 hitColor = sceneColorTexture.Sample(pointClampSampler, result.hitUV).xyz;
+
+			radiance += float3(hitColor * ssgiIntensity * result.mask * pdf);
 		}
-		dstTexture[dispatchThreadID.xy] = float4(hitColor * ssgiIntensity, 1.f);
 	}
+	radiance = radiance / numSample;
+
+	dstTexture[dispatchThreadID.xy] = float4(radiance, 1.f);
 }

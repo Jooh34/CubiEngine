@@ -41,8 +41,10 @@ void FBloomPass::InitSizeDependantResource(const FGraphicsDevice* const Device, 
         .Name = L"BloomResult Texture",
     };
     BloomResultTexture = Device->CreateTexture(BloomResultTextureDesc);
-
+    
+    BloomXTextures.clear();
     BloomXTextures.reserve(BLOOM_MAX_STEP);
+    BloomYTextures.clear();
     BloomYTextures.reserve(BLOOM_MAX_STEP);
 
     for (int BloomIndex = 0; BloomIndex < BLOOM_MAX_STEP; BloomIndex++)

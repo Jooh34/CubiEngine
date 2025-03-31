@@ -262,3 +262,52 @@ XMMATRIX FCamera::GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightDirect
     XMMATRIX LightViewProjectionMatrix = CalculateLightViewProjMatrix(XMLoadFloat4(&LightDirection), XMLoadFloat3(&CameraVFCenter), FrustumCorners, MaxDistance);
     return LightViewProjectionMatrix;
 }
+
+XMFLOAT4 FCamera::CreateInvDeviceZToWorldZTransform(const XMMATRIX& ProjMatrix)
+{
+    float DepthMul = (float)XMVectorGetZ(ProjMatrix.r[2]); // [2][2]
+    float DepthAdd = (float)XMVectorGetZ(ProjMatrix.r[3]); // [3][2]
+    float M33 = (float)XMVectorGetW(ProjMatrix.r[3]); // [3][2]
+
+    if (DepthAdd == 0.f)
+    {
+        // Avoid dividing by 0 in this case
+        DepthAdd = 0.00000001f;
+    }
+    
+    bool bIsPerspectiveProjection = M33 < 1.0f;
+
+    if (bIsPerspectiveProjection)
+    {
+        float SubtractValue = DepthMul / DepthAdd;
+
+        // Subtract a tiny number to avoid divide by 0 errors in the shader when a very far distance is decided from the depth buffer.
+        // This fixes fog not being applied to the black background in the editor.
+        SubtractValue -= 0.00000001f;
+
+        return XMFLOAT4{
+            0.0f,
+            0.0f,
+            1.0f / DepthAdd,
+            SubtractValue
+        };
+    }
+    else
+    {
+        return XMFLOAT4(
+            (float)(1.0f / DepthMul),
+            (float)(-DepthAdd / DepthMul + 1.0f),
+            0.0f,
+            1.0f
+        );
+    }
+
+    return XMFLOAT4();
+}
+
+XMMATRIX FCamera::GetClipToPrevClip()
+{
+    XMMATRIX InvViewProj = XMMatrixInverse(nullptr, GetViewProjMatrix());
+    XMMATRIX PrevViewProj = GetPrevViewProjMatrix();
+    return XMMatrixMultiply(InvViewProj, PrevViewProj);
+}

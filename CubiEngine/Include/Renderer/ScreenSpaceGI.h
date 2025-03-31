@@ -15,10 +15,10 @@ public:
     void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
     
     void GenerateStochasticNormal(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* GBufferB, FTexture* GBufferC, uint32_t Width, uint32_t Height);
-    void RaycastDiffuse(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* HDR, FTexture* Depth, uint32_t Width, uint32_t Height);
+    void RaycastDiffuse(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* HDR, FTexture* Depth, FTexture* GBufferB, uint32_t Width, uint32_t Height);
     void Denoise(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height);
     void DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height);
-    void Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* VelocityTexture, uint32_t Width, uint32_t Height);
+    void Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* VelocityTexture, FTexture* PrevDepthTexture, FTexture* DepthTexture, uint32_t Width, uint32_t Height);
     void UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height);
     void CompositionSSGI(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* HDR, FTexture* GBufferA, uint32_t Width, uint32_t Height);
 
@@ -27,6 +27,7 @@ public:
     FTexture DenoisedScreenSpaceGITexture;
 
     FTexture HistoryTexture;
+    FTexture HistroyNumFrameAccumulated;
     FTexture ResolveTexture;
 
     FTexture HalfTexture;
@@ -43,6 +44,6 @@ private:
 
     FPipelineState SSGIDownSamplePipelineState;
     FPipelineState SSGIUpSamplePipelineState;
-    FPipelineState SSGIGaussianBlurPipelineState;
+    FPipelineState SSGIGaussianBlurWPipelineState;
     uint32_t HistoryFrameCount = 0;
 };

@@ -3,7 +3,7 @@
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-ConstantBuffer<interlop::TemporalAAUpdateHistoryRenderResource> renderResources : register(b0);
+ConstantBuffer<interlop::SSGIUpdateHistoryRenderResource> renderResources : register(b0);
 
 [RootSignature(BindlessRootSignature)]
 [numthreads(8, 8, 1)]

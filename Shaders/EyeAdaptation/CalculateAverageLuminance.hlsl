@@ -52,6 +52,9 @@ void CsMain( uint3 dispatchThreadID : SV_DispatchThreadID, uint groupIndex : SV_
         // **Read last frame's luminance for smooth exposure adaptation**
         float adaptedLum = luminanceLastFrame + (weightedAvgLum - luminanceLastFrame) * (1 - exp(-timeDelta * timeCoeff));
 
+        if (isnan(adaptedLum)) { // todo : debug nan
+            adaptedLum = luminanceLastFrame;
+        }
         // Store new adapted luminance value
         averageLuminanceBuffer[0] = float4(adaptedLum, 0, 0, 0);
     }

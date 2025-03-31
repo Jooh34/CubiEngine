@@ -37,6 +37,8 @@ namespace interlop
         float4x4 viewMatrix;
         float4x4 inverseViewMatrix;
         float4x4 prevViewProjMatrix;
+        float4x4 clipToPrevClip;
+        float4 invDeviceZToWorldZTransform;
         float nearZ;
         float farZ;
         uint width;

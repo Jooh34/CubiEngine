@@ -66,7 +66,7 @@ public:
     bool bUseShadow = true;
     bool bCSMDebug = false;
     float CSMExponentialFactor = 0.8f;
-    float ShadowBias = 1e-5f;
+    float ShadowBias = 1e-4f;
     
     // SSAO
     bool bUseSSAO = true;
@@ -76,13 +76,19 @@ public:
     bool SSAOUseRangeCheck = true;
 
     // SSGI
-    int GIMethod = 0;
+    int GIMethod = 1;
 
     float SSGIIntensity = 1.f;
     float SSGIRayLength = 2000.f;
-    int SSGINumSteps = 64;
-    int StochasticNormalSamplingMethod = 1; // Cosine weighted importance sampling
-    float CompareToleranceScale = 10.f;
+    int SSGINumSteps = 32;
+    int SSGINumSamples = 2;
+    int StochasticNormalSamplingMethod = 2;
+    float CompareToleranceScale = 4.f;
+    
+    int SSGIGaussianKernelSize = 64;
+    float SSGIGaussianStdDev = 20.f;
+
+    int MaxHistoryFrame = 10;
 
     // PostProcess
     int ToneMappingMethod = 3;
@@ -93,6 +99,7 @@ public:
     float BloomTint[4] = { 0.1f, 0.040f, 0.020f, 0.010f };
 
     // auto exposure
+    bool bUseEyeAdaptation = true;
     float HistogramLogMin = -8.f;
     float HistogramLogMax = 4.f;
     float TimeCoeff = 0.5f;

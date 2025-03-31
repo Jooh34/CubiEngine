@@ -223,7 +223,7 @@ namespace interlop
     {
         uint sceneColorTextureIndex;
         uint depthTextureIndex;
-        uint stochasticNormalTextureIndex;
+        uint GBufferBTextureIndex;
         uint dstTextureIndex;
 
         uint sceneBufferIndex;
@@ -234,6 +234,10 @@ namespace interlop
         uint numSteps;
         float ssgiIntensity;
         float compareToleranceScale;
+        uint frameCount;
+
+        uint stochasticNormalSamplingMethod;
+        uint numSamples;
     };
 
     struct CompositionSSGIRenderResource
@@ -243,6 +247,32 @@ namespace interlop
         uint dstTextureIndex;
         uint width;
         uint height;
+    };
+
+    struct SSGIUpdateHistoryRenderResource
+    {
+        uint resolveTextureIndex;
+        uint historyTextureIndex;
+        uint width;
+        uint height;
+    };
+
+    
+    struct SSGIResolveRenderResource
+    {
+        uint denoisedTextureIndex;
+        uint historyTextureIndex;
+        uint velocityTextureIndex;
+        uint prevDepthTextureIndex;
+
+        uint depthTextureIndex;
+        uint dstTextureIndex;
+        uint numFramesAccumulatedTextureIndex;
+        uint sceneBufferIndex;
+        
+        uint width;
+        uint height;
+        uint maxHistoryFrame;
     };
 
     struct DownSampleRenderResource

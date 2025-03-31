@@ -21,9 +21,10 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     const float4 aoMetalRoughness = GBufferC.Sample(pointClampSampler, uv);
     float roughness = aoMetalRoughness.z;
 
-    float noise = InterleavedGradientNoise(pixel, renderResources.frameCount);
-    float2 u = float2(noise, noise);
-    // float2 u = Hammersley( dispatchThreadID.x * renderResources.height + dispatchThreadID.y, invViewport.x * invViewport.y );
+    // float noise = InterleavedGradientNoise(pixel, renderResources.frameCount);
+    // float noise2 = InterleavedGradientNoise(pixel, renderResources.frameCount + 4);
+    // float2 u = float2(noise, noise2);
+    float2 u = Hammersley( dispatchThreadID.x * renderResources.height + dispatchThreadID.y, invViewport.x * invViewport.y );
     
     float3 stochasticNormal;
     if (renderResources.stochasticNormalSamplingMethod == 0)

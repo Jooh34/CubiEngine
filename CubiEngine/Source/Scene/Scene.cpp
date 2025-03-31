@@ -32,8 +32,9 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     }
     
     // Directional Light
-    float LightPosition[4] = { 0,-1,-0.4,0 };
+    float LightPosition[4] = { -0.3, -1, -0.4, 0 };
     float LightColor[4] = { 1,1,1,1 };
+    float Intensity = 5.f;
     AddLight(LightPosition, LightColor);
 
     int Scene = 1;
@@ -89,6 +90,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     DebugVisualizeList.push_back(std::string("DenoisedScreenSpaceGITexture"));
     DebugVisualizeList.push_back(std::string("QuarterTexture"));
     DebugVisualizeList.push_back(std::string("SSGIHistory"));
+    DebugVisualizeList.push_back(std::string("SSGIHistroyNumFrameAccumulated"));
     DebugVisualizeList.push_back(std::string("DownSampledSceneTexture 1/2"));
     DebugVisualizeList.push_back(std::string("DownSampledSceneTexture 1/4"));
     DebugVisualizeList.push_back(std::string("DownSampledSceneTexture 1/8"));
@@ -147,6 +149,8 @@ void FScene::UpdateBuffers()
         .viewMatrix = Camera.GetViewMatrix(),
         .inverseViewMatrix = XMMatrixInverse(nullptr, Camera.GetViewMatrix()),
         .prevViewProjMatrix = Camera.GetPrevViewProjMatrix(),
+        .clipToPrevClip = Camera.GetClipToPrevClip(),
+        .invDeviceZToWorldZTransform = Camera.CreateInvDeviceZToWorldZTransform(Camera.GetProjMatrix()),
         .nearZ = Camera.NearZ,
         .farZ = Camera.FarZ,
         .width = Width,

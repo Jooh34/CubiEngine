@@ -291,6 +291,38 @@ float3 UniformSampleHemisphere(float2 uv)
     return float3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
 }
 
+void ConcentricSampleDisk(float2 u, float3 N, out float3 outL, out float pdf)
+{
+    float sx = 2.0 * u.x - 1.0;
+    float sy = 2.0 * u.y - 1.0;
+
+    if (sx == 0 && sy == 0)
+        sx = 0.01f;
+
+    float r, theta;
+
+    if (abs(sx) > abs(sy)) {
+        r = sx;
+        theta = (PI / 4.0) * (sy / sx);
+    } else {
+        r = sy;
+        theta = (PI / 2.0) - (PI / 4.0) * (sx / sy);
+    }
+
+    float x = r * cos(theta);
+    float y = r * sin(theta);
+    float z = sqrt(saturate(1.0 - x * x - y * y));
+    float3 L = float3(x, y, z);
+    
+    float3 UpVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
+    float3 TangentX = normalize(cross(UpVector, N));
+    float3 TangentY = normalize(cross(N, TangentX));
+    
+    outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
+
+    pdf = 1.f;
+}
+
 // Bring the vector that was randomly sampled from a hemisphere into the coordinate system where N, S and T form the orthonormal basis.
 float3 tangentToWorldCoords(float3 v, float3 n, float3 s, float3 t)
 {
@@ -319,3 +351,36 @@ float InterleavedGradientNoise(float2 uv, int FrameCount){
     
     return frac(magic.z * frac(dot(uv, magic.xy)));
 } 
+
+float InterleavedGradientNoiseByIntel(int2 pixelPos, int frameIndex = 0)
+{
+    // 상수는 적절한 해싱을 위한 마법 숫자들
+    uint x = uint(pixelPos.x);
+    uint y = uint(pixelPos.y);
+    uint f = uint(frameIndex);
+
+    uint m = x + y * 374761393u + f * 668265263u;
+    m = (m ^ (m >> 13u)) * 1274126177u;
+    return frac(float((m ^ (m >> 16u)) & 0x00FFFFFFu) / 16777216.0);
+}
+
+// @param DeviceZ value that is stored in the depth buffer (Z/W)
+// @return SceneDepth (linear in world units, W)
+float ConvertFromDeviceZ(float DeviceZ, float4 InvDeviceZToWorldZTransform)
+{
+	// Supports ortho and perspective, see CreateInvDeviceZToWorldZTransform()
+	return DeviceZ * InvDeviceZToWorldZTransform[0] + InvDeviceZToWorldZTransform[1] + 1.0f / (DeviceZ * InvDeviceZToWorldZTransform[2] - InvDeviceZToWorldZTransform[3]);
+}
+
+float2 ClipToUV(float2 ClipXY)
+{
+    float2 uv = ClipXY*0.5f+0.5f;
+    uv.y = 1.f - uv.y;
+    return uv;
+}
+
+float2 UVToClip(float2 UV)
+{
+    float2 clip = float2(UV.x, 1.0f - UV.y) * 2.0f - 1.0f;
+    return clip;
+}

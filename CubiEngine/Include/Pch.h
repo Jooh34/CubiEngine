@@ -55,6 +55,10 @@ using Dx::XMVector4Transform;
 using Dx::XMVectorDivide;
 using Dx::XMVectorMin;
 using Dx::XMVectorMax;
+using Dx::XMVectorGetX;
+using Dx::XMVectorGetY;
+using Dx::XMVectorGetZ;
+using Dx::XMVectorGetW;
 
 #ifdef _DEBUG
 #define ENABLE_PIX_EVENT 1

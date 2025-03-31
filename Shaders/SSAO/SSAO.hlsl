@@ -5,13 +5,6 @@
 #include "Utils.hlsli"
 ConstantBuffer<interlop::SSAORenderResource> renderResources : register(b0);
 
-float2 ClipToUV(float2 ClipXY)
-{
-    float2 uv = ClipXY*0.5f+0.5f;
-    uv.y = 1.f - uv.y;
-    return uv;
-}
-
 [RootSignature(BindlessRootSignature)]
 [numthreads(8, 8, 1)]
 void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
@@ -69,8 +62,9 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float rangeCheck = 1.f;
         if (renderResources.bUseRangeCheck)
         {
-            float3 sampleDepthViewSpace = viewSpaceCoordsFromDepthBuffer(sampleDepth, peekUV, sceneBuffer.inverseProjectionMatrix);
-            rangeCheck = smoothstep(0.0, 1.0, kernelRadius / abs(samplePos.z - sampleDepthViewSpace.z));
+            // float3 sampleDepthViewSpace = viewSpaceCoordsFromDepthBuffer(sampleDepth, peekUV, sceneBuffer.inverseProjectionMatrix);
+            float worldDepth = ConvertFromDeviceZ(sampleDepth, sceneBuffer.invDeviceZToWorldZTransform);
+            rangeCheck = smoothstep(0.0, 1.0, kernelRadius / abs(samplePos.z - worldDepth));
         }
         occlusion += (sampleDepth >= clipXYZ.z + depthBias ? 1.0 : 0.0) * rangeCheck;
     }

@@ -36,6 +36,10 @@ public:
     void GetShadowBoundingBox(XMFLOAT3& Center, XMVECTOR FrustumCorners[], int CascadeIndex, XMMATRIX InverseViewProj);
 
     XMMATRIX GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightPosition, float MaxDistance, int CascadeIndex, float& NearDistance);
+    
+    // from UE5
+    XMFLOAT4 CreateInvDeviceZToWorldZTransform(const XMMATRIX& ProjMatrix);
+    XMMATRIX GetClipToPrevClip();
 
     float FarZ;
     float NearZ;

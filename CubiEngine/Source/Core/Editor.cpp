@@ -150,6 +150,7 @@ void FEditor::RenderCameraProperties(FScene* Scene)
     
     if (ImGui::TreeNode("Auto Exposure"))
     {
+        ImGui::Checkbox("Enable Auto Exposure", &Scene->bUseEyeAdaptation);
         ImGui::SliderFloat("HistogramLogMin", &Scene->HistogramLogMin, -10.f, 0.f);
         ImGui::SliderFloat("HistogramLogMax", &Scene->HistogramLogMax, 0.f, 10.f);
         ImGui::SliderFloat("Time Coeff", &Scene->TimeCoeff, 0.0f, 1.0f);
@@ -191,8 +192,12 @@ void FEditor::RenderGIProperties(FScene* Scene)
         ImGui::SliderFloat("SSGI RayLength", &Scene->SSGIRayLength, 0.0f, 3000.0f);
         ImGui::SliderInt("SSGI NumSteps", &Scene->SSGINumSteps, 1, 256);
         ImGui::SliderFloat("SSGI CompareToleranceScale", &Scene->CompareToleranceScale, 1.f, 30.f);
+        ImGui::SliderInt("SSGI NumSamples", &Scene->SSGINumSamples, 1, 16);
 
-        const char* sampleingMethodItems[] = { "UniformSampleHemisphere", "ImportanceSampleCosDir" };
+        ImGui::SliderInt("SSGI GaussianKernelSize", &Scene->SSGIGaussianKernelSize, 1, 64);
+        ImGui::SliderFloat("SSGI GaussianStdDev", &Scene->SSGIGaussianStdDev, 0.1f, 20.0f);
+
+        const char* sampleingMethodItems[] = { "UniformSampleHemisphere", "ImportanceSampleCosDir", "ConcentricSampleDisk"};
         AddCombo("Sampling Method", sampleingMethodItems, IM_ARRAYSIZE(sampleingMethodItems), Scene->StochasticNormalSamplingMethod);
         ImGui::TreePop();
     }

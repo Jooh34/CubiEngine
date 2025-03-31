@@ -40,26 +40,32 @@ void CsMain( uint3 dispatchThreadID : SV_DispatchThreadID)
         float4 weights = renderResources.weights[i];
         for (int j=0; j<4; j++)
         {
-            int index = i*4+j+shift;
+            float index = i*4+j+shift;
             float weight = weights[j];
             float2 offset = horizontal ? float2(texelSize.x * index, 0) : float2(0, texelSize.y * index);
             float2 uv = uvCoords + offset;
-            float4 color = srcTexture.Sample(pointClampSampler, uv);
-            result += color.xyz * weight;
+		    if (all(and(0.0 < uv, uv < 1.0)))
+            {
+                float4 color = srcTexture.Sample(pointClampSampler, uv);
+                result += color.xyz * weight;
+            }
         }
     }
 
     int Rem = kernelSize%4;
     for (int j=0; j<Rem; j++)
     {
-        int index = Q*4+j+shift;
+        float index = Q*4+j+shift;
         float4 weights = renderResources.weights[Q];
         float weight = weights[j];
 
         float2 offset = horizontal ? float2(texelSize.x * index, 0) : float2(0, texelSize.y * index);
         float2 uv = uvCoords + offset;
-        float4 color = srcTexture.Sample(pointClampSampler, uv);
-        result += color.xyz * weight;
+        if (all(and(0.0 < uv, uv < 1.0)))
+        {
+            float4 color = srcTexture.Sample(pointClampSampler, uv);
+            result += color.xyz * weight;
+        }
     }
 
     if (renderResources.additiveTextureIndex != INVALID_INDEX)

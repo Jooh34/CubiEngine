@@ -24,6 +24,7 @@ public:
 
     void GameTick(float DeltaTime, FInput* Input);
     void BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer, FTexture& DepthTexture);
+    void CopyHistoricalTexture(FGraphicsContext* GraphicsContext);
     void Render();
     void OnWindowResized(uint32_t InWidth, uint32_t InHeight);
     void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
@@ -36,7 +37,9 @@ private:
 
     uint32_t Width{};
     uint32_t Height{};
+
     FTexture DepthTexture;
+    FTexture PrevDepthTexture;
 
     FTexture LDRTexture;
 

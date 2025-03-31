@@ -36,12 +36,10 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     Texture2D<float4> srcTexture = ResourceDescriptorHeap[renderResources.srcTextureIndex];
     RWTexture2D<float4> dstTexture = ResourceDescriptorHeap[renderResources.dstTextureIndex];
-    StructuredBuffer<float4> averageLuminanceBuffer = ResourceDescriptorHeap[renderResources.averageLuminanceBufferIndex];
 
     float2 invViewport = float2(1.f/(float)renderResources.width, 1.f/(float)renderResources.height);
     const float2 uv = (dispatchThreadID.xy + 0.5f) * invViewport;
     
-    float averageLuminance = averageLuminanceBuffer[0].x;
     float4 color = srcTexture.Sample(pointClampSampler, uv);
     
     if (renderResources.bloomTextureIndex != INVALID_INDEX)
@@ -50,7 +48,15 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         color.xyz = color.xyz + bloomTexture.Sample(pointClampSampler, uv).xyz;
     }
 
-    color = color / (9.6 * averageLuminance);
+    if (renderResources.averageLuminanceBufferIndex != INVALID_INDEX)
+    {
+        StructuredBuffer<float4> averageLuminanceBuffer = ResourceDescriptorHeap[renderResources.averageLuminanceBufferIndex];
+        float averageLuminance = averageLuminanceBuffer[0].x;
+        if (!isnan(averageLuminance))
+        {
+            color = color / (9.6 * averageLuminance);
+        }
+    }
 
     if (renderResources.toneMappingMethod == TONEMAPPING_REINHARD)
     {
