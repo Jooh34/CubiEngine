@@ -109,8 +109,7 @@ namespace interlop
 
         uint outputTextureIndex;
 
-        uint width;
-        uint height;
+        float2 dstTexelSize;
         uint sceneBufferIndex;
         uint lightBufferIndex;
         uint shadowBufferIndex;
@@ -194,8 +193,7 @@ namespace interlop
         uint historyTextureIndex;
         uint velocityTextureIndex;
         uint dstTextureIndex;
-        uint width;
-        uint height;
+        float2 dstTexelSize;
         uint historyFrameCount;
     };
 
@@ -203,8 +201,7 @@ namespace interlop
     {
         uint resolveTextureIndex;
         uint historyTextureIndex;
-        uint width;
-        uint height;
+        float2 dstTexelSize;
     };
 
     struct GenerateStochasticNormalRenderResource
@@ -253,8 +250,7 @@ namespace interlop
     {
         uint resolveTextureIndex;
         uint historyTextureIndex;
-        uint width;
-        uint height;
+        float2 dstTexelSize;
     };
 
     
@@ -270,8 +266,7 @@ namespace interlop
         uint numFramesAccumulatedTextureIndex;
         uint sceneBufferIndex;
         
-        uint width;
-        uint height;
+        float2 dstTexelSize;
         uint maxHistoryFrame;
     };
 

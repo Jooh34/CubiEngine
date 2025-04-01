@@ -53,23 +53,21 @@ void FTemporalAA::InitSizeDependantResource(const FGraphicsDevice* const Device,
     ResolveTexture = Device->CreateTexture(ResolveTextureDesc);
 }
 
-void FTemporalAA::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene,
-    FTexture& HDRTexture, FTexture& VelocityTexture, uint32_t Width, uint32_t Height)
+void FTemporalAA::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, TemporalAAResolve);
 
-    GraphicsContext->AddResourceBarrier(HDRTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(VelocityTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.HDRTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.VelocityTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(HistoryTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->ExecuteResourceBarriers();
 
     interlop::TemporalAAResolveRenderResource RenderResources = {
-        .sceneTextureIndex = HDRTexture.SrvIndex,
+        .sceneTextureIndex = SceneTexture.HDRTexture.SrvIndex,
         .historyTextureIndex = HistoryTexture.SrvIndex,
-        .velocityTextureIndex = VelocityTexture.SrvIndex,
+        .velocityTextureIndex = SceneTexture.VelocityTexture.SrvIndex,
         .dstTextureIndex = ResolveTexture.UavIndex,
-        .width = Width,
-        .height = Height,
+        .dstTexelSize = {1.0f / SceneTexture.Size.Width, 1.0f / SceneTexture.Size.Height},
         .historyFrameCount = HistoryFrameCount,
     };
 
@@ -78,12 +76,12 @@ void FTemporalAA::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene
 
     // shader (8,8,1)
     GraphicsContext->Dispatch(
-        max((uint32_t)std::ceil(Width / 8.0f), 1u),
-        max((uint32_t)std::ceil(Height / 8.0f), 1u),
+        max((uint32_t)std::ceil(SceneTexture.Size.Width / 8.0f), 1u),
+        max((uint32_t)std::ceil(SceneTexture.Size.Height / 8.0f), 1u),
     1);
 }
 
-void FTemporalAA::UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height)
+void FTemporalAA::UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, TemporalAAUpdateHistory);
 
@@ -94,8 +92,7 @@ void FTemporalAA::UpdateHistory(FGraphicsContext* const GraphicsContext, FScene*
     interlop::TemporalAAUpdateHistoryRenderResource RenderResources = {
         .resolveTextureIndex = ResolveTexture.SrvIndex,
         .historyTextureIndex = HistoryTexture.UavIndex,
-        .width = Width,
-        .height = Height,
+        .dstTexelSize = {1.0f / HistoryTexture.Width, 1.0f / HistoryTexture.Height},
     };
 
     GraphicsContext->SetComputePipelineState(TemporalAAUpdateHistoryPipelineState);
@@ -103,8 +100,8 @@ void FTemporalAA::UpdateHistory(FGraphicsContext* const GraphicsContext, FScene*
 
     // shader (8,8,1)
     GraphicsContext->Dispatch(
-        max((uint32_t)std::ceil(Width / 8.0f), 1u),
-        max((uint32_t)std::ceil(Height / 8.0f), 1u),
+        max((uint32_t)std::ceil(HistoryTexture.Width / 8.0f), 1u),
+        max((uint32_t)std::ceil(HistoryTexture.Height / 8.0f), 1u),
     1);
 
     HistoryFrameCount++;

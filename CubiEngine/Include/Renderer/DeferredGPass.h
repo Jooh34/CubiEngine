@@ -23,13 +23,10 @@ public:
     void OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
 
     void Render(FScene* const Scene, FGraphicsContext* const GraphicsContext,
-        FTexture& DepthBuffer, uint32_t Width, uint32_t Height);
+        FSceneTexture& SceneTexture);
 
     void RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext,
-        FShadowDepthPass* ShadowDepthPass, FTexture& DepthTexture, FTexture* SSAOTexture, uint32_t Width, uint32_t Height);
-
-    FGBuffer GBuffer;
-    FTexture HDRTexture;
+        FShadowDepthPass* ShadowDepthPass, FSceneTexture& SceneTexture, FTexture* SSAOTexture);
 
 private:
     FPipelineState GeometryPassPipelineState;

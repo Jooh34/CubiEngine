@@ -41,11 +41,8 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
 
-    float2 invViewport = float2(1.f/(float)renderResources.width, 1.f/(float)renderResources.height);
-    const float2 uv = (dispatchThreadID.xy + 0.5f) * invViewport;
-    // float2 velocity = velocityTexture.Sample(linearWrapSampler, uv);
-    // const float2 prevUV = uv - velocity;
-
+    float2 texelSize = renderResources.dstTexelSize;
+    const float2 uv = texelSize * (dispatchThreadID.xy + 0.5);
 
     // depth threshold
     float disocclusionDistanceThreshold = 0.005f;
@@ -64,14 +61,6 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     float3 radiance = denoisedTexture.Sample(pointClampSampler, uv).xyz;
     float3 historyColor = historyTexture.Sample(pointClampSampler, prevUV).xyz;
-    if (isnan(radiance.x) || isnan(radiance.y) || isnan(radiance.z))
-    {
-        radiance = float3(0.f, 0.f, 0.f);
-    }
-    if (isnan(historyColor.x) || isnan(historyColor.y) || isnan(historyColor.z))
-    {
-        historyColor = float3(0.f, 0.f, 0.f);
-    }
 
     int maxHistoryFrame = renderResources.maxHistoryFrame;
     float numFramesAccumulated = numFramesAccumulatedTexture[dispatchThreadID.xy] * maxHistoryFrame + 1.f;

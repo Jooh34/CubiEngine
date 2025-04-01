@@ -58,53 +58,6 @@ FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Wid
 
 void FDeferredGPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
 {
-    // TODO : re-use RTV descriptor handle
-    FTextureCreationDesc GBufferADesc{
-        .Usage = ETextureUsage::RenderTarget,
-        .Width = InWidth,
-        .Height = InHeight,
-        .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
-        .Name = L"GBuffer A",
-    };
-    FTextureCreationDesc GBufferBDesc{
-        .Usage = ETextureUsage::RenderTarget,
-        .Width = InWidth,
-        .Height = InHeight,
-        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
-        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
-        .Name = L"GBuffer B",
-    };
-    FTextureCreationDesc GBufferCDesc{
-        .Usage = ETextureUsage::RenderTarget,
-        .Width = InWidth,
-        .Height = InHeight,
-        .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
-        .Name = L"GBuffer C",
-    };
-    FTextureCreationDesc HDRTextureDesc{
-        .Usage = ETextureUsage::RenderTarget,
-        .Width = InWidth,
-        .Height = InHeight,
-        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
-        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
-        .Name = L"HDR",
-    };
-    FTextureCreationDesc VelocityTextureDesc{
-        .Usage = ETextureUsage::RenderTarget,
-        .Width = InWidth,
-        .Height = InHeight,
-        .Format = DXGI_FORMAT_R16G16_FLOAT,
-        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
-        .Name = L"Velocity",
-    };
-
-    GBuffer.GBufferA = Device->CreateTexture(GBufferADesc);
-    GBuffer.GBufferB = Device->CreateTexture(GBufferBDesc);
-    GBuffer.GBufferC = Device->CreateTexture(GBufferCDesc);
-    GBuffer.VelocityTexture = Device->CreateTexture(VelocityTextureDesc);
-    HDRTexture = Device->CreateTexture(HDRTextureDesc);
 }
 
 void FDeferredGPass::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
@@ -112,24 +65,24 @@ void FDeferredGPass::OnWindowResized(const FGraphicsDevice* const Device, uint32
     InitSizeDependantResource(Device, InWidth, InHeight);
 }
 
-void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsContext, FTexture& DepthBuffer, uint32_t Width, uint32_t Height)
+void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsContext, FSceneTexture& SceneTexture)
 {
     {
         SCOPED_NAMED_EVENT(GraphicsContext, DeferredGPassModel);
 
         GraphicsContext->SetGraphicsPipelineState(GeometryPassPipelineState);
         std::array<FTexture, 4> Textures = {
-            GBuffer.GBufferA,
-            GBuffer.GBufferB,
-            GBuffer.GBufferC,
-            GBuffer.VelocityTexture,
+            SceneTexture.GBufferA,
+            SceneTexture.GBufferB,
+            SceneTexture.GBufferC,
+            SceneTexture.VelocityTexture,
         };
-        GraphicsContext->SetRenderTargets(Textures, DepthBuffer);
+        GraphicsContext->SetRenderTargets(Textures, SceneTexture.DepthTexture);
         GraphicsContext->SetViewport(D3D12_VIEWPORT{
             .TopLeftX = 0.0f,
             .TopLeftY = 0.0f,
-            .Width = static_cast<float>(Width),
-            .Height = static_cast<float>(Height),
+            .Width = static_cast<float>(SceneTexture.Size.Width),
+            .Height = static_cast<float>(SceneTexture.Size.Height),
             .MinDepth = 0.0f,
             .MaxDepth = 1.0f,
             }, true);
@@ -137,11 +90,10 @@ void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const Graphic
         GraphicsContext->SetPrimitiveTopologyLayout(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         
         // No need to clear GBuffer
-        GraphicsContext->ClearRenderTargetView(GBuffer.GBufferA, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-        GraphicsContext->ClearRenderTargetView(GBuffer.GBufferB, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-        GraphicsContext->ClearRenderTargetView(GBuffer.GBufferC, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-        //GraphicsContext->ClearRenderTargetView(GBuffer.VelocityTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-        GraphicsContext->ClearRenderTargetView(HDRTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        GraphicsContext->ClearRenderTargetView(SceneTexture.GBufferA, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        GraphicsContext->ClearRenderTargetView(SceneTexture.GBufferB, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        GraphicsContext->ClearRenderTargetView(SceneTexture.GBufferC, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        GraphicsContext->ClearRenderTargetView(SceneTexture.HDRTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
 
         interlop::DeferredGPassRenderResources RenderResources{};
 
@@ -161,14 +113,17 @@ void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const Graphic
 }
 
 void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext,
-    FShadowDepthPass* ShadowDepthPass, FTexture& DepthTexture, FTexture* SSAOTexture, uint32_t Width, uint32_t Height)
+    FShadowDepthPass* ShadowDepthPass, FSceneTexture& SceneTexture, FTexture* SSAOTexture)
 {
+    uint32_t Width = SceneTexture.Size.Width;
+    uint32_t Height = SceneTexture.Size.Height;
+
     interlop::PBRRenderResources RenderResources = {
         .numCascadeShadowMap = GNumCascadeShadowMap,
-        .GBufferAIndex = GBuffer.GBufferA.SrvIndex,
-        .GBufferBIndex = GBuffer.GBufferB.SrvIndex,
-        .GBufferCIndex = GBuffer.GBufferC.SrvIndex,
-        .depthTextureIndex = DepthTexture.SrvIndex,
+        .GBufferAIndex = SceneTexture.GBufferA.SrvIndex,
+        .GBufferBIndex = SceneTexture.GBufferB.SrvIndex,
+        .GBufferCIndex = SceneTexture.GBufferC.SrvIndex,
+        .depthTextureIndex = SceneTexture.DepthTexture.SrvIndex,
         .prefilteredEnvmapIndex = Scene->GetEnvironmentMap()->PrefilteredCubemapTexture.SrvIndex,
         .cubemapTextureIndex = Scene->GetEnvironmentMap()->CubeMapTexture.SrvIndex,
         .envBRDFTextureIndex = Scene->GetEnvironmentMap()->BRDFLutTexture.SrvIndex,
@@ -176,9 +131,8 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .envMipCount = Scene->GetEnvironmentMap()->GetMipCount(),
         .shadowDepthTextureIndex = ShadowDepthPass->GetShadowDepthTexture().SrvIndex,
         .ssaoTextureIndex = SSAOTexture ? SSAOTexture->SrvIndex : INVALID_INDEX_U32,
-        .outputTextureIndex = HDRTexture.UavIndex,
-        .width = Width,
-        .height = Height,
+        .outputTextureIndex = SceneTexture.HDRTexture.UavIndex,
+        .dstTexelSize = {1.0f / Width, 1.0f / Height},
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
         .shadowBufferIndex = Scene->GetShadowBuffer().CbvIndex,
@@ -192,12 +146,12 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
     };
 
     // Resource Barrier
-    GraphicsContext->AddResourceBarrier(GBuffer.GBufferA, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(GBuffer.GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(GBuffer.GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(GBuffer.VelocityTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.GBufferA, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.VelocityTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(ShadowDepthPass->GetShadowDepthTexture(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(HDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(SceneTexture.HDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     if (SSAOTexture)
     {
         GraphicsContext->AddResourceBarrier(*SSAOTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);

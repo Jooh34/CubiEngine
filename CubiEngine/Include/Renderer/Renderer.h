@@ -23,25 +23,24 @@ public:
     ~FRenderer();
 
     void GameTick(float DeltaTime, FInput* Input);
-    void BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer, FTexture& DepthTexture);
+    void BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer);
     void CopyHistoricalTexture(FGraphicsContext* GraphicsContext);
     void Render();
     void OnWindowResized(uint32_t InWidth, uint32_t InHeight);
     void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
+    void InitializeSceneTexture(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
+
     FGraphicsDevice* GetGraphicsDevice() { return GraphicsDevice; }
 
 private:
+    FSceneTexture SceneTexture;
+
     FTexture* GetDebugVisualizeTexture(FScene* Scene);
 
     FGraphicsDevice* GraphicsDevice;
 
     uint32_t Width{};
     uint32_t Height{};
-
-    FTexture DepthTexture;
-    FTexture PrevDepthTexture;
-
-    FTexture LDRTexture;
 
     std::unique_ptr<FScene> Scene;
     std::unique_ptr<FDeferredGPass> DeferredGPass;

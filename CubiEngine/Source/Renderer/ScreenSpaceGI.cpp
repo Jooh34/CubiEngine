@@ -189,53 +189,35 @@ void FScreenSpaceGI::InitSizeDependantResource(const FGraphicsDevice* const Devi
     
 }
 
-void FScreenSpaceGI::GenerateStochasticNormal(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* GBufferB, FTexture* GBufferC, uint32_t Width, uint32_t Height)
+void FScreenSpaceGI::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
-    SCOPED_NAMED_EVENT(GraphicsContext, GenerateStochasticNormal);
+    SCOPED_NAMED_EVENT(GraphicsContext, ScreenSpaceGI);
 
-    GraphicsContext->AddResourceBarrier(*GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(*GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(StochasticNormalTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->ExecuteResourceBarriers();
-
-    interlop::GenerateStochasticNormalRenderResource RenderResources = {
-        .srcTextureIndex = GBufferB->SrvIndex,
-        .gbufferCTextureIndex = GBufferC->SrvIndex,
-        .dstTextureIndex = StochasticNormalTexture.SrvIndex,
-        .width = Width,
-        .height = Height,
-        .frameCount = GFrameCount,
-        .stochasticNormalSamplingMethod = (uint32_t)Scene->StochasticNormalSamplingMethod,
-    };
-
-    GraphicsContext->SetComputePipelineState(GenerateStochasticNormalPipelineState);
-    GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
-
-    // shader (8,8,1)
-    GraphicsContext->Dispatch(
-        max((uint32_t)std::ceil(Width / 8.0f), 1u),
-        max((uint32_t)std::ceil(Height / 8.0f), 1u),
-    1);
+    RaycastDiffuse(GraphicsContext, Scene, SceneTexture);
+    Denoise(GraphicsContext, Scene, SceneTexture);
+    Resolve(GraphicsContext, Scene, SceneTexture);
+    UpdateHistory(GraphicsContext, Scene);
+    CompositionSSGI(GraphicsContext, Scene, SceneTexture);
 }
 
-void FScreenSpaceGI::RaycastDiffuse(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* HDR, FTexture* Depth, FTexture* GBufferB, uint32_t Width, uint32_t Height)
+void FScreenSpaceGI::RaycastDiffuse(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, RaycastDiffuse);
 
-    GraphicsContext->AddResourceBarrier(*HDR, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(*Depth, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.HDRTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.DepthTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(StochasticNormalTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(ScreenSpaceGITexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
     
     interlop::RaycastDiffuseRenderResource RenderResources = {
-        .sceneColorTextureIndex = HDR->SrvIndex,
-        .depthTextureIndex = Depth->SrvIndex,
-        .GBufferBTextureIndex = GBufferB->SrvIndex,
+        .sceneColorTextureIndex = SceneTexture.HDRTexture.SrvIndex,
+        .depthTextureIndex = SceneTexture.DepthTexture.SrvIndex,
+        .GBufferBTextureIndex = SceneTexture.GBufferB.SrvIndex,
         .dstTextureIndex = ScreenSpaceGITexture.UavIndex,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
-        .width = Width,
-        .height = Height,
+        .width = SceneTexture.Size.Width,
+        .height = SceneTexture.Size.Height,
         .rayLength = Scene->SSGIRayLength,
         .numSteps = (uint32_t)Scene->SSGINumSteps,
         .ssgiIntensity = Scene->SSGIIntensity,
@@ -250,12 +232,12 @@ void FScreenSpaceGI::RaycastDiffuse(FGraphicsContext* const GraphicsContext, FSc
 
     // shader (8,8,1)
     GraphicsContext->Dispatch(
-        max((uint32_t)std::ceil(Width / 8.0f), 1u),
-        max((uint32_t)std::ceil(Height / 8.0f), 1u),
+        max((uint32_t)std::ceil(SceneTexture.Size.Width / 8.0f), 1u),
+        max((uint32_t)std::ceil(SceneTexture.Size.Height / 8.0f), 1u),
     1);
 }
 
-void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height)
+void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, Denoise);
     {
@@ -274,8 +256,8 @@ void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Sc
 
         // shader (8,8,1)
         GraphicsContext->Dispatch(
-            max((uint32_t)std::ceil(Width / 8.0f), 1u),
-            max((uint32_t)std::ceil(Height / 8.0f), 1u),
+            max((uint32_t)std::ceil(SceneTexture.Size.Width / 8.0f), 1u),
+            max((uint32_t)std::ceil(SceneTexture.Size.Height / 8.0f), 1u),
         1);
     }
     {
@@ -294,12 +276,12 @@ void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Sc
 
         // shader (8,8,1)
         GraphicsContext->Dispatch(
-            max((uint32_t)std::ceil(Width / 8.0f), 1u),
-            max((uint32_t)std::ceil(Height / 8.0f), 1u),
+            max((uint32_t)std::ceil(QuarterTexture.Width / 8.0f), 1u),
+            max((uint32_t)std::ceil(QuarterTexture.Height / 8.0f), 1u),
         1);
     }
 
-    DenoiseGaussianBlur(GraphicsContext, Scene, Width, Height);
+    DenoiseGaussianBlur(GraphicsContext, Scene, SceneTexture);
 
     {
         GraphicsContext->AddResourceBarrier(QuarterTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
@@ -317,14 +299,14 @@ void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Sc
 
         // shader (8,8,1)
         GraphicsContext->Dispatch(
-            max((uint32_t)std::ceil(Width / 8.0f), 1u),
-            max((uint32_t)std::ceil(Height / 8.0f), 1u),
+            max((uint32_t)std::ceil(DenoisedScreenSpaceGITexture.Width / 8.0f), 1u),
+            max((uint32_t)std::ceil(DenoisedScreenSpaceGITexture.Height / 8.0f), 1u),
         1);
     }
 
 }
 
-void FScreenSpaceGI::DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height)
+void FScreenSpaceGI::DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, DenoiseGaussianBlur);
 
@@ -361,13 +343,10 @@ void FScreenSpaceGI::DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext
 
         // shader (8,8,1)
         GraphicsContext->Dispatch(
-            max((uint32_t)std::ceil(Width / 8.0f), 1u),
-            max((uint32_t)std::ceil(Height / 8.0f), 1u),
+            max((uint32_t)std::ceil(BlurXTexture.Width / 8.0f), 1u),
+            max((uint32_t)std::ceil(BlurXTexture.Height / 8.0f), 1u),
         1);
     }
-    //GraphicsContext->AddUAVBarrier(BlurXTexture);
-    //GraphicsContext->AddUAVBarrier(QuarterTexture);
-    //GraphicsContext->ExecuteResourceBarriers();
     {
         GraphicsContext->AddResourceBarrier(BlurXTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
         GraphicsContext->AddResourceBarrier(QuarterTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -395,36 +374,34 @@ void FScreenSpaceGI::DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext
 
         // shader (8,8,1)
         GraphicsContext->Dispatch(
-            max((uint32_t)std::ceil(Width / 8.0f), 1u),
-            max((uint32_t)std::ceil(Height / 8.0f), 1u),
+            max((uint32_t)std::ceil(QuarterTexture.Width / 8.0f), 1u),
+            max((uint32_t)std::ceil(QuarterTexture.Height / 8.0f), 1u),
         1);
     }
 }
 
-void FScreenSpaceGI::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene,
-    FTexture* VelocityTexture, FTexture* PrevDepthTexture, FTexture* DepthTexture, uint32_t Width, uint32_t Height)
+void FScreenSpaceGI::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, ResolveSSGI);
 
     GraphicsContext->AddResourceBarrier(DenoisedScreenSpaceGITexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(HistoryTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(*VelocityTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(*PrevDepthTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(*DepthTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.VelocityTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.PrevDepthTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.DepthTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(ResolveTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 
     interlop::SSGIResolveRenderResource RenderResources = {
         .denoisedTextureIndex = DenoisedScreenSpaceGITexture.SrvIndex,
         .historyTextureIndex = HistoryTexture.SrvIndex,
-        .velocityTextureIndex = VelocityTexture->SrvIndex,
-        .prevDepthTextureIndex = PrevDepthTexture->SrvIndex,
-        .depthTextureIndex = DepthTexture->SrvIndex,
+        .velocityTextureIndex = SceneTexture.VelocityTexture.SrvIndex,
+        .prevDepthTextureIndex = SceneTexture.PrevDepthTexture.SrvIndex,
+        .depthTextureIndex = SceneTexture.DepthTexture.SrvIndex,
         .dstTextureIndex = ResolveTexture.UavIndex,
         .numFramesAccumulatedTextureIndex = HistroyNumFrameAccumulated.UavIndex,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
-        .width = Width,
-        .height = Height,
+        .dstTexelSize = {1.0f / ResolveTexture.Width, 1.0f / ResolveTexture.Height},
         .maxHistoryFrame = (uint)Scene->MaxHistoryFrame,
     };
 
@@ -433,12 +410,12 @@ void FScreenSpaceGI::Resolve(FGraphicsContext* const GraphicsContext, FScene* Sc
 
     // shader (8,8,1)
     GraphicsContext->Dispatch(
-        max((uint32_t)std::ceil(Width / 8.0f), 1u),
-        max((uint32_t)std::ceil(Height / 8.0f), 1u),
+        max((uint32_t)std::ceil(ResolveTexture.Width / 8.0f), 1u),
+        max((uint32_t)std::ceil(ResolveTexture.Height / 8.0f), 1u),
     1);
 }
 
-void FScreenSpaceGI::UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height)
+void FScreenSpaceGI::UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, SSGI_UpdateHistory);
 
@@ -449,8 +426,7 @@ void FScreenSpaceGI::UpdateHistory(FGraphicsContext* const GraphicsContext, FSce
     interlop::SSGIUpdateHistoryRenderResource RenderResources = {
         .resolveTextureIndex = ResolveTexture.SrvIndex,
         .historyTextureIndex = HistoryTexture.UavIndex,
-        .width = Width,
-        .height = Height,
+        .dstTexelSize = {1.0f / HistoryTexture.Width, 1.0f / HistoryTexture.Height},
     };
 
     GraphicsContext->SetComputePipelineState(SSGIUpdateHistoryPipelineState);
@@ -458,28 +434,28 @@ void FScreenSpaceGI::UpdateHistory(FGraphicsContext* const GraphicsContext, FSce
 
     // shader (8,8,1)
     GraphicsContext->Dispatch(
-        max((uint32_t)std::ceil(Width / 8.0f), 1u),
-        max((uint32_t)std::ceil(Height / 8.0f), 1u),
+        max((uint32_t)std::ceil(HistoryTexture.Width / 8.0f), 1u),
+        max((uint32_t)std::ceil(HistoryTexture.Height / 8.0f), 1u),
     1);
 
     HistoryFrameCount++;
 }
 
-void FScreenSpaceGI::CompositionSSGI(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* HDR, FTexture* GBufferA, uint32_t Width, uint32_t Height)
+void FScreenSpaceGI::CompositionSSGI(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, CompositionSSGI);
 
     GraphicsContext->AddResourceBarrier(ResolveTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(*GBufferA, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(*HDR, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(SceneTexture.GBufferA, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.HDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 
     interlop::CompositionSSGIRenderResource RenderResources = {
         .resolveTextureIndex = ResolveTexture.SrvIndex,
-        .gbufferAIndex = GBufferA->SrvIndex,
-        .dstTextureIndex = HDR->UavIndex,
-        .width = Width,
-        .height = Height,
+        .gbufferAIndex = SceneTexture.GBufferA.SrvIndex,
+        .dstTextureIndex = SceneTexture.HDRTexture.UavIndex,
+        .width = SceneTexture.Size.Width,
+        .height = SceneTexture.Size.Height,
     };
 
     GraphicsContext->SetComputePipelineState(CompositionSSGIPipelineState);
@@ -487,7 +463,7 @@ void FScreenSpaceGI::CompositionSSGI(FGraphicsContext* const GraphicsContext, FS
 
     // shader (8,8,1)
     GraphicsContext->Dispatch(
-        max((uint32_t)std::ceil(Width / 8.0f), 1u),
-        max((uint32_t)std::ceil(Height / 8.0f), 1u),
+        max((uint32_t)std::ceil(SceneTexture.Size.Width / 8.0f), 1u),
+        max((uint32_t)std::ceil(SceneTexture.Size.Height / 8.0f), 1u),
     1);
 }

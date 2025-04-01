@@ -44,7 +44,7 @@ FEyeAdaptationPass::FEyeAdaptationPass(FGraphicsDevice* Device, const uint32_t W
     });
 }
 
-void FEyeAdaptationPass::GenerateHistogram(FGraphicsContext* GraphicsContext, FScene* Scene, FTexture* HDR, uint32_t Width, uint32_t Height)
+void FEyeAdaptationPass::GenerateHistogram(FGraphicsContext* GraphicsContext, FScene* Scene, FTexture* HDR)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, GenerateHistogram);
 
@@ -65,8 +65,8 @@ void FEyeAdaptationPass::GenerateHistogram(FGraphicsContext* GraphicsContext, FS
 
     // shader (16,16,1)
     GraphicsContext->Dispatch(
-        max((uint32_t)std::ceil(Width / 16.0f), 1u),
-        max((uint32_t)std::ceil(Height / 16.0f), 1u),
+        max((uint32_t)std::ceil(HDR->Width / 16.0f), 1u),
+        max((uint32_t)std::ceil(HDR->Height / 16.0f), 1u),
     1);
 
     GraphicsContext->AddUAVBarrier(HistogramBuffer);
@@ -96,7 +96,7 @@ void FEyeAdaptationPass::CalculateAverageLuminance(FGraphicsContext* GraphicsCon
 }
 
 void FEyeAdaptationPass::ToneMapping(FGraphicsContext* GraphicsContext, FScene* Scene,
-    FTexture* HDRTexture, FTexture* LDRTexture, FTexture* BloomTexture, uint32_t Width, uint32_t Height)
+    FTexture* HDRTexture, FTexture* LDRTexture, FTexture* BloomTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, EyeAdaptationTonemapping);
 
@@ -112,8 +112,8 @@ void FEyeAdaptationPass::ToneMapping(FGraphicsContext* GraphicsContext, FScene* 
         .srcTextureIndex = HDRTexture->SrvIndex,
         .dstTextureIndex = LDRTexture->UavIndex,
         .bloomTextureIndex = BloomTexture ? BloomTexture->SrvIndex : INVALID_INDEX_U32,
-        .width = Width,
-        .height = Height,
+        .width = LDRTexture->Width,
+        .height = LDRTexture->Height,
         .toneMappingMethod = (uint)Scene->ToneMappingMethod,
         .bGammaCorrection = Scene->bGammaCorrection,
         .averageLuminanceBufferIndex = Scene->bUseEyeAdaptation ? AverageLuminanceBuffer.SrvIndex : INVALID_INDEX_U32,
@@ -124,7 +124,7 @@ void FEyeAdaptationPass::ToneMapping(FGraphicsContext* GraphicsContext, FScene* 
 
     // shader (8,8,1)
     GraphicsContext->Dispatch(
-        max((uint32_t)std::ceil(Width / 8.0f), 1u),
-        max((uint32_t)std::ceil(Height / 8.0f), 1u),
+        max((uint32_t)std::ceil(LDRTexture->Width / 8.0f), 1u),
+        max((uint32_t)std::ceil(LDRTexture->Height / 8.0f), 1u),
         1);
 }

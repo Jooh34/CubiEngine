@@ -52,10 +52,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     {
         StructuredBuffer<float4> averageLuminanceBuffer = ResourceDescriptorHeap[renderResources.averageLuminanceBufferIndex];
         float averageLuminance = averageLuminanceBuffer[0].x;
-        if (!isnan(averageLuminance))
-        {
-            color = color / (9.6 * averageLuminance);
-        }
+        color = color / (9.6 * averageLuminance);
     }
 
     if (renderResources.toneMappingMethod == TONEMAPPING_REINHARD)

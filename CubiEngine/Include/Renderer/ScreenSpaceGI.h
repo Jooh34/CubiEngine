@@ -14,13 +14,14 @@ public:
     void OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
     void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
     
-    void GenerateStochasticNormal(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* GBufferB, FTexture* GBufferC, uint32_t Width, uint32_t Height);
-    void RaycastDiffuse(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* HDR, FTexture* Depth, FTexture* GBufferB, uint32_t Width, uint32_t Height);
-    void Denoise(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height);
-    void DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height);
-    void Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* VelocityTexture, FTexture* PrevDepthTexture, FTexture* DepthTexture, uint32_t Width, uint32_t Height);
-    void UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene, uint32_t Width, uint32_t Height);
-    void CompositionSSGI(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* HDR, FTexture* GBufferA, uint32_t Width, uint32_t Height);
+    void AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture);
+
+    void RaycastDiffuse(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture);
+    void Denoise(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture);
+    void DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture);
+    void Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture);
+    void UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene);
+    void CompositionSSGI(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture);
 
     FTexture StochasticNormalTexture;
     FTexture ScreenSpaceGITexture;

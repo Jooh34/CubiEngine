@@ -122,6 +122,27 @@ struct FTexture
     bool IsDepthFormat();
 };
 
+struct FIntRect
+{
+    uint32_t Width;
+    uint32_t Height;
+};
+
+struct FSceneTexture
+{
+    FIntRect Size{};
+    FTexture GBufferA{}; // Albedo
+    FTexture GBufferB{}; // Normal
+    FTexture GBufferC{}; // AO + MetalRoughness
+    FTexture VelocityTexture{};
+
+    FTexture DepthTexture{};
+    FTexture PrevDepthTexture{};
+
+    FTexture LDRTexture{};
+    FTexture HDRTexture{};
+};
+
 struct FCbvCreationDesc
 {
     D3D12_CONSTANT_BUFFER_VIEW_DESC CbvDesc;

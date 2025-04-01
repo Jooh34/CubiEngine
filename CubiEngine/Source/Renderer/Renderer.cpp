@@ -38,24 +38,23 @@ void FRenderer::GameTick(float DeltaTime, FInput* Input)
     Scene->GameTick(DeltaTime, Input, Width, Height);
 }
 
-void FRenderer::BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer, FTexture& DepthTexture)
+void FRenderer::BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer)
 {
     GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
     if (DeferredGPass)
     {
-        FGBuffer& GBuffer = DeferredGPass->GBuffer;
-        GraphicsContext->AddResourceBarrier(GBuffer.GBufferA, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        GraphicsContext->AddResourceBarrier(GBuffer.GBufferB, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        GraphicsContext->AddResourceBarrier(GBuffer.GBufferC, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        GraphicsContext->AddResourceBarrier(GBuffer.VelocityTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        GraphicsContext->AddResourceBarrier(DeferredGPass->HDRTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(SceneTexture.GBufferA, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(SceneTexture.GBufferB, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(SceneTexture.GBufferC, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(SceneTexture.VelocityTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(SceneTexture.HDRTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
     }
-    GraphicsContext->AddResourceBarrier(DepthTexture, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.DepthTexture, D3D12_RESOURCE_STATE_DEPTH_WRITE);
     GraphicsContext->ExecuteResourceBarriers();
 
     float RenderTargetClearValue[4] = { 0,0,0,1 };
     GraphicsContext->ClearRenderTargetView(BackBuffer, RenderTargetClearValue);
-    GraphicsContext->ClearDepthStencilView(DepthTexture);
+    GraphicsContext->ClearDepthStencilView(SceneTexture.DepthTexture);
 
     GraphicsContext->SetGraphicsRootSignature();
     GraphicsContext->SetComputeRootSignature();
@@ -66,10 +65,10 @@ void FRenderer::CopyHistoricalTexture(FGraphicsContext* GraphicsContext)
     SCOPED_NAMED_EVENT(GraphicsContext, CopyHistoricalTexture);
 
     // Copy Prev Depth Texture
-    GraphicsContext->AddResourceBarrier(DepthTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
-    GraphicsContext->AddResourceBarrier(PrevDepthTexture, D3D12_RESOURCE_STATE_COPY_DEST);
+    GraphicsContext->AddResourceBarrier(SceneTexture.DepthTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.PrevDepthTexture, D3D12_RESOURCE_STATE_COPY_DEST);
     GraphicsContext->ExecuteResourceBarriers();
-    GraphicsContext->CopyResource(PrevDepthTexture.GetResource(), DepthTexture.GetResource());
+    GraphicsContext->CopyResource(SceneTexture.PrevDepthTexture.GetResource(), SceneTexture.DepthTexture.GetResource());
 }
 
 void FRenderer::Render()
@@ -81,7 +80,7 @@ void FRenderer::Render()
     FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
 
     // Resource Transition + BackBuffer Clear
-    BeginFrame(GraphicsContext, BackBuffer, DepthTexture);
+    BeginFrame(GraphicsContext, BackBuffer);
     
     // ----- Shadow Depth pass -----
     if (ShadowDepthPass)
@@ -98,14 +97,13 @@ void FRenderer::Render()
     {
         SCOPED_NAMED_EVENT(GraphicsContext, DeferredGPass);
         SCOPED_GPU_EVENT(GraphicsDevice, DeferredGPass);
-        DeferredGPass->Render(Scene.get(), GraphicsContext, DepthTexture, Width, Height);
+        DeferredGPass->Render(Scene.get(), GraphicsContext, SceneTexture);
 
         // Render Skybox
-        if (Scene->bUseEnvmap)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, EnvironmentMap);
             SCOPED_GPU_EVENT(GraphicsDevice, EnvironmentMap);
-            Scene->RenderEnvironmentMap(GraphicsContext, DeferredGPass->HDRTexture, DepthTexture);
+            Scene->RenderEnvironmentMap(GraphicsContext, SceneTexture);
         }
     }
     // ----- Deferred GPass ----
@@ -116,7 +114,7 @@ void FRenderer::Render()
         SCOPED_NAMED_EVENT(GraphicsContext, SSAO);
         SCOPED_GPU_EVENT(GraphicsDevice, SSAO);
 
-        SSAOPass->AddSSAOPass(GraphicsContext, Scene.get(), &DeferredGPass->GBuffer.GBufferB, &DepthTexture);
+        SSAOPass->AddSSAOPass(GraphicsContext, Scene.get(), SceneTexture);
     }
     // ----- Screen Space Ambient Occlusion -----
 
@@ -131,7 +129,7 @@ void FRenderer::Render()
         {
             SSAOTexture = &SSAOPass->SSAOTexture;
         }
-        DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext, ShadowDepthPass.get(), DepthTexture, SSAOTexture, Width, Height);
+        DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext, ShadowDepthPass.get(), SceneTexture, SSAOTexture);
     }
     // ----- Deferred Lighting Pass -----
 
@@ -139,12 +137,8 @@ void FRenderer::Render()
     {
         SCOPED_NAMED_EVENT(GraphicsContext, ScreenSpaceGI);
         SCOPED_GPU_EVENT(GraphicsDevice, ScreenSpaceGI);
-        //ScreenSpaceGI->GenerateStochasticNormal(GraphicsContext, Scene.get(), &DeferredGPass->GBuffer.GBufferB, &DeferredGPass->GBuffer.GBufferC, Width, Height);
-        ScreenSpaceGI->RaycastDiffuse(GraphicsContext, Scene.get(), &DeferredGPass->HDRTexture, &DepthTexture, &DeferredGPass->GBuffer.GBufferB, Width, Height);
-        ScreenSpaceGI->Denoise(GraphicsContext, Scene.get(), Width, Height);
-        ScreenSpaceGI->Resolve(GraphicsContext, Scene.get(), &DeferredGPass->GBuffer.VelocityTexture, &PrevDepthTexture, &DepthTexture, Width, Height);
-        ScreenSpaceGI->UpdateHistory(GraphicsContext, Scene.get(), Width, Height);
-        ScreenSpaceGI->CompositionSSGI(GraphicsContext, Scene.get(), &DeferredGPass->HDRTexture, &DeferredGPass->GBuffer.GBufferA, Width, Height);
+
+        ScreenSpaceGI->AddPass(GraphicsContext, Scene.get(), SceneTexture);
     }
     
     // ----- Post Process -----
@@ -152,18 +146,18 @@ void FRenderer::Render()
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
         SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
 
-        FTexture* HDR = &DeferredGPass->HDRTexture;
-        FTexture* LDR = &LDRTexture;
+        FTexture* HDR = &SceneTexture.HDRTexture;
+        FTexture* LDR = &SceneTexture.LDRTexture;
         
         if (Scene.get()->bUseTaa)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, TemporalAA);
             SCOPED_GPU_EVENT(GraphicsDevice, TemporalAA);
 
-            TemporalAA->Resolve(GraphicsContext, Scene.get(), *HDR, DeferredGPass->GBuffer.VelocityTexture, Width, Height);
+            TemporalAA->Resolve(GraphicsContext, Scene.get(), SceneTexture);
             HDR = &TemporalAA->ResolveTexture;
 
-            TemporalAA->UpdateHistory(GraphicsContext, Scene.get(), Width, Height);
+            TemporalAA->UpdateHistory(GraphicsContext, Scene.get());
         }
         
         if (Scene.get()->bUseEyeAdaptation)
@@ -171,7 +165,7 @@ void FRenderer::Render()
             SCOPED_NAMED_EVENT(GraphicsContext, EyeAdaptation);
             SCOPED_GPU_EVENT(GraphicsDevice, EyeAdaptation);
 
-            EyeAdaptationPass->GenerateHistogram(GraphicsContext, Scene.get(), HDR, Width, Height);
+            EyeAdaptationPass->GenerateHistogram(GraphicsContext, Scene.get(), HDR);
             EyeAdaptationPass->CalculateAverageLuminance(GraphicsContext, Scene.get(), Width, Height);
         }
         
@@ -186,7 +180,7 @@ void FRenderer::Render()
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
             SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);
             EyeAdaptationPass->ToneMapping(GraphicsContext, Scene.get(), HDR, LDR,
-                Scene->bUseBloom ? &BloomPass->BloomResultTexture : nullptr, Width, Height);
+                Scene->bUseBloom ? &BloomPass->BloomResultTexture : nullptr);
         }
 
         // PostProcess->Tonemapping(GraphicsContext, Scene.get(), *HDR, Width, Height);
@@ -258,6 +252,11 @@ void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
 
 void FRenderer::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
 {
+    InitializeSceneTexture(Device, InWidth, InHeight);
+}
+
+void FRenderer::InitializeSceneTexture(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+{
     FTextureCreationDesc DepthTextureDesc = {
         .Usage = ETextureUsage::DepthStencil,
         .Width = Width,
@@ -266,12 +265,14 @@ void FRenderer::InitSizeDependantResource(const FGraphicsDevice* const Device, u
         .InitialState = D3D12_RESOURCE_STATE_DEPTH_WRITE,
         .Name = L"Depth Texture",
     };
-
-    DepthTexture = GraphicsDevice->CreateTexture(DepthTextureDesc);
-
-    DepthTextureDesc.Name = L"PrevDepth Texture";
-    PrevDepthTexture = GraphicsDevice->CreateTexture(DepthTextureDesc);
-
+    FTextureCreationDesc PrevDepthTextureDesc = {
+        .Usage = ETextureUsage::DepthStencil,
+        .Width = Width,
+        .Height = Height,
+        .Format = DXGI_FORMAT_D32_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_DEPTH_WRITE,
+        .Name = L"PrevDepth Texture",
+    };
     FTextureCreationDesc LDRTextureDesc{
         .Usage = ETextureUsage::RenderTarget,
         .Width = InWidth,
@@ -281,7 +282,61 @@ void FRenderer::InitSizeDependantResource(const FGraphicsDevice* const Device, u
         .Name = L"LDR Texture",
     };
 
-    LDRTexture = GraphicsDevice->CreateTexture(LDRTextureDesc);
+    // TODO : re-use RTV descriptor handle
+    FTextureCreationDesc GBufferADesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+        .Name = L"GBuffer A",
+    };
+    FTextureCreationDesc GBufferBDesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+        .Name = L"GBuffer B",
+    };
+    FTextureCreationDesc GBufferCDesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+        .Name = L"GBuffer C",
+    };
+    FTextureCreationDesc HDRTextureDesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+        .Name = L"HDR",
+    };
+    FTextureCreationDesc VelocityTextureDesc{
+        .Usage = ETextureUsage::RenderTarget,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_R16G16_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+        .Name = L"Velocity",
+    };
+
+
+    SceneTexture.DepthTexture = Device->CreateTexture(DepthTextureDesc);
+    SceneTexture.PrevDepthTexture = Device->CreateTexture(PrevDepthTextureDesc);
+
+    SceneTexture.GBufferA = Device->CreateTexture(GBufferADesc);
+    SceneTexture.GBufferB = Device->CreateTexture(GBufferBDesc);
+    SceneTexture.GBufferC = Device->CreateTexture(GBufferCDesc);
+    SceneTexture.VelocityTexture = Device->CreateTexture(VelocityTextureDesc);
+
+    SceneTexture.LDRTexture = Device->CreateTexture(LDRTextureDesc);
+    SceneTexture.HDRTexture = Device->CreateTexture(HDRTextureDesc);
+
+    SceneTexture.Size = { InWidth, InHeight };
 }
 
 FTexture* FRenderer::GetDebugVisualizeTexture(FScene* Scene)
@@ -290,23 +345,23 @@ FTexture* FRenderer::GetDebugVisualizeTexture(FScene* Scene)
 
     if (Name.compare("Depth") == 0)
     {
-        return &DepthTexture;
+        return &SceneTexture.DepthTexture;
     }
     else if (Name.compare("GBufferA") == 0)
     {
-        return &DeferredGPass->GBuffer.GBufferA;
+        return &SceneTexture.GBufferA;
     }
     else if (Name.compare("GBufferB") == 0)
     {
-        return &DeferredGPass->GBuffer.GBufferB;
+        return &SceneTexture.GBufferB;
     }
     else if (Name.compare("GBufferC") == 0)
     {
-        return &DeferredGPass->GBuffer.GBufferC;
+        return &SceneTexture.GBufferC;
     }
     else if (Name.compare("HDRTexture") == 0)
     {
-        return &DeferredGPass->HDRTexture;
+        return &SceneTexture.HDRTexture;
     }
     else if (Name.compare("TemporalHistory") == 0)
     {

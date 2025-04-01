@@ -71,19 +71,18 @@ void FSSAO::GenerateSSAOKernel()
     SSAOKernelBuffer.Update(&SSAOKernelBufferData);
 }
 
-void FSSAO::AddSSAOPass(FGraphicsContext* GraphicsContext, FScene* Scene,
-    FTexture* GBufferB, FTexture* DepthTexture)
+void FSSAO::AddSSAOPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, SSAO);
 
-    GraphicsContext->AddResourceBarrier(*GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(*DepthTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.DepthTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(SSAOTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 
     interlop::SSAORenderResource RenderResources = {
-        .GBufferBIndex = GBufferB->SrvIndex,
-        .depthTextureIndex = DepthTexture->SrvIndex,
+        .GBufferBIndex = SceneTexture.GBufferB.SrvIndex,
+        .depthTextureIndex = SceneTexture.DepthTexture.SrvIndex,
         .dstTextureIndex = SSAOTexture.UavIndex,
         .SSAOKernelBufferIndex = SSAOKernelBuffer.CbvIndex,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,

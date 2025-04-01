@@ -39,8 +39,7 @@ public:
     FBuffer& GetDebugBuffer() { return DebugBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
     FCamera& GetCamera() { return Camera; }
     FCubeMap* GetEnvironmentMap() { return (WhiteFurnaceMethod == 0 || WhiteFurnaceMethod == 3) ? EnviromentMap.get() : WhiteFurnaceMap.get(); }
-    void RenderEnvironmentMap(FGraphicsContext* const GraphicsContext,
-        FTexture& Target, const FTexture& DepthBuffer);
+    void RenderEnvironmentMap(FGraphicsContext* const GraphicsContext, FSceneTexture& SceneTexture);
 
     FLight Light;
     float CPUFrameMsTime = 0;

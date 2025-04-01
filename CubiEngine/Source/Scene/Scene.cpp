@@ -234,8 +234,7 @@ void FScene::RenderLightsDeferred(FGraphicsContext* const GraphicsContext,
     }
 }
 
-void FScene::RenderEnvironmentMap(FGraphicsContext* const GraphicsContext,
-    FTexture& Target, const FTexture& DepthBuffer)
+void FScene::RenderEnvironmentMap(FGraphicsContext* const GraphicsContext, FSceneTexture& SceneTexture)
 {
     interlop::ScreenSpaceCubeMapRenderResources RenderResource = {
         .sceneBufferIndex = GetSceneBuffer().CbvIndex,
@@ -244,6 +243,6 @@ void FScene::RenderEnvironmentMap(FGraphicsContext* const GraphicsContext,
 
     if (GetEnvironmentMap())
     {
-        GetEnvironmentMap()->Render(GraphicsContext, RenderResource, Target, DepthBuffer);
+        GetEnvironmentMap()->Render(GraphicsContext, RenderResource, SceneTexture.HDRTexture, SceneTexture.DepthTexture);
     }
 }

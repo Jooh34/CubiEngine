@@ -15,7 +15,7 @@ public:
     void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
     
     void GenerateSSAOKernel();
-    void AddSSAOPass(FGraphicsContext* GraphicsContext, FScene* Scene, FTexture* GBufferB, FTexture* DepthTexture);
+    void AddSSAOPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture);
     
     FTexture SSAOTexture;
 

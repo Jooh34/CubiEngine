@@ -132,8 +132,8 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     uint sampleBias = renderResources.sampleBias;
 
-    float2 invViewport = float2(1.f/(float)renderResources.width, 1.f/(float)renderResources.height);
-    const float2 uv = (dispatchThreadID.xy + 0.5f) * invViewport;
+    float2 texelSize = renderResources.dstTexelSize;
+    const float2 uv = texelSize * (dispatchThreadID.xy + 0.5);
 
     const float depth = depthTexture.Sample(pointClampSampler, uv);
     float4 albedo = GBufferA.Sample(pointClampSampler, uv);
