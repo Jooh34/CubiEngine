@@ -309,7 +309,9 @@ void ConcentricSampleDisk(float2 u, float3 N, out float3 outL, out float pdf)
         theta = (PI / 2.0) - (PI / 4.0) * (sx / sy);
     }
 
-    float x = r * cos(theta);
+    float cosTheta = cos(theta);
+
+    float x = r * cosTheta;
     float y = r * sin(theta);
     float z = sqrt(saturate(1.0 - x * x - y * y));
     float3 L = float3(x, y, z);
@@ -320,7 +322,39 @@ void ConcentricSampleDisk(float2 u, float3 N, out float3 outL, out float pdf)
     
     outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
 
-    pdf = 1.f;
+    pdf = cosTheta * (1.f/PI);
+}
+
+// UE5
+float3x3 GetTangentBasis( float3 TangentZ )
+{
+	const float Sign = TangentZ.z >= 0 ? 1 : -1;
+	const float a = -rcp( Sign + TangentZ.z );
+	const float b = TangentZ.x * TangentZ.y * a;
+	float3 TangentX = { 1 + Sign * a * pow(2, TangentZ.x ), Sign * b, -Sign * TangentZ.x };
+	float3 TangentY = { b,  Sign + a * pow(2, TangentZ.y ), -TangentZ.y };
+	return float3x3( TangentX, TangentY, TangentZ );
+}
+
+float3 ConcentricDiskSamplingHelper(float2 E)
+{
+	float2 p = 2 * E - 0.99999994;
+	float2 a = abs(p);
+	float Lo = min(a.x, a.y);
+	float Hi = max(a.x, a.y);
+	float Epsilon = 5.42101086243e-20; 
+	float Phi = (PI / 4) * (Lo / (Hi + Epsilon) + 2 * float(a.y >= a.x));
+	float Radius = Hi;
+	const uint SignMask = 0x80000000;
+	float2 Disk = asfloat((asuint(float2(cos(Phi), sin(Phi))) & ~SignMask) | (asuint(p) & SignMask));
+	return float3(Disk, Radius);
+}
+float4 CosineSampleHemisphereConcentric(float2 E)
+{
+	float3 Result = ConcentricDiskSamplingHelper(E);
+	float SinTheta = Result.z;
+	float CosTheta = sqrt(1 - SinTheta * SinTheta);
+	return float4(Result.xy * SinTheta, CosTheta, CosTheta * (1.0 / PI));
 }
 
 // Bring the vector that was randomly sampled from a hemisphere into the coordinate system where N, S and T form the orthonormal basis.

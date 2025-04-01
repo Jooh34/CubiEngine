@@ -365,37 +365,40 @@ void FScreenSpaceGI::DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext
             max((uint32_t)std::ceil(Height / 8.0f), 1u),
         1);
     }
-    //{
-    //    GraphicsContext->AddResourceBarrier(BlurXTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    //    GraphicsContext->AddResourceBarrier(QuarterTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-    //    GraphicsContext->ExecuteResourceBarriers();
-    //    
-    //    interlop::GaussianBlurWRenderResource RenderResources = {
-    //        .srcTextureIndex = BlurXTexture.SrvIndex,
-    //        .dstTextureIndex = QuarterTexture.UavIndex,
-    //        .dstTexelSize = {1.0f / QuarterTexture.Width, 1.0f / QuarterTexture.Height},
-    //        .additiveTextureIndex = INVALID_INDEX_U32,
-    //        .bHorizontal = 0,
-    //        .kernelSize = (uint)KernelSize,
-    //    };
-    //    for (int i = 0; i < MAX_GAUSSIAN_KERNEL_SIZE / 4; i++)
-    //    {
-    //        RenderResources.weights[i] = XMFLOAT4(GaussianBlurWeight[i * 4],
-    //            GaussianBlurWeight[i * 4 + 1],
-    //            GaussianBlurWeight[i * 4 + 2],
-    //            GaussianBlurWeight[i * 4 + 3]
-    //        );
-    //    }
+    //GraphicsContext->AddUAVBarrier(BlurXTexture);
+    //GraphicsContext->AddUAVBarrier(QuarterTexture);
+    //GraphicsContext->ExecuteResourceBarriers();
+    {
+        GraphicsContext->AddResourceBarrier(BlurXTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        GraphicsContext->AddResourceBarrier(QuarterTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        GraphicsContext->ExecuteResourceBarriers();
+        
+        interlop::GaussianBlurWRenderResource RenderResources = {
+            .srcTextureIndex = BlurXTexture.SrvIndex,
+            .dstTextureIndex = QuarterTexture.UavIndex,
+            .dstTexelSize = {1.0f / QuarterTexture.Width, 1.0f / QuarterTexture.Height},
+            .additiveTextureIndex = INVALID_INDEX_U32,
+            .bHorizontal = 0,
+            .kernelSize = (uint)KernelSize,
+        };
+        for (int i = 0; i < MAX_GAUSSIAN_KERNEL_SIZE / 4; i++)
+        {
+            RenderResources.weights[i] = XMFLOAT4(GaussianBlurWeight[i * 4],
+                GaussianBlurWeight[i * 4 + 1],
+                GaussianBlurWeight[i * 4 + 2],
+                GaussianBlurWeight[i * 4 + 3]
+            );
+        }
 
-    //    GraphicsContext->SetComputePipelineState(SSGIGaussianBlurWPipelineState);
-    //    GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
+        GraphicsContext->SetComputePipelineState(SSGIGaussianBlurWPipelineState);
+        GraphicsContext->SetComputeRoot32BitConstants(&RenderResources);
 
-    //    // shader (8,8,1)
-    //    GraphicsContext->Dispatch(
-    //        max((uint32_t)std::ceil(Width / 8.0f), 1u),
-    //        max((uint32_t)std::ceil(Height / 8.0f), 1u),
-    //    1);
-    //}
+        // shader (8,8,1)
+        GraphicsContext->Dispatch(
+            max((uint32_t)std::ceil(Width / 8.0f), 1u),
+            max((uint32_t)std::ceil(Height / 8.0f), 1u),
+        1);
+    }
 }
 
 void FScreenSpaceGI::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene,

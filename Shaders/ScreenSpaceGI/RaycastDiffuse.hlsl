@@ -128,7 +128,7 @@ FTraceResult TraceScreenSpaceRay(
 		if (SampleDepth != StartDepth)
 		{
 			float DepthDiff = SampleUVz.z - SampleDepth;
-			bool Hit = abs(DepthDiff) < CompareTolerance;
+			bool Hit = abs(DepthDiff+CompareTolerance) < CompareTolerance;
 
 			if (Hit)
 			{
@@ -164,9 +164,17 @@ void GenerateStochasticNormal(const float3 normal, float2 u, out float3 stochast
         float NdotL;
         ImportanceSampleCosDir(u, normal.xyz, stochasticNormal, NdotL, pdf);
     }
-	else
+	else if (renderResources.stochasticNormalSamplingMethod == 2)
 	{
 		ConcentricSampleDisk(u, normal, stochasticNormal, pdf);
+	}
+	else
+	{
+		float3x3 TangentBasis = GetTangentBasis(normal);
+		float4 result = CosineSampleHemisphereConcentric(u);
+		float3 TangentL = result.xyz;
+		pdf = result.w;
+		stochasticNormal = mul(TangentL, TangentBasis);
 	}
 }
 
@@ -207,6 +215,10 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 		float2 u = float2(noise, noise);
 
 		GenerateStochasticNormal(normal, u, stochasticNormal, pdf);
+		// {
+		// 	dstTexture[dispatchThreadID.xy] = float4(stochasticNormal, 1.f);
+		// 	return;
+		// }
 
 		FTraceResult result = TraceScreenSpaceRay(depthTexture, viewSpacePosition, stochasticNormal, RayLength, sceneBuffer.projectionMatrix, renderResources.compareToleranceScale, NumSteps);
 		if (result.hit)

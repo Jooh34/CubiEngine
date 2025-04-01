@@ -78,15 +78,15 @@ public:
     // SSGI
     int GIMethod = 1;
 
-    float SSGIIntensity = 1.f;
-    float SSGIRayLength = 2000.f;
-    int SSGINumSteps = 32;
-    int SSGINumSamples = 2;
-    int StochasticNormalSamplingMethod = 2;
-    float CompareToleranceScale = 4.f;
+    float SSGIIntensity = 5.f;
+    float SSGIRayLength = 1000.f;
+    int SSGINumSteps = 64;
+    int SSGINumSamples = 1;
+    int StochasticNormalSamplingMethod = 3;
+    float CompareToleranceScale = 2.f;
     
-    int SSGIGaussianKernelSize = 64;
-    float SSGIGaussianStdDev = 20.f;
+    int SSGIGaussianKernelSize = 44;
+    float SSGIGaussianStdDev = 12.f;
 
     int MaxHistoryFrame = 10;
 

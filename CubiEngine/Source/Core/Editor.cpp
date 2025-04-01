@@ -188,7 +188,7 @@ void FEditor::RenderGIProperties(FScene* Scene)
     {
         const char* giItems[] = { "Off", "SSGI" };
         AddCombo("GI Method", giItems, IM_ARRAYSIZE(giItems), Scene->GIMethod);
-        ImGui::SliderFloat("SSGI Intensity", &Scene->SSGIIntensity, 0.0f, 10.0f);
+        ImGui::SliderFloat("SSGI Intensity", &Scene->SSGIIntensity, 0.0f, 20.0f);
         ImGui::SliderFloat("SSGI RayLength", &Scene->SSGIRayLength, 0.0f, 3000.0f);
         ImGui::SliderInt("SSGI NumSteps", &Scene->SSGINumSteps, 1, 256);
         ImGui::SliderFloat("SSGI CompareToleranceScale", &Scene->CompareToleranceScale, 1.f, 30.f);
@@ -197,7 +197,7 @@ void FEditor::RenderGIProperties(FScene* Scene)
         ImGui::SliderInt("SSGI GaussianKernelSize", &Scene->SSGIGaussianKernelSize, 1, 64);
         ImGui::SliderFloat("SSGI GaussianStdDev", &Scene->SSGIGaussianStdDev, 0.1f, 20.0f);
 
-        const char* sampleingMethodItems[] = { "UniformSampleHemisphere", "ImportanceSampleCosDir", "ConcentricSampleDisk"};
+        const char* sampleingMethodItems[] = { "UniformSampleHemisphere", "ImportanceSampleCosDir", "ConcentricSampleDisk", "ConcentricSampleDiskUE5"};
         AddCombo("Sampling Method", sampleingMethodItems, IM_ARRAYSIZE(sampleingMethodItems), Scene->StochasticNormalSamplingMethod);
         ImGui::TreePop();
     }
