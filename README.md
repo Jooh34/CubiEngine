@@ -1,7 +1,9 @@
 # CubiEngine
-A DX12 renderer for learning new graphics techniques.
+A DX12 renderer for experimenting modern graphics techniques.
+- Windows only.
 
 # Build
+
 ``` 
 cmake -S . -B Build
 ```
@@ -9,6 +11,19 @@ cmake -S . -B Build
 + Then open Build/CubiEngine.sln and build solution.
 
 # Features
+- Multi-Scattering BRDF
+- Image Based Lighting
+- Deferred Rendering
+- Temporal Anti Aliasing
+- Profile GPU + event marker
+- Cascaded Shadow Map
+- ToneMapping
+- AutoExposure
+- Bloom
+- SSAO
+- SSGI
+
+# Images
 ### Multi-Scattering BRDF
 ![image](Assets/Images/Multi-Scatter-BRDF.png)
 ### Image Based Lighting
@@ -32,4 +47,11 @@ cmake -S . -B Build
 ![image](Assets/Images/SSGI.png)
 
 # Reference Projects
-[Helios](https://github.com/rtarun9/Helios/tree/master) By rtarun9
+[Helios](https://github.com/rtarun9/Helios/tree/master) by rtarun9
+[Cauldron](https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron) by AMD
+
+# 3rd-Party Open Source Projects Used
+[IMGUI](https://github.com/ocornut/imgui)
+[DirectXShaderCompiler](https://github.com/Microsoft/DirectXShaderCompiler)
+[D3DX12](https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/Libraries/D3DX12)
+[stb](https://github.com/nothings/stb)
