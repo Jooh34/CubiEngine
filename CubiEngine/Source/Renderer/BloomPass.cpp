@@ -5,19 +5,24 @@
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-
 FBloomPass::FBloomPass(FGraphicsDevice* Device, const uint32_t Width, const uint32_t Height)
 {
     FComputePipelineStateCreationDesc GaussianBlurPipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/Common/GaussianBlurW.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/Common/GaussianBlurW.hlsl",
+        },
         .PipelineName = L"GaussianBlurW Pipeline"
     };
     GaussianBlurPipelineState = Device->CreatePipelineState(GaussianBlurPipelineDesc);
 
     FComputePipelineStateCreationDesc DownSamplePipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/Common/DownSample.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/Common/DownSample.hlsl",
+        },
         .PipelineName = L"DownSample Pipeline"
     };
     DownSamplePipelineState = Device->CreatePipelineState(DownSamplePipelineDesc);

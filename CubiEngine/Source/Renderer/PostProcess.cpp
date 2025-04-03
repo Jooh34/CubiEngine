@@ -8,21 +8,30 @@ FPostProcess::FPostProcess(FGraphicsDevice* const GraphicsDevice, uint32_t Width
 {
     FComputePipelineStateCreationDesc TonemappingPipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/PostProcess/Tonemapping.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/PostProcess/Tonemapping.hlsl",
+        },
         .PipelineName = L"Tonemapping Pipeline"
     };
     TonemappingPipelineState = GraphicsDevice->CreatePipelineState(TonemappingPipelineDesc);
     
     FComputePipelineStateCreationDesc DebugVisualizePipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/PostProcess/DebugVisualize.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/PostProcess/DebugVisualize.hlsl",
+        },
         .PipelineName = L"DebugVisualize Pipeline"
     };
     DebugVisualizePipeline = GraphicsDevice->CreatePipelineState(DebugVisualizePipelineDesc);
     
     FComputePipelineStateCreationDesc DebugVisualizeDepthPipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/PostProcess/DebugVisualizeDepth.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/PostProcess/DebugVisualizeDepth.hlsl",
+        },
         .PipelineName = L"DebugVisualizeDepth Pipeline"
     };
     DebugVisualizeDepthPipeline = GraphicsDevice->CreatePipelineState(DebugVisualizeDepthPipelineDesc);

@@ -8,14 +8,20 @@ FTemporalAA::FTemporalAA(FGraphicsDevice* const GraphicsDevice, uint32_t Width, 
 {
     FComputePipelineStateCreationDesc TemporalAAResolvePipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/PostProcess/TemporalAAResolve.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/PostProcess/TemporalAAResolve.hlsl",
+        },
         .PipelineName = L"TemporalAA Resolve Pipeline"
     };
     TemporalAAResolvePipelineState = GraphicsDevice->CreatePipelineState(TemporalAAResolvePipelineDesc);
 
     FComputePipelineStateCreationDesc TemporalAAUpdateHistoryPipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/PostProcess/TemporalAAUpdateHistory.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/PostProcess/TemporalAAUpdateHistory.hlsl",
+        },
         .PipelineName = L"TemporalAA UpdateHistory Pipeline"
     };
     TemporalAAUpdateHistoryPipelineState = GraphicsDevice->CreatePipelineState(TemporalAAUpdateHistoryPipelineDesc);

@@ -6,7 +6,10 @@ FDebugPass::FDebugPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, ui
 {
     FComputePipelineStateCreationDesc PipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/PostProcess/Copy.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/PostProcess/Copy.hlsl",
+        },
         .PipelineName = L"Debug Copy Pipeline"
     };
 

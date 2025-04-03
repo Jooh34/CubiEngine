@@ -93,8 +93,8 @@ FPipelineState::FPipelineState(ID3D12Device5* const device, const FComputePipeli
 {
     const auto& ComputeShaderBlob =
         ShaderCompiler::Compile(ShaderTypes::Compute,
-        FFileSystem::GetFullPath(pipelineStateCreationDesc.CsShaderPath),
-        L"CsMain").shaderBlob;
+        FFileSystem::GetFullPath(pipelineStateCreationDesc.ShaderModule.computeShaderPath),
+        pipelineStateCreationDesc.ShaderModule.computeEntryPoint).shaderBlob;
 
     const D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {
         .pRootSignature = FPipelineState::StaticRootSignature.Get(),

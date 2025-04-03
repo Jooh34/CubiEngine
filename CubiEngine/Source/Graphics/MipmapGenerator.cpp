@@ -5,12 +5,18 @@
 FMipmapGenerator::FMipmapGenerator(FGraphicsDevice* const Device) : Device(Device)
 {
     GenerateMipmapPipelineState = Device->CreatePipelineState(FComputePipelineStateCreationDesc{
-        .CsShaderPath = L"Shaders/MipMap/GenerateMipmapCS.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/MipMap/GenerateMipmapCS.hlsl",
+        },
         .PipelineName = L"Mipmap Generation Pipeline",
     });
 
     GenerateCubemapMipmapPipelineState = Device->CreatePipelineState(FComputePipelineStateCreationDesc{
-        .CsShaderPath = L"Shaders/MipMap/GenerateCubemapMipmapCS.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/MipMap/GenerateCubemapMipmapCS.hlsl",
+        },
         .PipelineName = L"Mipmap Generation Pipeline",
     });
 }

@@ -24,7 +24,10 @@ FEyeAdaptationPass::FEyeAdaptationPass(FGraphicsDevice* Device, const uint32_t W
     
     FComputePipelineStateCreationDesc GenerateHistogramPipelineStateDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/EyeAdaptation/GenerateHistogram.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/EyeAdaptation/GenerateHistogram.hlsl",
+        },
         .PipelineName = L"GenerateHistogram Pipeline"
     };
     
@@ -32,14 +35,20 @@ FEyeAdaptationPass::FEyeAdaptationPass(FGraphicsDevice* Device, const uint32_t W
 
     FComputePipelineStateCreationDesc CalculateAverageLuminancePipelineStateDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/EyeAdaptation/CalculateAverageLuminance.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/EyeAdaptation/CalculateAverageLuminance.hlsl",
+        },
         .PipelineName = L"CalculateAverageLuminance Pipeline"
     };
 
     CalcuateAverageLuminancePipelineState = Device->CreatePipelineState(CalculateAverageLuminancePipelineStateDesc);
 
     EyeAdaptationTonemappingPipelineState = Device->CreatePipelineState(FComputePipelineStateCreationDesc{
-        .CsShaderPath = L"Shaders/EyeAdaptation/Tonemapping.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/EyeAdaptation/Tonemapping.hlsl",
+        },
         .PipelineName = L"EyeAdaptation Tonemapping Pipeline",
     });
 }

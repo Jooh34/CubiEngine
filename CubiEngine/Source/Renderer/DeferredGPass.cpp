@@ -47,7 +47,10 @@ FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Wid
 
     FComputePipelineStateCreationDesc LightPassPipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/RenderPass/DeferredLightingPBR.hlsl",
+        .ShaderModule =
+            {
+                .computeShaderPath = L"Shaders/RenderPass/DeferredLightingPBR.hlsl",
+            },
         .PipelineName = L"LightPass Pipeline"
     };
 

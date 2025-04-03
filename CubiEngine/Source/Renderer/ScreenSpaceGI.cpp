@@ -9,7 +9,10 @@ FScreenSpaceGI::FScreenSpaceGI(FGraphicsDevice* const GraphicsDevice, uint32_t W
 {
     FComputePipelineStateCreationDesc GenerateStochasticNormalPipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/ScreenSpaceGI/GenerateStochasticNormal.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/ScreenSpaceGI/GenerateStochasticNormal.hlsl",
+        },
         .PipelineName = L"Generate Stochastic Normal Pipeline"
     };
 
@@ -17,7 +20,10 @@ FScreenSpaceGI::FScreenSpaceGI(FGraphicsDevice* const GraphicsDevice, uint32_t W
 
     FComputePipelineStateCreationDesc RaycastDiffusePipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/ScreenSpaceGI/RaycastDiffuse.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/ScreenSpaceGI/RaycastDiffuse.hlsl",
+        },
         .PipelineName = L"RaycastDiffuse Pipeline"
     };
 
@@ -25,7 +31,10 @@ FScreenSpaceGI::FScreenSpaceGI(FGraphicsDevice* const GraphicsDevice, uint32_t W
 
     FComputePipelineStateCreationDesc CompositionSSGIPipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/ScreenSpaceGI/CompositionSSGI.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/ScreenSpaceGI/CompositionSSGI.hlsl",
+        },
         .PipelineName = L"CompositionSSGI Pipeline"
     };
     
@@ -33,35 +42,50 @@ FScreenSpaceGI::FScreenSpaceGI(FGraphicsDevice* const GraphicsDevice, uint32_t W
 
     FComputePipelineStateCreationDesc SSGIDownSamplePipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/Common/DownSample.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/Common/DownSample.hlsl",
+        },
         .PipelineName = L"SSGI DownSample Pipeline"
     };
     SSGIDownSamplePipelineState = GraphicsDevice->CreatePipelineState(SSGIDownSamplePipelineDesc);
 
     FComputePipelineStateCreationDesc SSGIUpSamplePipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/Common/UpSample.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/Common/UpSample.hlsl",
+        },
         .PipelineName = L"SSGI UpSample Pipeline"
     };
     SSGIUpSamplePipelineState = GraphicsDevice->CreatePipelineState(SSGIUpSamplePipelineDesc);
 
     FComputePipelineStateCreationDesc SSGIResolvePipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/ScreenSpaceGI/SSGIResolve.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/ScreenSpaceGI/SSGIResolve.hlsl",
+        },
         .PipelineName = L"SSGIResolve Pipeline"
     };
     SSGIResolvePipelineState = GraphicsDevice->CreatePipelineState(SSGIResolvePipelineDesc);
 
     FComputePipelineStateCreationDesc SSGIUpdateHistoryPipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/ScreenSpaceGI/SSGIUpdateHistory.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/ScreenSpaceGI/SSGIUpdateHistory.hlsl",
+        },
         .PipelineName = L"SSGIUpdateHistory Pipeline"
     };
     SSGIUpdateHistoryPipelineState = GraphicsDevice->CreatePipelineState(SSGIUpdateHistoryPipelineDesc);
 
     FComputePipelineStateCreationDesc SSGIGaussianBlurWPipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/Common/GaussianBlurW.hlsl",
+        .ShaderModule
+        {
+            .computeShaderPath = L"Shaders/Common/GaussianBlurW.hlsl",
+        },
         .PipelineName = L"SSGI GaussianBlur Pipeline"
     };
     SSGIGaussianBlurWPipelineState = GraphicsDevice->CreatePipelineState(SSGIGaussianBlurWPipelineDesc);

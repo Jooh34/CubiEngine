@@ -15,7 +15,10 @@ FSSAO::FSSAO(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Hei
 
     FComputePipelineStateCreationDesc SSAOPipelineDesc = FComputePipelineStateCreationDesc
     {
-        .CsShaderPath = L"Shaders/SSAO/SSAO.hlsl",
+        .ShaderModule =
+        {
+            .computeShaderPath = L"Shaders/SSAO/SSAO.hlsl",
+        },
         .PipelineName = L"SSAO Pipeline"
     };
     SSAOPipelineState = GraphicsDevice->CreatePipelineState(SSAOPipelineDesc);

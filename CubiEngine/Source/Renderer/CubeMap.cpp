@@ -27,7 +27,10 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
 
     ConvertEquirectToCubeMapPipelineState =
         Device->CreatePipelineState(FComputePipelineStateCreationDesc{
-            .CsShaderPath = L"Shaders/CubeMap/ConvertEquirectToCubeMap.hlsl",
+            .ShaderModule =
+                {
+                    .computeShaderPath = L"Shaders/CubeMap/ConvertEquirectToCubeMap.hlsl",
+                },
             .PipelineName = L"Convert EquirectTexture To CubeMap",
         });
     
@@ -83,7 +86,10 @@ void FCubeMap::GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint
 {
     PrefilterPipelineState =
         Device->CreatePipelineState(FComputePipelineStateCreationDesc{
-            .CsShaderPath = L"Shaders/CubeMap/GeneratePrefilteredCubemapCS.hlsl",
+            .ShaderModule =
+                {
+                    .computeShaderPath = L"Shaders/CubeMap/GeneratePrefilteredCubemapCS.hlsl",
+                },
             .PipelineName = L"GeneratePrefilteredCubemapCS Pipeline",
         });
 
@@ -135,7 +141,10 @@ void FCubeMap::GenerateBRDFLut(const FCubeMapCreationDesc& Desc)
 {
     BRDFLutPipelineState =
         Device->CreatePipelineState(FComputePipelineStateCreationDesc{
-            .CsShaderPath = L"Shaders/CubeMap/GenerateBRDFLutCS.hlsl",
+            .ShaderModule =
+                {
+                    .computeShaderPath = L"Shaders/CubeMap/GenerateBRDFLutCS.hlsl",
+                },
             .PipelineName = L"GenerateBRDFLutCS Pipeline",
         });
 
@@ -175,7 +184,10 @@ void FCubeMap::GenerateIrradianceMap(const FCubeMapCreationDesc& Desc)
 {
     GenerateIrradianceMapPipelineState =
         Device->CreatePipelineState(FComputePipelineStateCreationDesc{
-            .CsShaderPath = L"Shaders/CubeMap/GenerateIrradianceMap.hlsl",
+            .ShaderModule =
+                {
+                    .computeShaderPath = L"Shaders/CubeMap/GenerateIrradianceMap.hlsl",
+                },
             .PipelineName = L"GenerateIrradianceMapCS Pipeline",
         });
 

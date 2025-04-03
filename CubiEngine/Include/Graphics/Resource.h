@@ -37,7 +37,7 @@ struct FGraphicsPipelineStateCreationDesc
 
 struct FComputePipelineStateCreationDesc
 {
-    std::wstring_view CsShaderPath{};
+    ShaderModule ShaderModule{};
     std::wstring_view PipelineName{};
 };
 
