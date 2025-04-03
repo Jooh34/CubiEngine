@@ -241,8 +241,8 @@ float3 ImportanceSampleGGX(float2 Xi, float Roughness, float3 N)
 
 void ImportanceSampleCosDir(float2 u, float3 N, out float3 outL, out float NdotL, out float pdf)
 {
-    float CosTheta = sqrt(max(0.0f, 1.0f - u.x));
-    float SinTheta = sqrt(u.x);
+    const float CosTheta = sqrt(u.x);
+    const float SinTheta = sqrt(max(0.0f, 1.0f - CosTheta * CosTheta)); // Sin Theta
     float Phi = u.y * PI * 2;
     
     float3 L;
@@ -285,7 +285,7 @@ void ImportanceSampleCosDirPow(float2 u, float3 N, float p, out float3 outL, out
 // for normal (0,0,1)
 float3 UniformSampleHemisphere(float2 uv)
 {
-    const float cosTheta = uv.x; // cosTheta = (1-uv.x),  but okay.
+    const float cosTheta = 1-uv.x;
     const float sinTheta = sqrt(max(0.0f, 1.0f - cosTheta * cosTheta)); // Sin Theta
     const float phi = 2.0f * PI * uv.y;
     return float3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);

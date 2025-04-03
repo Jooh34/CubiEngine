@@ -17,7 +17,7 @@ ConstantBuffer<interlop::DeferredGPassCubeRenderResources> renderResources : reg
 // 정점 ID를 기반으로 큐브의 정점을 생성하는 함수
 void GetCubeVertex(uint vertexID, out float3 outPosition, out float3 outNormal)
 {
-    float halfsize = 5.f;
+    float halfsize = 0.5f;
     static const float3 vertices[8] =
     {
         float3(-halfsize, -halfsize, -halfsize), // 0

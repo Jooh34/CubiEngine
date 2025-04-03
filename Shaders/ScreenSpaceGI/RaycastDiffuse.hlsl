@@ -211,8 +211,9 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 	{
 		float3 stochasticNormal;
 		float pdf;
-		float noise = InterleavedGradientNoiseByIntel(dispatchThreadID.xy, renderResources.frameCount*numSample+i);
-		float2 u = float2(noise, noise);
+		float noise = InterleavedGradientNoiseByIntel(dispatchThreadID.xy*(numSample*(i+1)), renderResources.frameCount*numSample+i);
+		float noise2 = InterleavedGradientNoiseByIntel(dispatchThreadID.xy*(numSample*(i+2)), renderResources.frameCount*numSample+i);
+		float2 u = float2(noise, noise2);
 
 		GenerateStochasticNormal(normal, u, stochasticNormal, pdf);
 		// {

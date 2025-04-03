@@ -60,6 +60,10 @@ public:
     int DiffuseMethod = 0;
     
     int MaxFPS = 60;
+    
+    // Light
+    bool bLightDanceDebug = false;
+    float bLightDanceSpeed = 0.3f;
 
     // Shadow
     bool bUseShadow = true;
@@ -81,7 +85,7 @@ public:
     float SSGIRayLength = 1000.f;
     int SSGINumSteps = 64;
     int SSGINumSamples = 1;
-    int StochasticNormalSamplingMethod = 3;
+    int StochasticNormalSamplingMethod = 1;
     float CompareToleranceScale = 2.f;
     
     int SSGIGaussianKernelSize = 44;

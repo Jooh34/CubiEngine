@@ -13,8 +13,6 @@ float3 GetHistoryScreenPosition(float2 ScreenPosition, float DeviceZ, float4x4 C
     float4 PrevClip = mul(ThisClip, ClipToPrevClip); 
     float3 PrevScreen = PrevClip.xyz / PrevClip.w;
 
-    // float3 Velocity = HistoryScreenPosition - PrevScreen;
-    // HistoryScreenPosition -= Velocity;
     return PrevScreen;
 }
 

@@ -116,6 +116,17 @@ void FScene::GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t H
     Camera.Update(DeltaTime, Input, Width, Height, bUseTaa, CSMExponentialFactor);
 
     UpdateBuffers();
+
+    if (bLightDanceDebug)
+    {
+        Light.LightBufferData.lightPosition[0].z = sinf(bLightDanceSpeed * GFrameCount / 100.f);
+
+        if (Light.LightBufferData.numLight > 1)
+        {
+            Light.LightBufferData.lightPosition[1].x = 500.f * sinf(bLightDanceSpeed * GFrameCount / 100.f);
+            Light.LightBufferData.lightPosition[1].z = 500.f * cosf(bLightDanceSpeed * GFrameCount / 100.f);
+        }
+    }
 }
 
 void FScene::HandleMaxTickRate()
