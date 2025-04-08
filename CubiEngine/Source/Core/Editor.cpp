@@ -257,6 +257,7 @@ void FEditor::RenderLightProperties(FScene* Scene)
     if (ImGui::TreeNode("Shadow"))
     {
         ImGui::Checkbox("Shadow", &Scene->bUseShadow);
+        ImGui::Checkbox("Use Variance Shadow Map", &Scene->bUseVSM);
         ImGui::Checkbox("CSM Debug", &Scene->bCSMDebug);
         ImGui::InputFloat("Shadow Bias", &Scene->ShadowBias, 0.00001, 0.0001, "%.5f");
         ImGui::InputFloat("CSM Exponential Factor", &Scene->CSMExponentialFactor, 0.01, 0.1);

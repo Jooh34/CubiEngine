@@ -418,3 +418,7 @@ float2 UVToClip(float2 UV)
     float2 clip = float2(UV.x, 1.0f - UV.y) * 2.0f - 1.0f;
     return clip;
 }
+
+inline float pow2(float x) {
+    return pow(x, 2.0);
+}

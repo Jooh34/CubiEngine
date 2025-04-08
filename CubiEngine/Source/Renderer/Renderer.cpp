@@ -124,11 +124,7 @@ void FRenderer::Render()
         SCOPED_NAMED_EVENT(GraphicsContext, LightPass);
         SCOPED_GPU_EVENT(GraphicsDevice, LightPass);
         
-        FTexture* SSAOTexture = nullptr;
-        if (Scene->bUseSSAO)
-        {
-            SSAOTexture = &SSAOPass->SSAOTexture;
-        }
+        FTexture* SSAOTexture = Scene->bUseSSAO ? &SSAOPass->SSAOTexture : nullptr;
         DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext, ShadowDepthPass.get(), SceneTexture, SSAOTexture);
     }
     // ----- Deferred Lighting Pass -----

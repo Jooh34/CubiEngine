@@ -133,6 +133,7 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .envIrradianceTextureIndex = Scene->GetEnvironmentMap()->IrradianceCubemapTexture.SrvIndex,
         .envMipCount = Scene->GetEnvironmentMap()->GetMipCount(),
         .shadowDepthTextureIndex = ShadowDepthPass->GetShadowDepthTexture().SrvIndex,
+        .vsmMomentTextureIndex = Scene->bUseVSM ? ShadowDepthPass->GetMomentTexture().SrvIndex : INVALID_INDEX_U32,
         .ssaoTextureIndex = SSAOTexture ? SSAOTexture->SrvIndex : INVALID_INDEX_U32,
         .outputTextureIndex = SceneTexture.HDRTexture.UavIndex,
         .dstTexelSize = {1.0f / Width, 1.0f / Height},
@@ -158,6 +159,10 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
     if (SSAOTexture)
     {
         GraphicsContext->AddResourceBarrier(*SSAOTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    }
+    if (Scene->bUseVSM)
+    {
+        GraphicsContext->AddResourceBarrier(ShadowDepthPass->GetMomentTexture(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     }
     GraphicsContext->ExecuteResourceBarriers();
 

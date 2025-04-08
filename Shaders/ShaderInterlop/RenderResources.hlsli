@@ -105,6 +105,7 @@ namespace interlop
         uint envMipCount;
 
         uint shadowDepthTextureIndex;
+        uint vsmMomentTextureIndex;
         uint ssaoTextureIndex;
 
         uint outputTextureIndex;
@@ -340,5 +341,12 @@ namespace interlop
 
         float depthBias;
         uint bUseRangeCheck;
+    };
+
+    struct VSMMomentPassRenderResource
+    {
+        uint srcTextureIndex;
+        uint momentTextureIndex;
+        float2 dstTexelSize;
     };
 }
