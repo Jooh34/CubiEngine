@@ -38,6 +38,7 @@ namespace interlop
         uint positionBufferIndex;
         uint textureCoordBufferIndex;
         uint normalBufferIndex;
+        uint tangentBufferIndex;
         uint transformBufferIndex;
 
         uint debugBufferIndex;

@@ -584,6 +584,7 @@ void FModel::Render(const FGraphicsContext* const GraphicsContext, FScene* Scene
         DeferredGPassRenderResources.positionBufferIndex = Mesh.PositionBuffer.SrvIndex;
         DeferredGPassRenderResources.textureCoordBufferIndex = Mesh.TextureCoordsBuffer.SrvIndex;
         DeferredGPassRenderResources.normalBufferIndex = Mesh.NormalBuffer.SrvIndex;
+        DeferredGPassRenderResources.tangentBufferIndex = Mesh.TangentBuffer.SrvIndex;
         DeferredGPassRenderResources.transformBufferIndex = Transform.TransformBuffer.CbvIndex;
         DeferredGPassRenderResources.debugBufferIndex = Scene->GetDebugBuffer().CbvIndex;
 

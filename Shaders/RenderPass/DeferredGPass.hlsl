@@ -22,6 +22,7 @@ VSOutput VsMain(uint vertexID : SV_VertexID)
     StructuredBuffer<float3> positionBuffer = ResourceDescriptorHeap[renderResources.positionBufferIndex];
     StructuredBuffer<float3> normalBuffer = ResourceDescriptorHeap[renderResources.normalBufferIndex];
     StructuredBuffer<float2> textureCoordBuffer = ResourceDescriptorHeap[renderResources.textureCoordBufferIndex];
+    StructuredBuffer<float3> tangentBuffer = ResourceDescriptorHeap[renderResources.tangentBufferIndex];
 
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
     ConstantBuffer<interlop::TransformBuffer> transformBuffer = ResourceDescriptorHeap[renderResources.transformBufferIndex];
@@ -39,7 +40,7 @@ VSOutput VsMain(uint vertexID : SV_VertexID)
     output.normal = normalBuffer[vertexID];
     output.viewMatrix = (float3x3)sceneBuffer.viewMatrix;
 
-    const float3 tangent = generateTangent(output.normal).xyz;
+    const float3 tangent = normalize(tangentBuffer[vertexID]);
     const float3 biTangent = normalize(cross(output.normal, tangent));
     const float3 t = normalize(mul(tangent, normalMatrix));
     const float3 b = normalize(mul(biTangent, normalMatrix));
