@@ -14,7 +14,7 @@ public:
     FShadowDepthPass(FGraphicsDevice* const Device);
     
     void Render(FGraphicsContext* GraphicsContext, FScene* Scene);
-    void AddVSMPass(FGraphicsContext* GraphicsContext, FScene* Scene);
+    void AddVSMPassCS(FGraphicsContext* GraphicsContext, FScene* Scene);
 
     FTexture& GetShadowDepthTexture() { return ShadowDepthTexture; }
     FTexture& GetMomentTexture() { return MomentTexture; }
@@ -25,6 +25,7 @@ private:
     FTexture MomentTexture;
 
     FPipelineState ShadowDepthPassPipelineState;
+    FPipelineState VSMShadowDepthPassPipelineState;
     FPipelineState MomentPassPipelineState;
 
     XMMATRIX ViewProjectionMatrix[4];

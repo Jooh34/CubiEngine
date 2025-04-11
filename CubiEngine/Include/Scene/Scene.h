@@ -67,7 +67,7 @@ public:
 
     // Shadow
     bool bUseShadow = true;
-    bool bUseVSM = true;
+    bool bUseVSM = false;
     bool bCSMDebug = false;
     float CSMExponentialFactor = 0.8f;
     float ShadowBias = 1e-4f;

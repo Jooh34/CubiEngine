@@ -27,18 +27,32 @@ FShadowDepthPass::FShadowDepthPass(FGraphicsDevice* const Device)
 
     MomentTexture = Device->CreateTexture(MomentTextureDesc);
 
-    FGraphicsPipelineStateCreationDesc PipelineStateDesc{
+    FGraphicsPipelineStateCreationDesc ShadowDepthPassPipelineStateDesc{
         .ShaderModule =
             {
                 .vertexShaderPath = L"Shaders/RenderPass/ShadowDepthPass.hlsl",
                 .pixelShaderPath = L"Shaders/RenderPass/ShadowDepthPass.hlsl",
             },
-        .RtvFormats = {DXGI_FORMAT_R32G32_FLOAT},
-        .RtvCount = 1,
+        .RtvFormats = {},
+        .RtvCount = 0,
         .PipelineName = L"ShadowDepthPass Pipeline",
     };
 
-    ShadowDepthPassPipelineState = Device->CreatePipelineState(PipelineStateDesc);
+    ShadowDepthPassPipelineState = Device->CreatePipelineState(ShadowDepthPassPipelineStateDesc);
+    
+
+    FGraphicsPipelineStateCreationDesc VSMShadowDepthPassPipelineStateDesc{
+        .ShaderModule =
+            {
+                .vertexShaderPath = L"Shaders/RenderPass/VSMShadowDepthPass.hlsl",
+                .pixelShaderPath = L"Shaders/RenderPass/VSMShadowDepthPass.hlsl",
+            },
+        .RtvFormats = {DXGI_FORMAT_R32G32_FLOAT},
+        .RtvCount = 1,
+        .PipelineName = L"VSMShadowDepthPass Pipeline",
+    };
+
+    VSMShadowDepthPassPipelineState = Device->CreatePipelineState(VSMShadowDepthPassPipelineStateDesc);
 
     FComputePipelineStateCreationDesc MomentPassPipelineStateDesc{
         .ShaderModule =
@@ -55,15 +69,29 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
 {
     // todo : shader permutation to use vsm or not.
     GraphicsContext->AddResourceBarrier(ShadowDepthTexture, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-    GraphicsContext->AddResourceBarrier(MomentTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (Scene->bUseVSM)
+    {
+        GraphicsContext->AddResourceBarrier(MomentTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    }
     GraphicsContext->ExecuteResourceBarriers();
     GraphicsContext->ClearDepthStencilView(ShadowDepthTexture);
-    GraphicsContext->ClearRenderTargetView(MomentTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+
+    if (Scene->bUseVSM)
+    {
+        GraphicsContext->ClearRenderTargetView(MomentTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+    }
     
 
-    GraphicsContext->SetGraphicsPipelineState(ShadowDepthPassPipelineState);
-    //GraphicsContext->SetRenderTargetDepthOnly(ShadowDepthTexture);
-    GraphicsContext->SetRenderTarget(MomentTexture, ShadowDepthTexture);
+    if (Scene->bUseVSM)
+    {
+        GraphicsContext->SetRenderTarget(MomentTexture, ShadowDepthTexture);
+        GraphicsContext->SetGraphicsPipelineState(VSMShadowDepthPassPipelineState);
+    }
+    else
+    {
+        GraphicsContext->SetRenderTargetDepthOnly(ShadowDepthTexture);
+        GraphicsContext->SetGraphicsPipelineState(ShadowDepthPassPipelineState);
+    }
 
     GraphicsContext->SetViewport(D3D12_VIEWPORT{
         .TopLeftX = 0.0f,
@@ -130,16 +158,12 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
             Scene->RenderModels(GraphicsContext, RenderResources);
         }
     }
-
-    if (Scene->bUseVSM)
-    {
-        //AddVSMPass(GraphicsContext, Scene);
-    }
 }
 
-void FShadowDepthPass::AddVSMPass(FGraphicsContext* GraphicsContext, FScene* Scene)
+void FShadowDepthPass::AddVSMPassCS(FGraphicsContext* GraphicsContext, FScene* Scene)
 {
-    // currently not using
+    // this pass is not used currently.
+    // Moment pass is rendered in VSM shadow pass.
 
     SCOPED_NAMED_EVENT(GraphicsContext, VSMPass);
 
