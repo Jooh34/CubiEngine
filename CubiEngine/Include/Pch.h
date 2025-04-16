@@ -34,6 +34,8 @@
 namespace wrl = Microsoft::WRL;
 namespace Dx = DirectX;
 
+using wrl::ComPtr;
+
 using Dx::XMFLOAT2;
 using Dx::XMFLOAT3;
 using Dx::XMFLOAT4;

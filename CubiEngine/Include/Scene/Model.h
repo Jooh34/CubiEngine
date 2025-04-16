@@ -2,7 +2,9 @@
 
 #include "Graphics/Resource.h"
 #include "Graphics/Material.h"
+#include "Graphics/Raytracing.h"
 #include "ShaderInterlop/RenderResources.hlsli"
+#include "Scene/Mesh.h"
 
 class FGraphicsDevice;
 class FGraphicsContext;
@@ -15,6 +17,7 @@ struct FTransform
     Dx::XMFLOAT3 Translate{ 0.0f, 0.0f, 0.0f };
 
     FBuffer TransformBuffer{};
+    XMMATRIX TransformMatrix{ Dx::XMMatrixIdentity() };
     void Update();
 };
 
@@ -28,20 +31,6 @@ struct FModelCreationDesc
     Dx::XMFLOAT3 Translate{0.0f, 0.0f, 0.0f};
 };
 
-struct FMesh
-{
-    FBuffer PositionBuffer{};
-    FBuffer TextureCoordsBuffer{};
-    FBuffer NormalBuffer{};
-    FBuffer TangentBuffer{};
-
-    FBuffer IndexBuffer{};
-
-    uint32_t IndicesCount{};
-
-    uint32_t MaterialIndex{};
-};
-
 class FModel
 {
 public:
@@ -53,6 +42,9 @@ public:
         interlop::DeferredGPassRenderResources& DeferredGPassRenderResources);
     void Render(const FGraphicsContext* const GraphicsContext,
         interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource);
+
+    void GatherRaytracingGeometry(std::vector<BLASMatrixPairType>& BLASMatrixPair);
+
 private:
     std::wstring ModelName;
     std::string ModelDir;
@@ -63,6 +55,7 @@ private:
     std::vector<FMesh> Meshes{};
 
     FTransform Transform;
+
 
     void LoadSamplers(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel);
     void LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel);

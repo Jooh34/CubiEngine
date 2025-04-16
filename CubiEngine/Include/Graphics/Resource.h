@@ -58,10 +58,17 @@ struct FBuffer
 
     FAllocation Allocation{};
     size_t SizeInBytes{};
+    size_t NumElement{};
+    size_t ElementSizeInBytes{};
 
     uint32_t SrvIndex{ INVALID_INDEX_U32 };
     uint32_t UavIndex{ INVALID_INDEX_U32 };
     uint32_t CbvIndex{ INVALID_INDEX_U32 };
+
+    ID3D12Resource* GetResource() const
+    {
+        return Allocation.Resource.Get();
+    }
 };
 
 enum class ETextureUsage

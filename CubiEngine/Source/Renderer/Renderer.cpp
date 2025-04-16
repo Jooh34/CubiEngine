@@ -81,6 +81,13 @@ void FRenderer::Render()
 
     // Resource Transition + BackBuffer Clear
     BeginFrame(GraphicsContext, BackBuffer);
+
+    // Generate Raytracing Scene
+    {
+        SCOPED_NAMED_EVENT(GraphicsContext, GenerateRaytracingScene);
+        SCOPED_GPU_EVENT(GraphicsDevice, GenerateRaytracingScene)
+        Scene->GenerateRaytracingScene(GraphicsContext);
+    }
     
     // ----- Shadow Depth pass -----
     if (ShadowDepthPass)

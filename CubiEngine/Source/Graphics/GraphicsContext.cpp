@@ -7,9 +7,16 @@ FGraphicsContext::FGraphicsContext(FGraphicsDevice* const Device)
 {
     ThrowIfFailed(Device->GetDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
         IID_PPV_ARGS(&CommandAllocator)));
+    
+    wrl::ComPtr<ID3D12GraphicsCommandList> CommandListBase;
 
     ThrowIfFailed(Device->GetDevice()->CreateCommandList(
-        0u, D3D12_COMMAND_LIST_TYPE_DIRECT, CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&CommandList)));
+        0u, D3D12_COMMAND_LIST_TYPE_DIRECT, CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&CommandListBase)));
+
+    if (!SUCCEEDED(CommandListBase.As(&CommandList))) {
+        // not supported
+        FatalError("current device does not support ID3D12GraphicsCommandList4!");
+    }
 
     SetDescriptorHeaps();
 

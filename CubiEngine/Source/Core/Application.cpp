@@ -87,6 +87,12 @@ void Application::Cleanup()
     SDL_DestroyWindow(Window);
     SDL_Quit();
 
+    // flush before clearing D3DRenderer
+    if (GraphicsDevice)
+    {
+        GraphicsDevice->FlushAllQueue();
+    }
+
     if (D3DRenderer) {
         delete D3DRenderer;
     }

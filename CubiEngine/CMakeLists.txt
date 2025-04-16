@@ -31,6 +31,8 @@ set(SRC_FILES
     "Include/Scene/Camera.h"
     "Source/Scene/Light.cpp"
     "Include/Scene/Light.h"
+    "Source/Scene/Mesh.cpp"
+    "Include/Scene/Mesh.h"
 
     "Include/Graphics/d3dx12.h"
     "Include/Graphics/Material.h"
@@ -63,6 +65,8 @@ set(SRC_FILES
     "Include/Graphics/Profiler.h"
     "Source/Graphics/Query.cpp"
     "Include/Graphics/Query.h"
+    "Source/Graphics/Raytracing.cpp"
+    "Include/Graphics/Raytracing.h"
 
     "Source/Renderer/Renderer.cpp"
     "Include/Renderer/Renderer.h"

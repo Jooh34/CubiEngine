@@ -19,10 +19,15 @@ FGraphicsDevice::FGraphicsDevice(const uint32_t Width, const uint32_t Height,
 
 FGraphicsDevice::~FGraphicsDevice()
 {
-    DirectCommandQueue->Flush(); // flush GPU works
-    CopyCommandQueue->Flush();
-    ComputeCommandQueue->Flush();
+    FlushAllQueue();
+
+    // Uncomment this code if live object  warning occurs.
+    // ComPtr<ID3D12DebugDevice> debugDevice;
+    //if (SUCCEEDED(Device.As(&debugDevice))) {
+    //    debugDevice->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL);
+    //}
 }
+
 void FGraphicsDevice::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
 {
     ResizeSwapchainResources(InWidth, InHeight);
@@ -303,6 +308,34 @@ void FGraphicsDevice::ExecuteAndFlushComputeContext(std::unique_ptr<FComputeCont
     ComputeContextQueue.emplace(std::move(ComputeContext));
 }
 
+void FGraphicsDevice::CreateRawBuffer(ComPtr<ID3D12Resource>& outBuffer, uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps) const
+{
+    assert(outBuffer.Get() == nullptr);
+
+    D3D12_RESOURCE_DESC bufDesc = {};
+    bufDesc.Alignment = 0;
+    bufDesc.DepthOrArraySize = 1;
+    bufDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    bufDesc.Flags = flags;
+    bufDesc.Format = DXGI_FORMAT_UNKNOWN;
+    bufDesc.Height = 1;
+    bufDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    bufDesc.MipLevels = 1;
+    bufDesc.SampleDesc.Count = 1;
+    bufDesc.SampleDesc.Quality = 0;
+    bufDesc.Width = size;
+    bufDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+    // D3D Warning : Ignoring InitialState D3D12_RESOURCE_STATE_UNORDERED_ACCESS. Buffers are effectively created in state D3D12_RESOURCE_STATE_COMMON.
+    if (initState == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+    {
+        initState = D3D12_RESOURCE_STATE_COMMON;
+    }
+
+    ThrowIfFailed(GetDevice()->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufDesc,
+        initState, nullptr, IID_PPV_ARGS(&outBuffer)));
+}
+
 std::unique_ptr<FComputeContext> FGraphicsDevice::GetComputeContext()
 {
     if (ComputeContextQueue.empty())
@@ -572,6 +605,8 @@ FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationD
 
     Buffer.Allocation = MemoryAllocator->CreateBufferResourceAllocation(BufferCreationDesc, ResourceCreationDesc);
     Buffer.SizeInBytes = SizeInBytes;
+    Buffer.NumElement = NumberComponents;
+    Buffer.ElementSizeInBytes = sizeof(T);
 
     std::scoped_lock<std::recursive_mutex> LockGuard(ResourceMutex);
 
@@ -729,7 +764,8 @@ void FGraphicsDevice::EndFrame()
 
 void FGraphicsDevice::FlushAllQueue()
 {
-    DirectCommandQueue->WaitForFenceValue(DirectCommandQueue->Signal());
-    CopyCommandQueue->WaitForFenceValue(CopyCommandQueue->Signal());
+    DirectCommandQueue->Flush(); // flush GPU works
+    CopyCommandQueue->Flush();
+    ComputeCommandQueue->Flush();
 }
 

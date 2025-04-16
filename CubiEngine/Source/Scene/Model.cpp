@@ -20,9 +20,11 @@ void FTransform::Update()
         .inverseModelMatrix = Dx::XMMatrixInverse(nullptr, modelMatrix),
     };
 
-    TransformBuffer.Update(&transformBufferData);
+    TransformMatrix = modelMatrix;
 
+    TransformBuffer.Update(&transformBufferData);
 }
+
 FModel::FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
     :ModelName(ModelCreationDesc.ModelName)
 {
@@ -30,7 +32,7 @@ FModel::FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreation
         GraphicsDevice->CreateBuffer<interlop::TransformBuffer>(FBufferCreationDesc{
             .Usage = EBufferUsage::ConstantBuffer,
             .Name = ModelName + L" Transform Buffer",
-        });
+            });
 
     Transform.Scale = ModelCreationDesc.Scale;
     Transform.Rotation = ModelCreationDesc.Rotation;
@@ -39,7 +41,7 @@ FModel::FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreation
     Transform.Update();
 
     std::string FullPath = FFileSystem::GetAssetPath() + ModelCreationDesc.ModelPath.data();
-    
+
     if (FullPath.find_last_of("/") != std::string::npos)
     {
         ModelDir = FullPath.substr(0, FullPath.find_last_of("/")) + "/";
@@ -66,18 +68,32 @@ FModel::FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreation
             if (!warning.empty()) FatalError(warning);
         }
     }
-    
-    const std::jthread loadSamplerThread([&]() { LoadSamplers(GraphicsDevice, GLTFModel); });
-    const std::jthread loadMaterialThread([&]() { LoadMaterials(GraphicsDevice, GLTFModel); });
 
-    const tinygltf::Scene& scene = GLTFModel.scenes[GLTFModel.defaultScene];
+    {
+        const std::jthread loadSamplerThread([&]() { LoadSamplers(GraphicsDevice, GLTFModel); });
+        const std::jthread loadMaterialThread([&]() { LoadMaterials(GraphicsDevice, GLTFModel); });
 
-    const std::jthread loadMeshThread([&]() {
-        for (const int& nodeIndex : scene.nodes)
-        {
-            LoadNode(GraphicsDevice, ModelCreationDesc, nodeIndex, GLTFModel);
-        }
-    });
+        const tinygltf::Scene& scene = GLTFModel.scenes[GLTFModel.defaultScene];
+
+        const std::jthread loadMeshThread([&]() {
+            for (const int& nodeIndex : scene.nodes)
+            {
+                LoadNode(GraphicsDevice, ModelCreationDesc, nodeIndex, GLTFModel);
+            }
+        });
+    }
+
+    FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
+    GraphicsContext->Reset();
+
+    for (auto& Mesh : Meshes)
+    {
+        Mesh.GenerateRaytracingGeometry(GraphicsDevice);
+    }
+
+    // sync gpu immediatly
+    GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
+    GraphicsDevice->GetDirectCommandQueue()->Flush();
 }
 
 void FModel::LoadSamplers(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel)
@@ -521,8 +537,9 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
 
         Mesh.IndicesCount = static_cast<uint32_t>(Indices.size());
         Mesh.MaterialIndex = primitive.material;
+        Mesh.TransformMatrix = Transform.TransformMatrix;
 
-        Meshes.push_back(Mesh);
+        Meshes.push_back(std::move(Mesh));
     }
     for (const int& ChildIndex : node.children)
     {
@@ -605,5 +622,13 @@ void FModel::Render(const FGraphicsContext* const GraphicsContext,
 
         GraphicsContext->SetGraphicsRoot32BitConstants(&ShadowDepthPassRenderResource);
         GraphicsContext->DrawIndexedInstanced(Mesh.IndicesCount);
+    }
+}
+
+void FModel::GatherRaytracingGeometry(std::vector<BLASMatrixPairType>& BLASMatrixPair)
+{
+    for (FMesh& Mesh : Meshes)
+    {
+        Mesh.GatherRaytracingGeometry(BLASMatrixPair);
     }
 }

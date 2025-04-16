@@ -5,6 +5,7 @@
 #include "Scene/Camera.h"
 #include "Scene/Light.h"
 #include "Renderer/CubeMap.h"
+#include "Graphics/Raytracing.h"
 
 class FGraphicsContext;
 class FCamera;
@@ -40,6 +41,8 @@ public:
     FCamera& GetCamera() { return Camera; }
     FCubeMap* GetEnvironmentMap() { return (WhiteFurnaceMethod == 0 || WhiteFurnaceMethod == 3) ? EnviromentMap.get() : WhiteFurnaceMap.get(); }
     void RenderEnvironmentMap(FGraphicsContext* const GraphicsContext, FSceneTexture& SceneTexture);
+
+    void GenerateRaytracingScene(FGraphicsContext* const GraphicsContext);
 
     FLight Light;
     float CPUFrameMsTime = 0;
@@ -126,4 +129,6 @@ private:
     std::unique_ptr<FCubeMap> WhiteFurnaceMap{};
 
     std::chrono::high_resolution_clock::time_point PrevTime;
+
+    FRaytracingScene RaytracingScene;
 };

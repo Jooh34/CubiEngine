@@ -104,6 +104,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
 
 FScene::~FScene()
 {
+
 }
 
 void FScene::GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height)
@@ -256,4 +257,21 @@ void FScene::RenderEnvironmentMap(FGraphicsContext* const GraphicsContext, FScen
     {
         GetEnvironmentMap()->Render(GraphicsContext, RenderResource, SceneTexture.HDRTexture, SceneTexture.DepthTexture);
     }
+}
+
+void FScene::GenerateRaytracingScene(FGraphicsContext* const GraphicsContext)
+{
+    std::vector<BLASMatrixPairType> BLASMatrixPair;
+
+    for (const auto& [_, Model] : Models)
+    {
+        Model->GatherRaytracingGeometry(BLASMatrixPair);
+    }
+
+    if (BLASMatrixPair.size() == 0)
+    {
+        return;
+    }
+
+    RaytracingScene.GenerateRaytracingScene(Device, GraphicsContext, BLASMatrixPair);
 }
