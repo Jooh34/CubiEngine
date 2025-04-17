@@ -63,6 +63,8 @@ public:
     int DiffuseMethod = 0;
     
     int MaxFPS = 60;
+
+    bool bDebugRaytracingScene = true;
     
     // Light
     bool bLightDanceDebug = false;

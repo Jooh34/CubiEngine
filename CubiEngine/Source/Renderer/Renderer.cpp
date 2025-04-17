@@ -85,16 +85,54 @@ void FRenderer::Render()
     // Generate Raytracing Scene
     {
         SCOPED_NAMED_EVENT(GraphicsContext, GenerateRaytracingScene);
-        SCOPED_GPU_EVENT(GraphicsDevice, GenerateRaytracingScene)
+        SCOPED_GPU_EVENT(GraphicsDevice, GenerateRaytracingScene);
         Scene->GenerateRaytracingScene(GraphicsContext);
     }
-    
+
+    if (Scene->bDebugRaytracingScene)
+    {
+        RenderDebugRaytracingScene(GraphicsContext);
+    }
+    else
+    {
+        RenderDeferredShading(GraphicsContext);
+    }
+
+    // ----- Editor ------
+    {
+        SCOPED_NAMED_EVENT(GraphicsContext, Editor);
+        SCOPED_GPU_EVENT(GraphicsDevice, Editor);
+
+        GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->ExecuteResourceBarriers();
+        GraphicsContext->SetRenderTarget(BackBuffer);
+        Editor->Render(GraphicsContext, Scene.get());
+    }
+    // -------------------
+
+    GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
+    GraphicsContext->ExecuteResourceBarriers();
+
+    GraphicsDevice->GetGPUProfiler().EndFrame();
+
+    GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
+    GraphicsDevice->Present();
+
+    GraphicsDevice->EndFrame();
+    GraphicsDevice->GetGPUProfiler().EndFrameAfterFence();
+
+    GFrameCount++;
+}
+
+void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
+{
+    FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
+
     // ----- Shadow Depth pass -----
     if (ShadowDepthPass)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, ShadowDepth);
         SCOPED_GPU_EVENT(GraphicsDevice, ShadowDepth)
-
         ShadowDepthPass->Render(GraphicsContext, Scene.get());
     }
     // ----- Shadow Depth pass -----
@@ -130,7 +168,7 @@ void FRenderer::Render()
     {
         SCOPED_NAMED_EVENT(GraphicsContext, LightPass);
         SCOPED_GPU_EVENT(GraphicsDevice, LightPass);
-        
+
         FTexture* SSAOTexture = Scene->bUseSSAO ? &SSAOPass->SSAOTexture : nullptr;
         DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext, ShadowDepthPass.get(), SceneTexture, SSAOTexture);
     }
@@ -143,7 +181,7 @@ void FRenderer::Render()
 
         ScreenSpaceGI->AddPass(GraphicsContext, Scene.get(), SceneTexture);
     }
-    
+
     // ----- Post Process -----
     {
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
@@ -151,7 +189,7 @@ void FRenderer::Render()
 
         FTexture* HDR = &SceneTexture.HDRTexture;
         FTexture* LDR = &SceneTexture.LDRTexture;
-        
+
         if (Scene.get()->bUseTaa)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, TemporalAA);
@@ -162,7 +200,7 @@ void FRenderer::Render()
 
             TemporalAA->UpdateHistory(GraphicsContext, Scene.get());
         }
-        
+
         if (Scene.get()->bUseEyeAdaptation)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, EyeAdaptation);
@@ -171,7 +209,7 @@ void FRenderer::Render()
             EyeAdaptationPass->GenerateHistogram(GraphicsContext, Scene.get(), HDR);
             EyeAdaptationPass->CalculateAverageLuminance(GraphicsContext, Scene.get(), Width, Height);
         }
-        
+
         if (Scene->bUseBloom)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, Bloom);
@@ -204,34 +242,14 @@ void FRenderer::Render()
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
         GraphicsContext->ExecuteResourceBarriers();
         GraphicsContext->CopyResource(BackBuffer.GetResource(), LDR->GetResource());
-
-        // ----- Editor ------
-        {
-            SCOPED_NAMED_EVENT(GraphicsContext, Editor);
-            SCOPED_GPU_EVENT(GraphicsDevice, Editor);
-
-            GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
-            GraphicsContext->ExecuteResourceBarriers();
-            GraphicsContext->SetRenderTarget(BackBuffer);
-            Editor->Render(GraphicsContext, Scene.get());
-        }
-        // -------------------
-
-        GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
-        GraphicsContext->ExecuteResourceBarriers();
     }
 
     CopyHistoricalTexture(GraphicsContext);
     // ----- Post Process -----
-    GraphicsDevice->GetGPUProfiler().EndFrame();
+}
 
-    GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
-    GraphicsDevice->Present();
-
-    GraphicsDevice->EndFrame();
-    GraphicsDevice->GetGPUProfiler().EndFrameAfterFence();
-
-    GFrameCount++;
+void FRenderer::RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext)
+{
 }
 
 void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)

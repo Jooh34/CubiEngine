@@ -17,7 +17,7 @@ struct VSOutput
 
 ConstantBuffer<interlop::ScreenSpaceCubeMapRenderResources> renderResource : register(b0);
 
-[RootSignature(BindlessRootSignature)] 
+ 
 VSOutput VsMain(uint vertexID : SV_VertexID) 
 {
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResource.sceneBufferIndex];

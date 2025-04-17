@@ -109,7 +109,6 @@ float3 WhiteFurnaceSampling(float3 V, float3 N, float roughness, float metalic, 
     return color * (invNumSample * lightIntensity);
 }
 
-[RootSignature(BindlessRootSignature)]
 [numThreads(8, 8, 1)]
 void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 {

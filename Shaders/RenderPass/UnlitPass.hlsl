@@ -13,7 +13,7 @@ struct VSOutput
 
 ConstantBuffer<interlop::UnlitPassRenderResources> renderResources : register(b0);
 
-[RootSignature(BindlessRootSignature)] 
+ 
 VSOutput VsMain(uint vertexID : SV_VertexID) 
 {
     StructuredBuffer<float3> positionBuffer = ResourceDescriptorHeap[renderResources.positionBufferIndex];
@@ -38,7 +38,7 @@ struct PsOutput
     float4 albedo : SV_Target0;
 };
 
-[RootSignature(BindlessRootSignature)] 
+ 
 PsOutput PsMain(VSOutput psInput) 
 {
     ConstantBuffer<interlop::MaterialBuffer> materialBuffer = ResourceDescriptorHeap[renderResources.materialBufferIndex];

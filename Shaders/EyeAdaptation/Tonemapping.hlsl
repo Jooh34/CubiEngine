@@ -30,7 +30,6 @@ float4 Tonemap_ACES(float4 x) {
 #define TONEMAPPING_REINHARD_MODIFIED 2
 #define TONEMAPPING_ACES 3
 
-[RootSignature(BindlessRootSignature)]
 [numthreads(8, 8, 1)]
 void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 {

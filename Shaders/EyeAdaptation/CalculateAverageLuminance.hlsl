@@ -11,7 +11,7 @@ ConstantBuffer<interlop::CalculateAverageLuminanceRenderResource> renderResource
 
 groupshared uint histogramShared[GROUP_SIZE];
 
-[RootSignature(BindlessRootSignature)][numthreads(THREADS_X, THREADS_Y, 1)]
+[numthreads(THREADS_X, THREADS_Y, 1)]
 void CsMain( uint3 dispatchThreadID : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex )
 {
     RWStructuredBuffer<uint> histogramBuffer = ResourceDescriptorHeap[renderResources.histogramBufferIndex];

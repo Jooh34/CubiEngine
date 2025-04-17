@@ -24,7 +24,7 @@ float4 GetHistoryScreenPositionTest(float2 ScreenPosition, float DeviceZ, float4
     return PrevClip;
 }
 
-[RootSignature(BindlessRootSignature)]
+
 [numthreads(8, 8, 1)]
 void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 {

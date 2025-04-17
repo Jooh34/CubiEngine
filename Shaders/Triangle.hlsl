@@ -12,7 +12,8 @@ struct VSOutput
 
 ConstantBuffer<interlop::TriangleRenderResources> renderResources : register(b0);
 
-[RootSignature(BindlessRootSignature)] VSOutput VsMain(uint vertexID: SV_VertexID) 
+[RootSignature(BindlessRootSignature)] 
+VSOutput VsMain(uint vertexID: SV_VertexID) 
 {
     StructuredBuffer<float3> positionBuffer = ResourceDescriptorHeap[renderResources.positionBufferIndex];
     StructuredBuffer<float2> textureCoordBuffer = ResourceDescriptorHeap[renderResources.textureCoordBufferIndex];

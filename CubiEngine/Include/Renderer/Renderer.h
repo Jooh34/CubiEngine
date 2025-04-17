@@ -26,6 +26,8 @@ public:
     void BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer);
     void CopyHistoricalTexture(FGraphicsContext* GraphicsContext);
     void Render();
+    void RenderDeferredShading(FGraphicsContext* GraphicsContext);
+    void RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext);
     void OnWindowResized(uint32_t InWidth, uint32_t InHeight);
     void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
     void InitializeSceneTexture(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);

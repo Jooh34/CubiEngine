@@ -32,7 +32,7 @@ uint colorToBin(float3 hdrColor, float minLogLum, float inverseLogLumRange) {
     return uint(logLum * 254.0 + 1.0);
 }
 
-[RootSignature(BindlessRootSignature)][numthreads(THREADS_X, THREADS_Y, 1)]
+[numthreads(THREADS_X, THREADS_Y, 1)]
 void CsMain( uint3 dispatchThreadID : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex )
 {
     Texture2D<float4> sceneTexture = ResourceDescriptorHeap[renderResources.sceneTextureIndex];

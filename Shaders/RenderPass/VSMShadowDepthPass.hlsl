@@ -13,7 +13,7 @@ struct VSOutput
 
 ConstantBuffer<interlop::ShadowDepthPassRenderResource> renderResources : register(b0);
 
-[RootSignature(BindlessRootSignature)] 
+ 
 VSOutput VsMain(uint vertexID : SV_VertexID) 
 {
     StructuredBuffer<float3> positionBuffer = ResourceDescriptorHeap[renderResources.positionBufferIndex];
@@ -47,7 +47,7 @@ float2 ComputeMoments(float Depth)
     return Moments;
 }
 
-[RootSignature(BindlessRootSignature)] 
+ 
 PsOutput PsMain(VSOutput input) 
 {
     float2 moment = ComputeMoments(input.depth);

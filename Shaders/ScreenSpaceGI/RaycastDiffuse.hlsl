@@ -178,7 +178,7 @@ void GenerateStochasticNormal(const float3 normal, float2 u, out float3 stochast
 	}
 }
 
-[RootSignature(BindlessRootSignature)]
+
 [numthreads(8, 8, 1)]
 void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 {

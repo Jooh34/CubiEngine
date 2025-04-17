@@ -57,7 +57,6 @@ void GetCubeVertex(uint vertexID, out float3 outPosition, out float3 outNormal)
 }
 
 
-[RootSignature(BindlessRootSignature)] 
 VSOutput VsMain(uint vertexID : SV_VertexID) 
 {
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
@@ -91,7 +90,6 @@ struct PsOutput
     float2 Velocity : SV_Target3;
 };
 
-[RootSignature(BindlessRootSignature)] 
 PsOutput PsMain(VSOutput psInput) 
 {
     float3 lightColor = renderResources.lightColor.xyz;

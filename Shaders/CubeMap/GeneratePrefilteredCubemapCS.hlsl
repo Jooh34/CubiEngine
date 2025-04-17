@@ -45,7 +45,7 @@ float3 PrefilterEnvMap(float Roughness, float3 V, in TextureCube<float4> EnvMap)
 
 ConstantBuffer<interlop::GeneratePrefilteredCubemapResource> renderResources : register(b0);
 
-[RootSignature(BindlessRootSignature)][numthreads(8, 8, 1)]
+[numthreads(8, 8, 1)]
 void CsMain( uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     uint2 coord = dispatchThreadID.xy;

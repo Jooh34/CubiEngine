@@ -116,6 +116,7 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     const char* wfItems[] = { "Off", "Sampling", "IBL", "Albedo only"};
     ImGui::SliderFloat("VisDebugMin", &Scene->VisualizeDebugMin, 0.f, 1.f);
     ImGui::SliderFloat("VisDebugMax", &Scene->VisualizeDebugMax, 0.f, 1.f);
+
     ImGui::SliderInt("Max FPS", &Scene->MaxFPS, 30, 144);
 
     AddCombo("White Furnace Method", wfItems, IM_ARRAYSIZE(wfItems), Scene->WhiteFurnaceMethod);
@@ -134,6 +135,8 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     }*/
 
     ImGui::Checkbox("Energy Compensation", &Scene->bUseEnergyCompensation);
+    ImGui::Checkbox("Debug RaytracingScene", &Scene->bDebugRaytracingScene);
+
     const char* diffuseItems[] = { "Lambertian", "Disney_Burley"};
     AddCombo("Diffuse Model", diffuseItems, IM_ARRAYSIZE(diffuseItems), Scene->DiffuseMethod);
 

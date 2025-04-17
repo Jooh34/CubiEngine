@@ -24,7 +24,7 @@ float4 Tonemap_ACES(float4 x) {
     return (x * (a * x + b)) / (x * (c * x + d) + e);
 }
 
-[RootSignature(BindlessRootSignature)]
+
 [numthreads(8, 8, 1)]
 void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 {

@@ -16,7 +16,7 @@ float3 convertToSRGB(float3 x)
     return all(x < 0.0031308) ? 12.92 * x : 1.055 * pow(abs(x), 1.0 / 2.4) - 0.055;
 }
 
-[RootSignature(BindlessRootSignature)][numthreads(8, 8, 1)]
+[numthreads(8, 8, 1)]
 void CsMain( uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     uint2 coord = dispatchThreadID.xy;
