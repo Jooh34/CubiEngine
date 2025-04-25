@@ -44,6 +44,8 @@ public:
 
     void GenerateRaytracingScene(FGraphicsContext* const GraphicsContext);
 
+    FRaytracingScene& GetRaytracingScene() { return RaytracingScene; }
+
     FLight Light;
     float CPUFrameMsTime = 0;
 
@@ -94,7 +96,7 @@ public:
     int StochasticNormalSamplingMethod = 1;
     float CompareToleranceScale = 2.f;
     
-    int SSGIGaussianKernelSize = 44;
+    int SSGIGaussianKernelSize = 32;
     float SSGIGaussianStdDev = 12.f;
 
     int MaxHistoryFrame = 10;

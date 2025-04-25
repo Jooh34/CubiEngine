@@ -13,6 +13,6 @@ public:
     // complete path (with respect to the executable).
     static void CreateBindlessRootSignature(ID3D12Device* const device, const std::wstring_view shaderPath);
     static inline wrl::ComPtr<ID3D12RootSignature> StaticRootSignature{};
-    
+
     wrl::ComPtr<ID3D12PipelineState> PipelineStateObject{};
 };

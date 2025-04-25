@@ -1,5 +1,6 @@
 #include "Graphics/GraphicsDevice.h"
 #include "Graphics/PipelineState.h"
+#include "Graphics/RaytracingPipelineState.h"
 #include "Graphics/MemoryAllocator.h"
 #include "Graphics/CopyContext.h"
 #include "Core/FileSystem.h"
@@ -528,6 +529,7 @@ void FGraphicsDevice::InitBindlessRootSignature()
 {
     // Setup bindless root signature.
     FPipelineState::CreateBindlessRootSignature(Device.Get(), L"Shaders/Triangle.hlsl");
+    FRaytracingPipelineState::CreateRaytracingRootSignature(Device.Get());
 }
 
 uint32_t FGraphicsDevice::CreateCbv(const FCbvCreationDesc& CbvCreationDesc) const

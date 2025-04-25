@@ -11,6 +11,7 @@ enum class ShaderTypes : uint8_t
     Vertex,
     Pixel,
     Compute,
+    Raytracing,
     RootSignature,
 };
 

@@ -47,6 +47,8 @@ set(SRC_FILES
     "Include/Graphics/CommandQueue.h"
     "Source/Graphics/PipelineState.cpp"
     "Include/Graphics/PipelineState.h"
+    "Source/Graphics/RaytracingPipelineState.cpp"
+    "Include/Graphics/RaytracingPipelineState.h"
     "Source/Graphics/Context.cpp"
     "Include/Graphics/Context.h"
     "Source/Graphics/GraphicsContext.cpp"
@@ -67,6 +69,11 @@ set(SRC_FILES
     "Include/Graphics/Query.h"
     "Source/Graphics/Raytracing.cpp"
     "Include/Graphics/Raytracing.h"
+    "Source/Graphics/ShaderBindingTable.cpp"
+    "Include/Graphics/ShaderBindingTable.h"
+    "Source/Graphics/ShaderBindingTableGenerator.cpp"
+    "Include/Graphics/ShaderBindingTableGenerator.h"
+
 
     "Source/Renderer/Renderer.cpp"
     "Include/Renderer/Renderer.h"
@@ -92,6 +99,8 @@ set(SRC_FILES
     "Include/Renderer/BloomPass.h"
     "Source/Renderer/SSAO.cpp"
     "Include/Renderer/SSAO.h"
+    "Source/Renderer/RaytracingDebugScenePass.cpp"
+    "Include/Renderer/RaytracingDebugScenePass.h"
 )
 
 add_executable(CubiEngine ${SRC_FILES} "Main.cpp")

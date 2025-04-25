@@ -119,6 +119,11 @@ void FGraphicsContext::SetComputePipelineState(const FPipelineState& PipelineSta
     CommandList->SetPipelineState(PipelineState.PipelineStateObject.Get());
 }
 
+void FGraphicsContext::SetRaytracingPipelineState(const FRaytracingPipelineState& PipelineState) const
+{
+    CommandList->SetPipelineState1(PipelineState.GetRTStateObjectPtr());
+}
+
 void FGraphicsContext::SetViewport(const D3D12_VIEWPORT& Viewport, bool bScissorRectAsSame) const
 {
     CommandList->RSSetViewports(1u, &Viewport);
@@ -176,9 +181,19 @@ void FGraphicsContext::SetComputeRootSignature() const
     CommandList->SetComputeRootSignature(FPipelineState::StaticRootSignature.Get());
 }
 
+void FGraphicsContext::SetRaytracingComputeRootSignature() const
+{
+    CommandList->SetComputeRootSignature(FRaytracingPipelineState::StaticGlobalRootSignature.Get());
+}
+
 void FGraphicsContext::SetComputeRoot32BitConstants(const void* RenderResources) const
 {
     CommandList->SetComputeRoot32BitConstants(0u, NUMBER_32_BIT_CONSTANTS, RenderResources, 0u);
+}
+
+void FGraphicsContext::SetComputeRoot32BitConstants(UINT RootParameterIndex, UINT Num32BitValuesToSet, const void* RenderResources) const
+{
+    CommandList->SetComputeRoot32BitConstants(RootParameterIndex, Num32BitValuesToSet, RenderResources, 0u);
 }
 
 void FGraphicsContext::CopyResource(ID3D12Resource* const Destination, ID3D12Resource* const Source) const
@@ -210,4 +225,19 @@ void FGraphicsContext::ResolveQueryData(
 )
 {
     CommandList->ResolveQueryData(Heap->GetD3D12QueryHeap(), Type, StartIndex, NumQueries, Heap->GetQueryReadbackBuffer(), AlignedDestinationBufferOffset);
+}
+
+void FGraphicsContext::DispatchRays(D3D12_DISPATCH_RAYS_DESC& RayDesc) const
+{
+    CommandList->DispatchRays(&RayDesc);
+}
+
+void FGraphicsContext::SetComputeRootShaderResourceView(UINT RootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS BufferLocation)
+{
+    CommandList->SetComputeRootShaderResourceView(RootParameterIndex, BufferLocation);
+}
+
+void FGraphicsContext::SetComputeRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor)
+{
+    CommandList->SetComputeRootDescriptorTable(RootParameterIndex, BaseDescriptor);
 }

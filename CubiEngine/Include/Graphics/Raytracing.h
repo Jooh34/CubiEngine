@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Graphics/RaytracingPipelineState.h"
+
 class FGraphicsDevice;
 class FGraphicsContext;
 
@@ -29,10 +31,17 @@ public:
         FGraphicsContext* const GraphicsContext,
         std::vector<BLASMatrixPairType>& instances
     );
-    
+
+    void CreateTopLevelASResourceView(const FGraphicsDevice* const GraphicsDevice);
+    uint32_t GetTopLevelASResourceView() { return SrvIndex; };
+    D3D12_GPU_VIRTUAL_ADDRESS GetTopLevelASGPUVirtualAddress() { return GPUVirtualAddress; };
+
     ComPtr<ID3D12Resource> pScratch;
     ComPtr<ID3D12Resource> pResult;
     ComPtr<ID3D12Resource> pInstanceDesc;
+
+    uint32_t SrvIndex;
+    D3D12_GPU_VIRTUAL_ADDRESS GPUVirtualAddress{};
 };
 
 /*-----------------------------------------------------------------------

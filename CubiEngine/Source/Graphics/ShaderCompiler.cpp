@@ -28,6 +28,7 @@ namespace ShaderCompiler
         }
 
         // Setup compilation arguments.
+        // need 6_6 for bindless raytracing shaders.
         const std::wstring targetProfile = [=]() {
             switch (shaderType)
             {
@@ -39,6 +40,9 @@ namespace ShaderCompiler
 
             case ShaderTypes::Compute:
                 return L"cs_6_6";
+
+            case ShaderTypes::Raytracing:
+                return L"lib_6_6";
 
             default:
                 return L"";

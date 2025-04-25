@@ -46,7 +46,11 @@ void FRaytracingScene::GenerateRaytracingScene(
     std::vector<BLASMatrixPairType>& instances
 )
 {
-    //Todo : check scene is changed
+    if (pResult)
+    {
+        //Todo : rebuild if scene is changed
+        return;
+    }
     pScratch.Reset();
     pResult.Reset();
     pInstanceDesc.Reset();
@@ -90,6 +94,25 @@ void FRaytracingScene::GenerateRaytracingScene(
         pResult.Get(),
         pInstanceDesc.Get()
     );
+
+    CreateTopLevelASResourceView(GraphicsDevice);
+}
+
+void FRaytracingScene::CreateTopLevelASResourceView(const FGraphicsDevice* const GraphicsDevice)
+{
+    FSrvCreationDesc SrvCreationDesc = {
+        .SrvDesc = {
+            .Format = DXGI_FORMAT_UNKNOWN,
+            .ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE,
+            .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+            .RaytracingAccelerationStructure = {
+                .Location = pResult->GetGPUVirtualAddress()
+            }
+        }
+    };
+
+    SrvIndex = GraphicsDevice->CreateSrv(SrvCreationDesc, nullptr);
+    GPUVirtualAddress = pResult->GetGPUVirtualAddress();
 }
 
 /*-----------------------------------------------------------------------

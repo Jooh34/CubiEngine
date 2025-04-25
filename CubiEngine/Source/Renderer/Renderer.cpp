@@ -20,6 +20,8 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32
     BloomPass = std::make_unique<FBloomPass>(GraphicsDevice, Width, Height);
     SSAOPass = std::make_unique<FSSAO>(GraphicsDevice, Width, Height);
 
+    RaytracingDebugScenePass = std::make_unique<FRaytracingDebugScenePass>(GraphicsDevice, Scene.get(), Width, Height);
+
     Editor = std::make_unique<FEditor>(GraphicsDevice, Window, Width, Height);
 
     InitSizeDependantResource(GraphicsDevice, Width, Height);
@@ -250,6 +252,27 @@ void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
 
 void FRenderer::RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext)
 {
+    if (RaytracingDebugScenePass)
+    {
+        SCOPED_NAMED_EVENT(GraphicsContext, RaytracingDebugScene);
+        SCOPED_GPU_EVENT(GraphicsDevice, RaytracingDebugScene);
+
+        RaytracingDebugScenePass->AddPass(GraphicsContext, Scene.get());
+    }
+
+    // ----- Post Process -----
+    {
+        SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
+        SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
+
+        FTexture* LDR = &RaytracingDebugScenePass->GetRaytracingDebugSceneTexture();
+        FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
+
+        GraphicsContext->AddResourceBarrier(*LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
+        GraphicsContext->ExecuteResourceBarriers();
+        GraphicsContext->CopyResource(BackBuffer.GetResource(), LDR->GetResource());
+    }
 }
 
 void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)

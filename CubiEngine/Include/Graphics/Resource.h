@@ -41,6 +41,14 @@ struct FComputePipelineStateCreationDesc
     std::wstring_view PipelineName{};
 };
 
+struct FRaytracingPipelineStateCreationDesc
+{
+    std::wstring_view rtShaderPath{};
+    std::wstring_view EntryPointRGS{ L"RayGen" };
+    std::wstring_view EntryPointCHS{ L"Hit" };
+    std::wstring_view EntryPointRMS{ L"Miss" };
+};
+
 struct FAllocation
 {
     void Update(const void* Data, const size_t Size);

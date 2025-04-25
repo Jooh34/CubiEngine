@@ -197,7 +197,7 @@ void FEditor::RenderGIProperties(FScene* Scene)
         ImGui::SliderFloat("SSGI CompareToleranceScale", &Scene->CompareToleranceScale, 1.f, 30.f);
         ImGui::SliderInt("SSGI NumSamples", &Scene->SSGINumSamples, 1, 16);
 
-        ImGui::SliderInt("SSGI GaussianKernelSize", &Scene->SSGIGaussianKernelSize, 1, 64);
+        ImGui::SliderInt("SSGI GaussianKernelSize", &Scene->SSGIGaussianKernelSize, 1, 32);
         ImGui::SliderFloat("SSGI GaussianStdDev", &Scene->SSGIGaussianStdDev, 0.1f, 20.0f);
 
         const char* sampleingMethodItems[] = { "UniformSampleHemisphere", "ImportanceSampleCosDir", "ConcentricSampleDisk", "ConcentricSampleDiskUE5"};

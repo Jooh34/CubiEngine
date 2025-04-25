@@ -295,7 +295,7 @@ namespace interlop
         uint bHorizontal;
     };
 
-    static const uint MAX_GAUSSIAN_KERNEL_SIZE_DIV_4 = 16u;
+    static const uint MAX_GAUSSIAN_KERNEL_SIZE_DIV_4 = 8u;
     struct GaussianBlurWRenderResource
     {
         uint srcTextureIndex;
@@ -349,5 +349,11 @@ namespace interlop
         uint srcTextureIndex;
         uint momentTextureIndex;
         float2 dstTexelSize;
+    };
+
+    // RayTracing
+    struct RTSceneDebugRenderResource
+    {
+        uint dstTextureIndex;
     };
 }

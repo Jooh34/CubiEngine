@@ -56,7 +56,7 @@ public:
     FDescriptorHeap* GetRtvDescriptorHeap() const { return RtvDescriptorHeap.get(); }
     FDescriptorHeap* GetDsvDescriptorHeap() const { return DsvDescriptorHeap.get(); }
     FDescriptorHeap* GetSamplerDescriptorHeap() const { return SamplerDescriptorHeap.get(); }
-    
+
     FGraphicsContext* GetCurrentGraphicsContext() const { return PerFrameGraphicsContexts[CurrentFrameIndex].get(); }
     FTexture& GetCurrentBackBuffer() { return BackBuffers[CurrentFrameIndex]; }
 
@@ -79,6 +79,13 @@ public:
     FQueryLocation AllocateQuery(D3D12_QUERY_TYPE Type);
     FQueryHeap* GetTimestampQueryHeap() { return TimeStampQueryHeap.get(); }
 
+    uint32_t CreateSrv(const FSrvCreationDesc& SrvCreationDesc, ID3D12Resource* const Resource) const;
+
+    FDescriptorHandle GetCbvSrvUavHandleFromIndex(uint32_t Index) const
+    {
+        return CbvSrvUavDescriptorHeap->GetDescriptorHandleFromIndex(Index);
+    }
+
 private:
     bool bInitialized = false;
 
@@ -92,10 +99,10 @@ private:
     void InitBindlessRootSignature();
     
     uint32_t CreateCbv(const FCbvCreationDesc& CbvCreationDesc) const;
-    uint32_t CreateSrv(const FSrvCreationDesc& SrvCreationDesc, ID3D12Resource* const Resource) const;
     uint32_t CreateUav(const FUavCreationDesc& UavCreationDesc, ID3D12Resource* const Resource) const;
     uint32_t CreateDsv(const FDsvCreationDesc& DsvCreationDesc, ID3D12Resource* const Resource) const;
     uint32_t CreateRtv(const FRtvCreationDesc& RtvCreationDesc, ID3D12Resource* const Resource) const;
+
 
     HWND WindowHandle;
 

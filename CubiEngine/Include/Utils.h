@@ -1,5 +1,7 @@
 #pragma once
 
+#define ArraySize_(x) ((sizeof(x) / sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
+
 inline void FatalError(const std::string_view message,
     const std::source_location sourceLocation = std::source_location::current())
 {

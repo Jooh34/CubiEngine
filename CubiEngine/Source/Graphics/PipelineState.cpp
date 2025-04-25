@@ -115,7 +115,7 @@ void FPipelineState::CreateBindlessRootSignature(ID3D12Device* const device, con
 
     if (!shader.rootSignatureBlob.Get())
     {
-        FatalError(std::format("Shader : {} not found.", wStringToString(path)));
+        FatalError(std::format("Shader : {} rootSignatureBlob not found.", wStringToString(path)));
     }
 
     ThrowIfFailed(device->CreateRootSignature(0u, shader.rootSignatureBlob->GetBufferPointer(),
