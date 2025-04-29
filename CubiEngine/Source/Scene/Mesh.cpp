@@ -1,4 +1,5 @@
 #include "Scene/Mesh.h"
+#include "Graphics/Material.h"
 
 FMesh::FMesh()
 {
@@ -12,11 +13,13 @@ void FMesh::GenerateRaytracingGeometry(const FGraphicsDevice* const GraphicsDevi
     RaytracingGeometry = make_shared<FRaytracingGeometry>( GraphicsDevice, A, B );
 }
 
-void FMesh::GatherRaytracingGeometry(std::vector<BLASMatrixPairType>& BLASMatrixPair)
+void FMesh::GatherRaytracingGeometry(std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList, FPBRMaterial* Material)
 {
     if (RaytracingGeometry)
     {
-        BLASMatrixPair.emplace_back(
+        RaytracingGeometryContextList.emplace_back(
+            this,
+            Material,
             RaytracingGeometry->GetBLAS(),
             TransformMatrix
         );

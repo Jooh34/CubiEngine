@@ -52,7 +52,12 @@ void FRaytracingDebugScenePass::AddPass(FGraphicsContext* GraphicsContext, FScen
     //GraphicsContext->SetComputeRootDescriptorTable(RTParams_UAVDescriptor, UavHandle.GpuDescriptorHandle); // u0
 
     interlop::RTSceneDebugRenderResource RenderResources = {
+        .invViewProjectionMatrix = Scene->GetCamera().GetInvViewProjMatrix(),
         .dstTextureIndex = RaytracingDebugSceneTexture.UavIndex,
+        .geometryInfoBufferIdx = Scene->GetRaytracingScene().GetGeometryInfoBufferSrv(),
+        .materialBufferIdx = Scene->GetRaytracingScene().GetMaterialBufferSrv(),
+        .vtxBufferIdx = Scene->GetRaytracingScene().GetMeshVertexBufferSrv(),
+        .idxBufferIdx = Scene->GetRaytracingScene().GetIndiceBufferSrv(),
     };
 
     GraphicsContext->SetComputeRoot32BitConstants(RTParams_CBuffer, 32u, &RenderResources);

@@ -36,6 +36,8 @@ set(SRC_FILES
 
     "Include/Graphics/d3dx12.h"
     "Include/Graphics/Material.h"
+    "Include/Graphics/Dx12Helper.h"
+    "Source/Graphics/Dx12Helper.cpp"
 
     "Include/Graphics/Resource.cpp"
     "Include/Graphics/Resource.h"

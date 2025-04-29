@@ -347,7 +347,6 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
         std::vector<XMFLOAT2> TextureCoords{};
         std::vector<XMFLOAT3> Normals{};
         std::vector<XMFLOAT3> Tangents{};
-        std::vector<uint16_t> Indices{};
 
         const tinygltf::Model& model = GLTFModel;
 
@@ -391,7 +390,7 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
         }
 
         // Index Buffer
-        const uint8_t* indices;
+        const uint8_t* indicePtr;
         int indexStride;
         tinygltf::Accessor indexAccessor{};
         {
@@ -400,8 +399,10 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
             const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
             indexStride = indexAccessor.ByteStride(bufferView);
-            indices = reinterpret_cast<const uint8_t*>(&buffer.data[indexAccessor.byteOffset + bufferView.byteOffset]);
+            indicePtr = reinterpret_cast<const uint8_t*>(&buffer.data[indexAccessor.byteOffset + bufferView.byteOffset]);
         }
+
+        Mesh.MeshVertices = std::vector<interlop::MeshVertex>(accessorNum);
 
         {
             {
@@ -428,27 +429,31 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
                     Positions.emplace_back(position);
                     TextureCoords.emplace_back(textureCoord);
                     Normals.emplace_back(normal);
+
+                    Mesh.MeshVertices[i].position = position;
+                    Mesh.MeshVertices[i].normal = normal;
+                    Mesh.MeshVertices[i].texcoord = textureCoord;
                 }
             }
         }
         
         {
             size_t indexCount = indexAccessor.count;
-            Indices.resize(indexCount);
+            Mesh.Indice.resize(indexCount);
             // Fill indices array.
             for (const size_t i : std::views::iota(0u, indexCount)) {
-                Indices[i] = (reinterpret_cast<uint16_t const*>(indices + (i * indexStride))[0]);
+                Mesh.Indice[i] = (reinterpret_cast<uint16_t const*>(indicePtr + (i * indexStride))[0]);
             }
         }
         
         // Calculate tangents for each vertex
         Tangents.resize(Positions.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
 
-        for (size_t i = 0; i < Indices.size(); i += 3)
+        for (size_t i = 0; i < Mesh.Indice.size(); i += 3)
         {
-            uint16_t index0 = Indices[i];
-            uint16_t index1 = Indices[i + 1];
-            uint16_t index2 = Indices[i + 2];
+            uint16_t index0 = Mesh.Indice[i];
+            uint16_t index1 = Mesh.Indice[i + 1];
+            uint16_t index2 = Mesh.Indice[i + 2];
 
             const XMFLOAT3& pos0 = Positions[index0];
             const XMFLOAT3& pos1 = Positions[index1];
@@ -488,9 +493,12 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
             Tangents[index2].y += tangent.y;
             Tangents[index2].z += tangent.z;
         }
+
         // Normalize tangents
-        for (auto& tangent : Tangents)
+        for (int i=0; i<Tangents.size(); i++)
         {
+            XMFLOAT3& tangent = Tangents[i];
+
             float length = std::sqrt(tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z);
             if (length > 0.0f)
             {
@@ -498,6 +506,8 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
                 tangent.y /= length;
                 tangent.z /= length;
             }
+
+            Mesh.MeshVertices[i].tangent = tangent;
         }
 
         Mesh.PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
@@ -533,14 +543,15 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" index buffer",
             },
-            Indices);
+            Mesh.Indice);
 
-        Mesh.IndicesCount = static_cast<uint32_t>(Indices.size());
+        Mesh.IndicesCount = static_cast<uint32_t>(Mesh.Indice.size());
         Mesh.MaterialIndex = primitive.material;
         Mesh.TransformMatrix = Transform.TransformMatrix;
 
         Meshes.push_back(std::move(Mesh));
     }
+
     for (const int& ChildIndex : node.children)
     {
         LoadNode(GraphicsDevice, ModelCreationDesc, ChildIndex, GLTFModel);
@@ -625,10 +636,10 @@ void FModel::Render(const FGraphicsContext* const GraphicsContext,
     }
 }
 
-void FModel::GatherRaytracingGeometry(std::vector<BLASMatrixPairType>& BLASMatrixPair)
+void FModel::GatherRaytracingGeometry(std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList)
 {
     for (FMesh& Mesh : Meshes)
     {
-        Mesh.GatherRaytracingGeometry(BLASMatrixPair);
+        Mesh.GatherRaytracingGeometry(RaytracingGeometryContextList, &Materials[Mesh.MaterialIndex]);
     }
 }

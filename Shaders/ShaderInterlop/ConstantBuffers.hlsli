@@ -92,5 +92,31 @@ namespace interlop
     {
         float4 kernel[MAX_SSAO_KERNEL_SIZE_HLSL];
     };
+    
+    struct FRaytracingGeometryInfo
+    {
+        uint vtxOffset;
+        uint idxOffset;
+        uint materialIdx;
+        uint padding;
+    };
 
+    struct FRaytracingMaterial
+    {
+        uint albedoTextureIndex;
+        uint albedoTextureSamplerIndex;
+        float3 albedoColor;
+
+        float3 padding;
+    };
+
+    struct MeshVertex
+    {
+        float3 position;
+        float3 normal;
+        float2 texcoord;
+
+        float3 tangent;
+        float padding;
+    };
 } // namespace interlop

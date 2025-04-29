@@ -1,7 +1,7 @@
 #include "Graphics/RaytracingPipelineState.h"
 #include "Graphics/ShaderCompiler.h"
 #include "Core/FileSystem.h"
-
+#include "Graphics/Dx12Helper.h"
 
 FRaytracingPipelineState::FRaytracingPipelineState(ID3D12Device5* const device, const FRaytracingPipelineStateCreationDesc& pipelineStateCreationDesc)
 {
@@ -30,7 +30,7 @@ FRaytracingPipelineState::FRaytracingPipelineState(ID3D12Device5* const device, 
     // Todo:
     PipelineGenerator.SetMaxPayloadSize(4 * sizeof(float)); // RGB + distance
     PipelineGenerator.SetMaxAttributeSize(2 * sizeof(float)); // barycentric coordinates
-    PipelineGenerator.SetMaxRecursionDepth(2);
+    PipelineGenerator.SetMaxRecursionDepth(1);
 
     PipelineGenerator.SetGlobalRootSignature(StaticGlobalRootSignature.Get());
 
@@ -97,16 +97,17 @@ void FRaytracingPipelineState::CreateGlobalRootSignature(ID3D12Device* const dev
     //rootParameters[RTParams_AppSettings].Descriptor.ShaderRegister = AppSettings::CBufferRegister;
     //rootParameters[RTParams_AppSettings].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
 
-    //D3D12_STATIC_SAMPLER_DESC staticSamplers[2] = {};
-    //staticSamplers[0] = DX12::GetStaticSamplerState(SamplerState::Anisotropic, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
-    //staticSamplers[1] = DX12::GetStaticSamplerState(SamplerState::LinearClamp, 1, 0, D3D12_SHADER_VISIBILITY_ALL);
+    D3D12_STATIC_SAMPLER_DESC staticSamplers[2] = {};
+    staticSamplers[0] = GetStaticSamplerDesc(SamplerState::Anisotropic, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
+    staticSamplers[1] = GetStaticSamplerDesc(SamplerState::LinearClamp, 1, 0, D3D12_SHADER_VISIBILITY_ALL);
 
     D3D12_ROOT_SIGNATURE_DESC1 rootSignatureDesc = {};
     rootSignatureDesc.NumParameters = ArraySize_(rootParameters);
     rootSignatureDesc.pParameters = rootParameters;
-    //rootSignatureDesc.NumStaticSamplers = ArraySize_(staticSamplers);
-    //rootSignatureDesc.pStaticSamplers = staticSamplers;
-    rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
+    rootSignatureDesc.NumStaticSamplers = ArraySize_(staticSamplers);
+    rootSignatureDesc.pStaticSamplers = staticSamplers;
+    rootSignatureDesc.Flags =
+        D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
 
     // Create the root signature from its descriptor
     ID3DBlob* pSigBlob;

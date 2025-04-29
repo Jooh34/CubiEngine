@@ -5,6 +5,7 @@
 #include "Graphics/CopyContext.h"
 #include "Core/FileSystem.h"
 #include "ShaderInterlop/ConstantBuffers.hlsli"
+#include "ShaderInterlop/RenderResources.hlsli"
 
 FGraphicsDevice::FGraphicsDevice(const uint32_t Width, const uint32_t Height,
     const DXGI_FORMAT SwapchainFormat, const HWND WindowHandle)
@@ -715,6 +716,9 @@ CREATE_BUFFER_TEMPLATE_FUNC(interlop::SceneBuffer)
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::LightBuffer)
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::ShadowBuffer)
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::SSAOKernelBuffer)
+CREATE_BUFFER_TEMPLATE_FUNC(interlop::FRaytracingGeometryInfo)
+CREATE_BUFFER_TEMPLATE_FUNC(interlop::FRaytracingMaterial)
+CREATE_BUFFER_TEMPLATE_FUNC(interlop::MeshVertex)
 
 void FGraphicsDevice::CreateBackBufferRTVs()
 {

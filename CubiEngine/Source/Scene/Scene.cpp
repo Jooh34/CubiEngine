@@ -261,17 +261,17 @@ void FScene::RenderEnvironmentMap(FGraphicsContext* const GraphicsContext, FScen
 
 void FScene::GenerateRaytracingScene(FGraphicsContext* const GraphicsContext)
 {
-    std::vector<BLASMatrixPairType> BLASMatrixPair;
+    std::vector<FRaytracingGeometryContext> RaytracingGeometryContextList;
 
     for (const auto& [_, Model] : Models)
     {
-        Model->GatherRaytracingGeometry(BLASMatrixPair);
+        Model->GatherRaytracingGeometry(RaytracingGeometryContextList);
     }
 
-    if (BLASMatrixPair.size() == 0)
+    if (RaytracingGeometryContextList.size() == 0)
     {
         return;
     }
 
-    RaytracingScene.GenerateRaytracingScene(Device, GraphicsContext, BLASMatrixPair);
+    RaytracingScene.GenerateRaytracingScene(Device, GraphicsContext, RaytracingGeometryContextList);
 }

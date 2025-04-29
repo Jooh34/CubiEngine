@@ -4,7 +4,17 @@
 
 class FGraphicsDevice;
 class FGraphicsContext;
+class FScene;
+class FMesh;
+struct FPBRMaterial;
 
+struct FRaytracingGeometryContext
+{
+    FMesh* Mesh;
+    FPBRMaterial* Material;
+    ID3D12Resource* BLASResource;
+    XMMATRIX Transform;
+};
 typedef std::pair<ID3D12Resource*, Dx::XMMATRIX> BLASMatrixPairType;
 
 class FRaytracingGeometry
@@ -29,7 +39,13 @@ public:
     void GenerateRaytracingScene(
         const FGraphicsDevice* const GraphicsDevice,
         FGraphicsContext* const GraphicsContext,
-        std::vector<BLASMatrixPairType>& instances
+        std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList
+    );
+
+    void GenerateRaytracingBuffers(
+        const FGraphicsDevice* const GraphicsDevice,
+        FGraphicsContext* const GraphicsContext,
+        std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList
     );
 
     void CreateTopLevelASResourceView(const FGraphicsDevice* const GraphicsDevice);
@@ -42,6 +58,17 @@ public:
 
     uint32_t SrvIndex;
     D3D12_GPU_VIRTUAL_ADDRESS GPUVirtualAddress{};
+    
+    uint32_t GetGeometryInfoBufferSrv() { return GeometryInfoBuffer.SrvIndex; }
+    uint32_t GetMaterialBufferSrv() { return MaterialBuffer.SrvIndex; }
+    uint32_t GetMeshVertexBufferSrv() { return MeshVertexBuffer.SrvIndex; }
+    uint32_t GetIndiceBufferSrv() { return IndiceBuffer.SrvIndex; }
+
+private:
+    FBuffer GeometryInfoBuffer{};
+    FBuffer MaterialBuffer{};
+    FBuffer MeshVertexBuffer{};
+    FBuffer IndiceBuffer{};
 };
 
 /*-----------------------------------------------------------------------

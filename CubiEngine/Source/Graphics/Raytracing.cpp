@@ -1,6 +1,7 @@
 #include "Graphics/Raytracing.h"
 #include "Graphics/GraphicsDevice.h"
 #include "Graphics/GraphicsContext.h"
+#include "Scene/Scene.h"
 
 FRaytracingGeometry::FRaytracingGeometry(const FGraphicsDevice* const GraphicsDevice,
     std::pair<wrl::ComPtr<ID3D12Resource>, uint32_t>& VertexBuffer,
@@ -42,8 +43,8 @@ FRaytracingGeometry::FRaytracingGeometry(const FGraphicsDevice* const GraphicsDe
 
 void FRaytracingScene::GenerateRaytracingScene(
     const FGraphicsDevice* const GraphicsDevice,
-    FGraphicsContext* const GraphicsContext, 
-    std::vector<BLASMatrixPairType>& instances
+    FGraphicsContext* const GraphicsContext,
+    std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList
 )
 {
     if (pResult)
@@ -51,6 +52,7 @@ void FRaytracingScene::GenerateRaytracingScene(
         //Todo : rebuild if scene is changed
         return;
     }
+
     pScratch.Reset();
     pResult.Reset();
     pInstanceDesc.Reset();
@@ -58,9 +60,11 @@ void FRaytracingScene::GenerateRaytracingScene(
     TopLevelASGenerator topLevelASGenerator;
 
     // Gather all the instances into the builder helper
-    for (size_t i = 0; i < instances.size(); i++) {
-        topLevelASGenerator.AddInstance(instances[i].first,
-            instances[i].second, static_cast<UINT>(i),
+    for (size_t i = 0; i < RaytracingGeometryContextList.size(); i++)
+    {
+        FRaytracingGeometryContext& Context = RaytracingGeometryContextList[i];
+        topLevelASGenerator.AddInstance(Context.BLASResource,
+            Context.Transform, static_cast<UINT>(i),
             static_cast<UINT>(0));
     }
 
@@ -96,6 +100,91 @@ void FRaytracingScene::GenerateRaytracingScene(
     );
 
     CreateTopLevelASResourceView(GraphicsDevice);
+
+    GenerateRaytracingBuffers(GraphicsDevice, GraphicsContext, RaytracingGeometryContextList);
+}
+
+void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const GraphicsDevice, FGraphicsContext* const GraphicsContext, std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList)
+{
+    // Update Buffers
+    uint32_t vtxOffset = 0;
+    uint32_t idxOffset = 0;
+
+    std::vector<interlop::FRaytracingGeometryInfo> GeometryInfoList;
+    std::vector<interlop::FRaytracingMaterial> MaterialList;
+    GeometryInfoList.reserve(RaytracingGeometryContextList.size());
+    MaterialList.reserve(RaytracingGeometryContextList.size());
+
+    std::vector<interlop::MeshVertex> MeshVertexList;
+    std::vector<uint32_t> IndexList;
+
+    for (size_t i = 0; i < RaytracingGeometryContextList.size(); i++)
+    {
+        FRaytracingGeometryContext& Context = RaytracingGeometryContextList[i];
+        FMesh* Mesh = Context.Mesh;
+        FPBRMaterial* Material = Context.Material;
+        if (Mesh)
+        {            
+            // Geometry
+            GeometryInfoList.emplace_back(
+                vtxOffset,
+                idxOffset,
+                (uint32_t)i,
+                0
+            );
+
+            // Material
+            MaterialList.push_back(
+                interlop::FRaytracingMaterial{
+                    .albedoTextureIndex = Material->AlbedoTexture.SrvIndex,
+                    .albedoTextureSamplerIndex = Material->AlbedoSampler.SamplerIndex,
+                    .albedoColor = Material->MaterialBufferData.albedoColor
+                }
+            );
+
+            // MeshVertex
+            MeshVertexList.reserve(MeshVertexList.size() + Mesh->MeshVertices.size());
+            MeshVertexList.insert(MeshVertexList.end(),
+                std::make_move_iterator(Mesh->MeshVertices.begin()),
+                std::make_move_iterator(Mesh->MeshVertices.end())
+            );
+
+            vtxOffset += Mesh->MeshVertices.size();
+
+            // Indice
+            IndexList.reserve(IndexList.size() + Mesh->Indice.size());
+            IndexList.insert(IndexList.end(),
+                std::make_move_iterator(Mesh->Indice.begin()),
+                std::make_move_iterator(Mesh->Indice.end())
+            );
+
+            idxOffset += Mesh->Indice.size();
+        }
+    }
+
+    GeometryInfoBuffer =
+        GraphicsDevice->CreateBuffer<interlop::FRaytracingGeometryInfo>(FBufferCreationDesc{
+            .Usage = EBufferUsage::StructuredBuffer,
+            .Name = L" Raytracing Geometry Buffer",
+        }, GeometryInfoList);
+
+    MaterialBuffer =
+        GraphicsDevice->CreateBuffer<interlop::FRaytracingMaterial>(FBufferCreationDesc{
+            .Usage = EBufferUsage::StructuredBuffer,
+            .Name = L" Raytracing Material Buffer",
+            }, MaterialList);
+
+    MeshVertexBuffer =
+        GraphicsDevice->CreateBuffer<interlop::MeshVertex>(FBufferCreationDesc{
+            .Usage = EBufferUsage::StructuredBuffer,
+            .Name = L" Raytracing MeshVertex Buffer",
+            }, MeshVertexList);
+
+    IndiceBuffer =
+        GraphicsDevice->CreateBuffer<uint32_t>(FBufferCreationDesc{
+            .Usage = EBufferUsage::StructuredBuffer,
+            .Name = L" Raytracing Indice Buffer",
+            }, IndexList);
 }
 
 void FRaytracingScene::CreateTopLevelASResourceView(const FGraphicsDevice* const GraphicsDevice)

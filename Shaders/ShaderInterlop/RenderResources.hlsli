@@ -4,6 +4,7 @@
 #ifdef __cplusplus
     #define uint uint32_t
     #define float2 XMFLOAT2
+    #define float3 XMFLOAT3
     #define float4 XMFLOAT4
     #define float4x4 XMMATRIX
 #endif
@@ -354,6 +355,13 @@ namespace interlop
     // RayTracing
     struct RTSceneDebugRenderResource
     {
+        float4x4 invViewProjectionMatrix;
         uint dstTextureIndex;
+        uint geometryInfoBufferIdx;
+        uint materialBufferIdx;
+        uint vtxBufferIdx;
+        uint idxBufferIdx;
+
+        float3 padding;
     };
 }

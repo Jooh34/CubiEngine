@@ -43,7 +43,7 @@ public:
     void Render(const FGraphicsContext* const GraphicsContext,
         interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource);
 
-    void GatherRaytracingGeometry(std::vector<BLASMatrixPairType>& BLASMatrixPair);
+    void GatherRaytracingGeometry(std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList);
 
 private:
     std::wstring ModelName;

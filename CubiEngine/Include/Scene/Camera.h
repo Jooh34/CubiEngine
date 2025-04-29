@@ -28,6 +28,10 @@ public:
         return PrevViewMatrix * PrevProjMatrix;
     }
 
+    XMMATRIX GetInvViewProjMatrix() const {
+        return XMMatrixInverse(nullptr, GetViewProjMatrix());
+    }
+
     XMFLOAT4& GetCameraPosition() { return CamPosition; }
     XMVECTOR GetCameraPositionXMV() const { return CamPositionXMV; }
     
