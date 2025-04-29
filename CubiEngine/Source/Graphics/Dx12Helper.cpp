@@ -33,13 +33,13 @@ D3D12_STATIC_SAMPLER_DESC GetStaticSamplerDesc(SamplerState samplerState, uint32
     else if (samplerState == SamplerState::Anisotropic)
     {
         staticDesc.Filter = D3D12_FILTER_ANISOTROPIC;
-        staticDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-        staticDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-        staticDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        staticDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        staticDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        staticDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         staticDesc.MipLODBias = 0.0f;
         staticDesc.MaxAnisotropy = 16;
         staticDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-        staticDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+        staticDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
         staticDesc.MinLOD = 0;
         staticDesc.MaxLOD = D3D12_FLOAT32_MAX;
     }

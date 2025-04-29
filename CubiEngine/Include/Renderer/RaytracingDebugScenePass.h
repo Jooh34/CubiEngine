@@ -10,6 +10,8 @@ class FRaytracingDebugScenePass
 {
 public:
     FRaytracingDebugScenePass(const FGraphicsDevice* const Device, FScene* Scene, uint32_t Width, uint32_t Height);
+
+    void OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
     
     void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
 

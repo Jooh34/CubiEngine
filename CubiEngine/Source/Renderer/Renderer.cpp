@@ -290,6 +290,7 @@ void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
     BloomPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     SSAOPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
     Editor->OnWindowResized(Width, Height);
+    RaytracingDebugScenePass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
 
     InitSizeDependantResource(GraphicsDevice, InWidth, InHeight);
 }

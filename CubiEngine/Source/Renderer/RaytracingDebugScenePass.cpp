@@ -17,6 +17,11 @@ FRaytracingDebugScenePass::FRaytracingDebugScenePass(const FGraphicsDevice* cons
     InitSizeDependantResource(Device, InWidth, InHeight);
 }
 
+void FRaytracingDebugScenePass::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+{
+    InitSizeDependantResource(Device, InWidth, InHeight);
+}
+
 void FRaytracingDebugScenePass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
 {
     Width = InWidth;
@@ -47,9 +52,6 @@ void FRaytracingDebugScenePass::AddPass(FGraphicsContext* GraphicsContext, FScen
     // Bind
     GraphicsContext->SetComputeRootShaderResourceView(
         RTParams_SceneDescriptor, Scene->GetRaytracingScene().GetTopLevelASGPUVirtualAddress()); // t0
-
-    //FDescriptorHandle UavHandle = GraphicsDevice->GetUavHandleFromIndex(RaytracingDebugSceneTexture.UavIndex);
-    //GraphicsContext->SetComputeRootDescriptorTable(RTParams_UAVDescriptor, UavHandle.GpuDescriptorHandle); // u0
 
     interlop::RTSceneDebugRenderResource RenderResources = {
         .invViewProjectionMatrix = Scene->GetCamera().GetInvViewProjMatrix(),
