@@ -31,7 +31,7 @@ void FRaytracingDebugScenePass::InitSizeDependantResource(const FGraphicsDevice*
         .Usage = ETextureUsage::UAVTexture,
         .Width = InWidth,
         .Height = InHeight,
-        .Format = DXGI_FORMAT_R10G10B10A2_UNORM,
+        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"RaytracingDebugScene Texture",
     };
@@ -66,4 +66,7 @@ void FRaytracingDebugScenePass::AddPass(FGraphicsContext* GraphicsContext, FScen
 
     // Dispatch the rays and write to the raytracing output
     GraphicsContext->DispatchRays(RayDesc);
+
+    // reset default rootSignature
+    GraphicsContext->SetComputeRootSignature();
 }

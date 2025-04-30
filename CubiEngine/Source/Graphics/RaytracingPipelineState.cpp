@@ -98,7 +98,7 @@ void FRaytracingPipelineState::CreateGlobalRootSignature(ID3D12Device* const dev
     //rootParameters[RTParams_AppSettings].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
 
     D3D12_STATIC_SAMPLER_DESC staticSamplers[2] = {};
-    staticSamplers[0] = GetStaticSamplerDesc(SamplerState::Anisotropic, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
+    staticSamplers[0] = GetStaticSamplerDesc(SamplerState::Linear, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
     staticSamplers[1] = GetStaticSamplerDesc(SamplerState::LinearClamp, 1, 0, D3D12_SHADER_VISIBILITY_ALL);
 
     D3D12_ROOT_SIGNATURE_DESC1 rootSignatureDesc = {};

@@ -18,7 +18,7 @@ struct FPayload
 // here the barycentric coordinates
 struct Attributes
 {
-  float2 barycentrics;
+  float2 barycentrics : SV_Barycentrics;
 };
 
 
@@ -83,7 +83,7 @@ interlop::FRaytracingMaterial GetGeometryMaterial(in interlop::RTSceneDebugRende
     const interlop::FRaytracingGeometryInfo geoInfo = geoInfoBuffer[geometryIdx];
 
     StructuredBuffer<interlop::FRaytracingMaterial> materialBuffer = ResourceDescriptorHeap[renderResources.materialBufferIdx];
-    return materialBuffer[geometryIdx];
+    return materialBuffer[geoInfo.materialIdx];
 }
 
 float4 getAlbedoSample(const float2 textureCoords, const uint albedoTextureIndex, SamplerState MeshSampler, const float3 albedoColor)

@@ -285,11 +285,11 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
             }
         }
         
-        if (material.alphaMode.compare("BLEND"))
+        if (material.alphaMode.compare("BLEND") == 0)
         {
             PbrMaterial.AlphaMode = EAlphaMode::Blend;
         }
-        else if (material.alphaMode.compare("MASK"))
+        else if (material.alphaMode.compare("MASK") == 0)
         {
             PbrMaterial.AlphaMode = EAlphaMode::Mask;
         }

@@ -91,17 +91,15 @@ void RayGen()
 }
 
 [shader("closesthit")] 
-void ClosestHit(inout FPayload payload, Attributes attr) 
+void ClosestHit(inout FPayload payload, in Attributes attr) 
 {
     const interlop::MeshVertex hitSurface = GetHitSurface(attr, renderResources, InstanceID());
     const interlop::FRaytracingMaterial material = GetGeometryMaterial(renderResources, InstanceID());
 
     float4 albedoEmissive = getAlbedoSample(hitSurface.texcoord, material.albedoTextureIndex, MeshSampler, material.albedoColor);
-    // payload.radiance = float3(hitSurface.texcoord, material.albedoTextureIndex/1000.f);
-    // Texture2D<float4> albedoTexture = ResourceDescriptorHeap[material.albedoTextureIndex];
-    // payload.radiance = albedoTexture.SampleLevel(MeshSampler, hitSurface.texcoord, 0.f).xyz;
+
     payload.radiance = albedoEmissive.xyz;
-    payload.distance = RayTCurrent();
+    payload.distance = (InstanceID()/103.f);
 }
 
 [shader("miss")]

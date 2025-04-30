@@ -53,16 +53,19 @@ void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext, FScene* 
 {
     SCOPED_NAMED_EVENT(GraphicsContext, Tonemapping);
 
+    GraphicsContext->AddResourceBarrier(HDRTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(LDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 
     interlop::TonemappingRenderResources RenderResources = {
         .srcTextureIndex = HDRTexture.SrvIndex,
         .dstTextureIndex = LDRTexture.UavIndex,
+        .bloomTextureIndex = INVALID_INDEX_U32,
         .width = Width,
         .height = Height,
         .toneMappingMethod = (uint)Scene->ToneMappingMethod,
         .bGammaCorrection = Scene->bGammaCorrection,
+        .averageLuminanceBufferIndex = INVALID_INDEX_U32,
     };
 
     GraphicsContext->SetComputePipelineState(TonemappingPipelineState);

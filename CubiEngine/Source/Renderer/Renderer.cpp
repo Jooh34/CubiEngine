@@ -265,7 +265,15 @@ void FRenderer::RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext)
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
         SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
 
-        FTexture* LDR = &RaytracingDebugScenePass->GetRaytracingDebugSceneTexture();
+        FTexture* HDR = &RaytracingDebugScenePass->GetRaytracingDebugSceneTexture();
+        FTexture* LDR = &SceneTexture.LDRTexture;
+
+        {
+            SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
+            SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);
+            PostProcess->Tonemapping(GraphicsContext, Scene.get(), *HDR, *LDR, Width, Height);
+        }
+
         FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
 
         GraphicsContext->AddResourceBarrier(*LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);

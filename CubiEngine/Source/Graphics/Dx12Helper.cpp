@@ -12,7 +12,7 @@ D3D12_STATIC_SAMPLER_DESC GetStaticSamplerDesc(SamplerState samplerState, uint32
         staticDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         staticDesc.MipLODBias = 0.0f;
         staticDesc.MaxAnisotropy = 1;
-        staticDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        staticDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
         staticDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
         staticDesc.MinLOD = 0;
         staticDesc.MaxLOD = D3D12_FLOAT32_MAX;
@@ -25,7 +25,7 @@ D3D12_STATIC_SAMPLER_DESC GetStaticSamplerDesc(SamplerState samplerState, uint32
         staticDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
         staticDesc.MipLODBias = 0.0f;
         staticDesc.MaxAnisotropy = 1;
-        staticDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        staticDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
         staticDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
         staticDesc.MinLOD = 0;
         staticDesc.MaxLOD = D3D12_FLOAT32_MAX;
@@ -38,7 +38,7 @@ D3D12_STATIC_SAMPLER_DESC GetStaticSamplerDesc(SamplerState samplerState, uint32
         staticDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         staticDesc.MipLODBias = 0.0f;
         staticDesc.MaxAnisotropy = 16;
-        staticDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        staticDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
         staticDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
         staticDesc.MinLOD = 0;
         staticDesc.MaxLOD = D3D12_FLOAT32_MAX;
