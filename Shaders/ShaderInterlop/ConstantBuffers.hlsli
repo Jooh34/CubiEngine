@@ -105,6 +105,12 @@ namespace interlop
     {
         uint albedoTextureIndex;
         uint albedoTextureSamplerIndex;
+        uint metalRoughnessTextureIndex;
+        uint metalRoughnessTextureSamplerIndex;
+
+        uint normalTextureIndex;
+        uint normalTextureSamplerIndex;
+
         float3 albedoColor;
 
         float3 padding;
@@ -117,6 +123,7 @@ namespace interlop
         float2 texcoord;
 
         float3 tangent;
-        float padding;
+        float3 bitangent;
+        float2 padding;
     };
 } // namespace interlop

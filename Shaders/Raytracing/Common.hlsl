@@ -1,7 +1,7 @@
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-static const uint INVALID_INDEX = 4294967295; // UINT32_MAX;
+static const float FP32Max = 3.402823466e+38f;
 
 // Hit information, aka ray payload
 // This sample only carries a shading color and hit distance.
@@ -12,6 +12,11 @@ struct FPayload
 {
   float3 radiance;
   float distance;
+};
+
+struct FShadowPayload
+{
+    float visibility;
 };
 
 // Attributes output by the raytracing when hitting a surface,
@@ -88,7 +93,8 @@ interlop::FRaytracingMaterial GetGeometryMaterial(in interlop::RTSceneDebugRende
 
 float4 getAlbedoSample(const float2 textureCoords, const uint albedoTextureIndex, SamplerState MeshSampler, const float3 albedoColor)
 {
-    if (albedoTextureIndex == INVALID_INDEX)
+    uint InvalidIndex = 4294967295;
+    if (albedoTextureIndex == InvalidIndex)
     {
         return float4(albedoColor, 1.0f);
     }
@@ -96,4 +102,21 @@ float4 getAlbedoSample(const float2 textureCoords, const uint albedoTextureIndex
     Texture2D<float4> albedoTexture = ResourceDescriptorHeap[albedoTextureIndex];
 
     return albedoTexture.SampleLevel(MeshSampler, textureCoords, 0.f);
+}
+
+
+float3 getNormalSample(float2 textureCoord, uint normalTextureIndex, SamplerState MeshSampler, float3 normal, float3x3 tbnMatrix)
+{
+    uint InvalidIndex = 4294967295;
+    if (normalTextureIndex != InvalidIndex)
+    {
+        Texture2D<float4> normalTexture = ResourceDescriptorHeap[normalTextureIndex];
+
+        // Make the normal into a -1 to 1 range.
+        normal = 2.0f * normalTexture.SampleLevel(MeshSampler, textureCoord, 0).xyz - float3(1.0f, 1.0f, 1.0f);
+        normal = normalize(mul(normal, tbnMatrix));
+        return normal;
+    }
+
+    return normalize(normal);
 }

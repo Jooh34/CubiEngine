@@ -2,6 +2,15 @@
 
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Raytracing/Common.hlsl"
+#include "Utils.hlsli"
+#include "Shading/BRDF.hlsli"
+
+enum RayTypes {
+    RayTypeRadiance = 0,
+    RayTypeShadow = 1,
+
+    NumRayTypes
+};
 
 // Raytracing acceleration structure, accessed as a SRV
 RaytracingAccelerationStructure SceneBVH : register(t0, space200);
@@ -41,17 +50,15 @@ void RayGen()
     payload.radiance = 0.0f;
     payload.distance = 0.0f;
     
-    // uint traceRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH;
+    uint traceRayFlags = RAY_FLAG_NONE;
 
-    // const uint hitGroupOffset = RayTypeShadow;
-    // const uint hitGroupGeoMultiplier = NumRayTypes;
-    // const uint missShaderIdx = RayTypeShadow;
+    const uint hitGroupOffset = RayTypeRadiance;
+    const uint hitGroupGeoMultiplier = NumRayTypes;
+    const uint missShaderIdx = RayTypeRadiance;
 
     TraceRay(
       SceneBVH,
-      // Parameter name: RayFlags
-      // Flags can be used to specify the behavior upon hitting a surface
-      RAY_FLAG_NONE,
+      traceRayFlags,
 
       // Parameter name: InstanceInclusionMask
       // Instance inclusion mask, which can be used to mask out some geometry to this ray by
@@ -65,7 +72,7 @@ void RayGen()
       // to compute shadows). Those hit groups are specified sequentially in the SBT, so the value
       // below indicates which offset (on 4 bits) to apply to the hit groups for this ray. In this
       // sample we only have one hit group per object, hence an offset of 0.
-      0,
+      hitGroupOffset,
 
       // Parameter name: MultiplierForGeometryContributionToHitGroupIndex
       // The offsets in the SBT can be computed from the object ID, its instance ID, but also simply
@@ -73,32 +80,106 @@ void RayGen()
       // application to group shaders in the SBT in the same order as they are added in the AS, in
       // which case the value below represents the stride (4 bits representing the number of hit
       // groups) between two consecutive objects.
-      0,
+      hitGroupGeoMultiplier,
 
       // Parameter name: MissShaderIndex
       // Index of the miss shader to use in case several consecutive miss shaders are present in the
       // SBT. This allows to change the behavior of the program when no geometry have been hit, for
       // example one to return a sky color for regular rendering, and another returning a full
       // visibility value for shadow rays. This sample has only one miss shader, hence an index 0
-      0,
+      missShaderIdx,
 
       ray,
       payload
     );
 
     dstTexture[pixelCoord] = float4(payload.radiance, 1.f);
-    // dstTexture[pixelCoord] = float4(distanceRGB, 1.f);
 }
 
 [shader("closesthit")] 
 void ClosestHit(inout FPayload payload, in Attributes attr) 
 {
+    float3 color = float3(0.0f, 0.0f, 0.0f);
+
     const interlop::MeshVertex hitSurface = GetHitSurface(attr, renderResources, InstanceID());
     const interlop::FRaytracingMaterial material = GetGeometryMaterial(renderResources, InstanceID());
 
-    float4 albedoEmissive = getAlbedoSample(hitSurface.texcoord, material.albedoTextureIndex, MeshSampler, material.albedoColor);
+    float2 textureCoords = hitSurface.texcoord;
+    float4 albedoEmissive = getAlbedoSample(textureCoords, material.albedoTextureIndex, MeshSampler, material.albedoColor);
+    float3 albedo = albedoEmissive.xyz;
+    
+    float3x3 tangentToWorld = float3x3(hitSurface.tangent, hitSurface.bitangent, hitSurface.normal);
+    float3 N = getNormalSample(textureCoords, material.normalTextureIndex, MeshSampler, float3(0,0,1), tangentToWorld).xyz;
 
-    payload.radiance = albedoEmissive.xyz;
+    Texture2D<float4> metalRoughnessTexture = ResourceDescriptorHeap[material.metalRoughnessTextureIndex];
+    float2 metalRoughness = metalRoughnessTexture.SampleLevel(MeshSampler, textureCoords, 0.f).bg;
+    
+    float metalic = metalRoughness.x;
+    float roughness = metalRoughness.y;
+
+    const float3 positionWS = hitSurface.position;
+
+    ConstantBuffer<interlop::LightBuffer> lightBuffer = ResourceDescriptorHeap[renderResources.lightBufferIndex];
+    ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
+
+    {
+        // Directional Light
+        uint DLIndex = 0;
+        float4 lightColor = lightBuffer.lightColor[DLIndex];
+        float lightIntensity = lightBuffer.intensityDistance[DLIndex][0];
+
+        const float3 viewSpacePosition = mul(float4(positionWS, 1.0f), sceneBuffer.viewMatrix).xyz;
+        const float3 V = normalize(-viewSpacePosition);
+        
+        BxDFContext context = (BxDFContext)0;
+        context.NoV = saturate(dot(N,V)); 
+        
+        float3 DIELECTRIC_SPECULAR = float3(0.04f, 0.04f, 0.04f);
+        const float3 F0 = lerp(DIELECTRIC_SPECULAR, albedo.xyz, metalic);
+        float3 diffuseColor = albedo.rgb * (1.0 - DIELECTRIC_SPECULAR) * (1.0 - metalic);
+
+        if (lightIntensity > 0.f)
+        {
+            float3 directionalResult = float3(0.f, 0.f, 0.f);
+            const float3 L = normalize(-lightBuffer.viewSpaceLightPosition[DLIndex].xyz);
+            const float3 H = normalize(V+L);
+
+            context.VoH = saturate(dot(V,H));
+            context.NoH = saturate(dot(N,H));
+            context.NoL = saturate(dot(N,L));
+
+            const float4 worldspaceL_ = mul(float4(L, 0.0f), sceneBuffer.inverseViewMatrix);
+            const float3 worldspaceL = normalize(worldspaceL_.xyz);
+            
+            float3 diffuseTerm = lambertianDiffuseBRDF(albedo.xyz, context.VoH, metalic);
+            float energyCompensation = 1.f;
+            float3 specularTerm = CookTorrenceSpecular(roughness, metalic, F0, context) * energyCompensation;
+            
+            directionalResult += lightColor.xyz * lightIntensity * context.NoL * (diffuseTerm + max(specularTerm, float3(0,0,0)));
+
+            // shadow ray
+            RayDesc ray;
+            ray.Origin = positionWS;
+            ray.Direction = worldspaceL;
+            ray.TMin = 0.001f;
+            ray.TMax = FP32Max;
+
+            FShadowPayload shadowPayload;
+            shadowPayload.visibility = 1.0f;
+
+            uint traceRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH;
+            
+            const uint hitGroupOffset = RayTypeShadow;
+            const uint hitGroupGeoMultiplier = NumRayTypes;
+            const uint missShaderIdx = RayTypeShadow;
+            TraceRay(SceneBVH, traceRayFlags, 0xFFFFFFFF, hitGroupOffset, hitGroupGeoMultiplier, missShaderIdx, ray, shadowPayload);
+
+            directionalResult *= shadowPayload.visibility;
+            color += directionalResult;
+        }
+    }
+
+    payload.radiance = color;
     payload.distance = (InstanceID()/103.f);
 }
 
@@ -107,4 +188,16 @@ void Miss(inout FPayload payload : SV_RayPayload)
 {
     payload.radiance = float3(0.2f, 0.2f, 0.8f);
     payload.distance = -1;
+}
+
+[shader("closesthit")]
+void ShadowClosestHit(inout FShadowPayload payload, in Attributes attr)
+{
+    payload.visibility = 0.0f;
+}
+
+[shader("miss")]
+void ShadowMiss(inout FShadowPayload payload)
+{
+    payload.visibility = 1.0f;
 }

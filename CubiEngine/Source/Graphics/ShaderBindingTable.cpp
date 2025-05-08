@@ -7,7 +7,9 @@ FShaderBindingTable::FShaderBindingTable(const FGraphicsDevice* const GraphicsDe
 
     sbtGenerator.AddRayGenerationProgram(L"RayGen", { heapPointer });
     sbtGenerator.AddMissProgram(L"Miss", {});
+    sbtGenerator.AddMissProgram(L"ShadowMiss", {});
     sbtGenerator.AddHitGroup(L"HitGroup", {});
+    sbtGenerator.AddHitGroup(L"ShadowHitGroup", {});
 
     uint32_t sbtSize = sbtGenerator.ComputeSBTSize();
     

@@ -60,6 +60,8 @@ void FRaytracingDebugScenePass::AddPass(FGraphicsContext* GraphicsContext, FScen
         .materialBufferIdx = Scene->GetRaytracingScene().GetMaterialBufferSrv(),
         .vtxBufferIdx = Scene->GetRaytracingScene().GetMeshVertexBufferSrv(),
         .idxBufferIdx = Scene->GetRaytracingScene().GetIndiceBufferSrv(),
+        .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
+        .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
     };
 
     GraphicsContext->SetComputeRoot32BitConstants(RTParams_CBuffer, 32u, &RenderResources);

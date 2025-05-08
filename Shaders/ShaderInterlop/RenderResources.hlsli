@@ -360,8 +360,10 @@ namespace interlop
         uint geometryInfoBufferIdx;
         uint materialBufferIdx;
         uint vtxBufferIdx;
-        uint idxBufferIdx;
 
-        float3 padding;
+        uint idxBufferIdx;
+        uint sceneBufferIndex;
+        uint lightBufferIndex;
+        float padding;
     };
 }

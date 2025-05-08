@@ -508,6 +508,18 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
             }
 
             Mesh.MeshVertices[i].tangent = tangent;
+
+            XMVECTOR normalVec = XMLoadFloat3(&Mesh.MeshVertices[i].normal);
+            XMVECTOR tangentVec = XMLoadFloat3(&tangent);
+
+            // normal x tangent
+            XMVECTOR bitangentVec = Dx::XMVector3Cross(normalVec, tangentVec);
+            bitangentVec = XMVector3Normalize(bitangentVec);
+
+            XMFLOAT3 bitangent;
+            XMStoreFloat3(&bitangent, bitangentVec);
+
+            Mesh.MeshVertices[i].bitangent = bitangent;
         }
 
         Mesh.PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
