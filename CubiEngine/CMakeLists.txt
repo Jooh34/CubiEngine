@@ -103,6 +103,8 @@ set(SRC_FILES
     "Include/Renderer/SSAO.h"
     "Source/Renderer/RaytracingDebugScenePass.cpp"
     "Include/Renderer/RaytracingDebugScenePass.h"
+    "Source/Renderer/RaytracingShadowPass.cpp"
+    "Include/Renderer/RaytracingShadowPass.h"
 )
 
 add_executable(CubiEngine ${SRC_FILES} "Main.cpp")

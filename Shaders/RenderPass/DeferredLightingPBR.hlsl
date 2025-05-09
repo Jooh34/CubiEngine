@@ -5,6 +5,10 @@
 #include "Shading/BRDF.hlsli"
 #include "Shadow/Shadow.hlsl"
 
+#define SHADOW_METHOD_NONE 0
+#define SHADOW_METHOD_SHADOWMAP 1
+#define SHADOW_METHOD_RAYTRACING 2
+
 ConstantBuffer<interlop::PBRRenderResources> renderResources : register(b0);
 
 float3 SingleScatteringIBL(float3 F0, float2 EnvBRDF, float3 diffuseColor, float3 radiance, float3 irradiance)
@@ -207,20 +211,27 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             uint cascadeIndex = getCascadeIndex(viewSpacePosition.z, sceneBuffer.nearZ, sceneBuffer.farZ, renderResources.numCascadeShadowMap, shadowBuffer.distanceCSM);
             const float4 lightSpacePosition = mul(worldSpacePosition, shadowBuffer.lightViewProjectionMatrix[cascadeIndex]);
 
-            float shadow = 0.f;
-            if (debugBuffer.bUseShadow)
+            float visibility = 1.f;
+
+            if (debugBuffer.ShadowMethod == SHADOW_METHOD_SHADOWMAP)
             {
                 float cascadeFarZ = sceneBuffer.farZ;
                 if (cascadeIndex < renderResources.numCascadeShadowMap-1)
                 {
                     cascadeFarZ = shadowBuffer.distanceCSM[cascadeIndex+1];
                 }
-                shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex, renderResources.vsmMomentTextureIndex, 
+                float shadow = calculateShadow(lightSpacePosition, context.NoL, renderResources.shadowDepthTextureIndex, renderResources.vsmMomentTextureIndex, 
                     cascadeIndex, renderResources.numCascadeShadowMap, cascadeFarZ, shadowBuffer.shadowBias);
+                
+                visibility = 1.f - shadow;
             }
-            const float attenuation = (1-shadow);
+            else if (debugBuffer.ShadowMethod == SHADOW_METHOD_RAYTRACING)
+            {
+                Texture2D<float4> RTShadowDepthTexture = ResourceDescriptorHeap[renderResources.rtShadowDepthTextureIndex];
+                const float RtShadowVisibility = RTShadowDepthTexture.Sample(pointClampSampler, uv).r;
+                visibility = RtShadowVisibility;
+            }
 
-            //float3 diffuseTerm = diffuseLambert(diffuseColor);
             float3 diffuseTerm;
             if (renderResources.diffuseMethod == DIFFUSE_METHOD_LAMBERTIAN)
             {
@@ -231,7 +242,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
                 diffuseTerm = Fd_Burley(context.NoV, context.NoL, saturate(dot(L,H)), roughness, albedo.xyz, context.VoH, metalic);
             }
             float3 specularTerm = CookTorrenceSpecular(roughness, metalic, F0, context) * energyCompensation;
-            color += attenuation * lightColor.xyz * lightIntensity * context.NoL * (diffuseTerm + max(specularTerm, float3(0,0,0))) * ssao * aoMetalRoughness.x;
+            color += visibility * lightColor.xyz * lightIntensity * context.NoL * (diffuseTerm + max(specularTerm, float3(0,0,0))) * ssao * aoMetalRoughness.x;
 
             if (renderResources.bCSMDebug)
             {

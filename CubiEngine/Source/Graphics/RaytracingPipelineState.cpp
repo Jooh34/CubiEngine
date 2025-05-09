@@ -22,19 +22,19 @@ FRaytracingPipelineState::FRaytracingPipelineState(ID3D12Device5* const device, 
 
     const auto& ShaderShadowCHS =
         ShaderCompiler::Compile(ShaderTypes::Raytracing,
-            FFileSystem::GetFullPath(pipelineStateCreationDesc.rtShaderPath),
+            FFileSystem::GetFullPath(L"Shaders/Raytracing/Shadow.hlsl"),
             L"ShadowClosestHit").shaderBlob;
 
     const auto& ShaderShadowRMS =
         ShaderCompiler::Compile(ShaderTypes::Raytracing,
-            FFileSystem::GetFullPath(pipelineStateCreationDesc.rtShaderPath),
+            FFileSystem::GetFullPath(L"Shaders/Raytracing/Shadow.hlsl"),
             L"ShadowMiss").shaderBlob;
 
     RayTracingPipelineGenerator PipelineGenerator(device);
     PipelineGenerator.AddLibrary(ShaderRGS.Get(), { std::wstring(pipelineStateCreationDesc.EntryPointRGS) });
     PipelineGenerator.AddLibrary(ShaderCHS.Get(), { std::wstring(pipelineStateCreationDesc.EntryPointCHS) });
-    PipelineGenerator.AddLibrary(ShaderShadowCHS.Get(), { L"ShadowClosestHit" });
     PipelineGenerator.AddLibrary(ShaderRMS.Get(), { std::wstring(pipelineStateCreationDesc.EntryPointRMS) });
+    PipelineGenerator.AddLibrary(ShaderShadowCHS.Get(), { L"ShadowClosestHit" });
     PipelineGenerator.AddLibrary(ShaderShadowRMS.Get(), { L"ShadowMiss" });
 
     PipelineGenerator.AddHitGroup(L"HitGroup", std::wstring(pipelineStateCreationDesc.EntryPointCHS));

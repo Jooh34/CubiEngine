@@ -259,7 +259,9 @@ void FEditor::RenderLightProperties(FScene* Scene)
 
     if (ImGui::TreeNode("Shadow"))
     {
-        ImGui::Checkbox("Shadow", &Scene->bUseShadow);
+        const char* shadowMethodItems[] = { "None", "ShadowMapping", "Raytracing Shadow" };
+        AddCombo("Shadow Method", shadowMethodItems, IM_ARRAYSIZE(shadowMethodItems), Scene->ShadowMethod);
+
         ImGui::Checkbox("Use Variance Shadow Map", &Scene->bUseVSM);
         ImGui::Checkbox("CSM Debug", &Scene->bCSMDebug);
         ImGui::InputFloat("Shadow Bias", &Scene->ShadowBias, 0.00001, 0.0001, "%.5f");

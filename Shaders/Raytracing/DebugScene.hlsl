@@ -5,16 +5,8 @@
 #include "Utils.hlsli"
 #include "Shading/BRDF.hlsli"
 
-enum RayTypes {
-    RayTypeRadiance = 0,
-    RayTypeShadow = 1,
-
-    NumRayTypes
-};
-
 // Raytracing acceleration structure, accessed as a SRV
 RaytracingAccelerationStructure SceneBVH : register(t0, space200);
-// RWTexture2D<float4> RenderTarget : register(u0);
 
 ConstantBuffer<interlop::RTSceneDebugRenderResource> renderResources : register(b0);
 
@@ -188,16 +180,4 @@ void Miss(inout FPayload payload : SV_RayPayload)
 {
     payload.radiance = float3(0.2f, 0.2f, 0.8f);
     payload.distance = -1;
-}
-
-[shader("closesthit")]
-void ShadowClosestHit(inout FShadowPayload payload, in Attributes attr)
-{
-    payload.visibility = 0.0f;
-}
-
-[shader("miss")]
-void ShadowMiss(inout FShadowPayload payload)
-{
-    payload.visibility = 1.0f;
 }

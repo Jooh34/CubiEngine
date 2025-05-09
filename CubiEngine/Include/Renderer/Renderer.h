@@ -12,6 +12,7 @@
 #include "Renderer/BloomPass.h"
 #include "Renderer/SSAO.h"
 #include "Renderer/RaytracingDebugScenePass.h"
+#include "Renderer/RaytracingShadowPass.h"
 
 class FInput;
 class FEditor;
@@ -29,6 +30,9 @@ public:
     void Render();
     void RenderDeferredShading(FGraphicsContext* GraphicsContext);
     void RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext);
+
+    void RenderShadow(FGraphicsContext* GraphicsContext, FSceneTexture& SceneTexture);
+
     void OnWindowResized(uint32_t InWidth, uint32_t InHeight);
     void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
     void InitializeSceneTexture(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
@@ -50,7 +54,10 @@ private:
     std::unique_ptr<FDebugPass> DebugPass;
     std::unique_ptr<FTemporalAA> TemporalAA;
     std::unique_ptr<FPostProcess> PostProcess;
+
     std::unique_ptr<FShadowDepthPass> ShadowDepthPass;
+    std::unique_ptr<FRaytracingShadowPass> RaytracingShadowPass;
+
     std::unique_ptr<FScreenSpaceGI> ScreenSpaceGI;
     std::unique_ptr<FEyeAdaptationPass> EyeAdaptationPass;
     std::unique_ptr<FBloomPass> BloomPass;

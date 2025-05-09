@@ -231,3 +231,10 @@ struct FBufferCreationDesc
     EBufferUsage Usage{};
     std::wstring_view Name{};
 };
+
+enum class EShadowMethod
+{
+    None = 0,
+    ShadowMap,
+    Raytracing,
+};

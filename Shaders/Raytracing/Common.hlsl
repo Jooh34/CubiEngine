@@ -19,6 +19,13 @@ struct FShadowPayload
     float visibility;
 };
 
+enum RayTypes {
+    RayTypeRadiance = 0,
+    RayTypeShadow = 1,
+
+    NumRayTypes
+};
+
 // Attributes output by the raytracing when hitting a surface,
 // here the barycentric coordinates
 struct Attributes

@@ -21,6 +21,7 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32
     SSAOPass = std::make_unique<FSSAO>(GraphicsDevice, Width, Height);
 
     RaytracingDebugScenePass = std::make_unique<FRaytracingDebugScenePass>(GraphicsDevice, Scene.get(), Width, Height);
+    RaytracingShadowPass = std::make_unique<FRaytracingShadowPass>(GraphicsDevice, Scene.get(), Width, Height);
 
     Editor = std::make_unique<FEditor>(GraphicsDevice, Window, Width, Height);
 
@@ -130,15 +131,6 @@ void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
 {
     FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
 
-    // ----- Shadow Depth pass -----
-    if (ShadowDepthPass)
-    {
-        SCOPED_NAMED_EVENT(GraphicsContext, ShadowDepth);
-        SCOPED_GPU_EVENT(GraphicsDevice, ShadowDepth)
-        ShadowDepthPass->Render(GraphicsContext, Scene.get());
-    }
-    // ----- Shadow Depth pass -----
-
     // ----- Deferred GPass ----
     if (DeferredGPass)
     {
@@ -154,6 +146,10 @@ void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
         }
     }
     // ----- Deferred GPass ----
+
+    // ----- Shadow pass -----
+    RenderShadow(GraphicsContext, SceneTexture);
+    // ----- Shadow Depth pass -----
 
     // ----- Screen Space Ambient Occlusion -----
     if (Scene->bUseSSAO)
@@ -172,7 +168,9 @@ void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
         SCOPED_GPU_EVENT(GraphicsDevice, LightPass);
 
         FTexture* SSAOTexture = Scene->bUseSSAO ? &SSAOPass->SSAOTexture : nullptr;
-        DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext, ShadowDepthPass.get(), SceneTexture, SSAOTexture);
+        DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext,
+            ShadowDepthPass.get(), SceneTexture, SSAOTexture, &RaytracingShadowPass->GetRaytracingShadowTexture()
+        );
     }
     // ----- Deferred Lighting Pass -----
 
@@ -183,7 +181,7 @@ void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
 
         ScreenSpaceGI->AddPass(GraphicsContext, Scene.get(), SceneTexture);
     }
-
+    
     // ----- Post Process -----
     {
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
@@ -280,6 +278,28 @@ void FRenderer::RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext)
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
         GraphicsContext->ExecuteResourceBarriers();
         GraphicsContext->CopyResource(BackBuffer.GetResource(), LDR->GetResource());
+    }
+}
+
+void FRenderer::RenderShadow(FGraphicsContext* GraphicsContext, FSceneTexture& SceneTexture)
+{
+    if (Scene->ShadowMethod == (int)EShadowMethod::ShadowMap)
+    {
+        if (ShadowDepthPass)
+        {
+            SCOPED_NAMED_EVENT(GraphicsContext, ShadowDepth);
+            SCOPED_GPU_EVENT(GraphicsDevice, ShadowDepth)
+            ShadowDepthPass->Render(GraphicsContext, Scene.get());
+        }
+    }
+    else if (Scene->ShadowMethod == (int)EShadowMethod::Raytracing)
+    {
+        if (RaytracingShadowPass)
+        {
+            SCOPED_NAMED_EVENT(GraphicsContext, RaytracingShadow);
+            SCOPED_GPU_EVENT(GraphicsDevice, RaytracingShadow);
+            RaytracingShadowPass->AddPass(GraphicsContext, Scene.get(), SceneTexture);
+        }
     }
 }
 
@@ -479,6 +499,10 @@ FTexture* FRenderer::GetDebugVisualizeTexture(FScene* Scene)
     else if (Name.compare("SSAO Texture") == 0)
     {
         return &SSAOPass->SSAOTexture;
+    }
+    else if (Name.compare("RaytracingShadowTexture") == 0)
+    {
+        return &RaytracingShadowPass->GetRaytracingShadowTexture();
     }
     else
     {

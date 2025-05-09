@@ -93,6 +93,7 @@ namespace interlop
 
     struct PBRRenderResources
     {
+        float2 dstTexelSize;
         uint numCascadeShadowMap;
 
         uint GBufferAIndex;
@@ -107,12 +108,12 @@ namespace interlop
         uint envMipCount;
 
         uint shadowDepthTextureIndex;
+        uint rtShadowDepthTextureIndex;
         uint vsmMomentTextureIndex;
         uint ssaoTextureIndex;
 
         uint outputTextureIndex;
 
-        float2 dstTexelSize;
         uint sceneBufferIndex;
         uint lightBufferIndex;
         uint shadowBufferIndex;
@@ -124,6 +125,7 @@ namespace interlop
         uint bCSMDebug;
         uint diffuseMethod;
         uint sampleBias;
+
     };
 
     struct ConvertEquirectToCubeMapRenderResource
@@ -365,5 +367,14 @@ namespace interlop
         uint sceneBufferIndex;
         uint lightBufferIndex;
         float padding;
+    };
+
+    struct RaytracingShadowRenderResource
+    {
+        float4x4 invViewProjectionMatrix;
+        uint dstTextureIndex;
+        uint depthTextureIndex;
+        uint sceneBufferIndex;
+        uint lightBufferIndex;
     };
 }

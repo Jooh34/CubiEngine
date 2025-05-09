@@ -26,7 +26,7 @@ public:
         FSceneTexture& SceneTexture);
 
     void RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext,
-        FShadowDepthPass* ShadowDepthPass, FSceneTexture& SceneTexture, FTexture* SSAOTexture);
+        FShadowDepthPass* ShadowDepthPass, FSceneTexture& SceneTexture, FTexture* SSAOTexture, FTexture* RaytracingShadowTexture);
 
 private:
     FPipelineState GeometryPassPipelineState;

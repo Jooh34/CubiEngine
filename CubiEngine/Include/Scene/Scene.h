@@ -66,14 +66,14 @@ public:
     
     int MaxFPS = 60;
 
-    bool bDebugRaytracingScene = true;
+    bool bDebugRaytracingScene = false;
     
     // Light
     bool bLightDanceDebug = false;
     float bLightDanceSpeed = 0.3f;
 
     // Shadow
-    bool bUseShadow = true;
+    int ShadowMethod = 2;
     bool bUseVSM = false;
     bool bCSMDebug = false;
     float CSMExponentialFactor = 0.8f;

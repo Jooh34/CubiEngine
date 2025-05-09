@@ -116,12 +116,13 @@ void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const Graphic
 }
 
 void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* const GraphicsContext,
-    FShadowDepthPass* ShadowDepthPass, FSceneTexture& SceneTexture, FTexture* SSAOTexture)
+    FShadowDepthPass* ShadowDepthPass, FSceneTexture& SceneTexture, FTexture* SSAOTexture, FTexture* RaytracingShadowTexture)
 {
     uint32_t Width = SceneTexture.Size.Width;
     uint32_t Height = SceneTexture.Size.Height;
 
     interlop::PBRRenderResources RenderResources = {
+        .dstTexelSize = {1.0f / Width, 1.0f / Height},
         .numCascadeShadowMap = GNumCascadeShadowMap,
         .GBufferAIndex = SceneTexture.GBufferA.SrvIndex,
         .GBufferBIndex = SceneTexture.GBufferB.SrvIndex,
@@ -133,10 +134,10 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .envIrradianceTextureIndex = Scene->GetEnvironmentMap()->IrradianceCubemapTexture.SrvIndex,
         .envMipCount = Scene->GetEnvironmentMap()->GetMipCount(),
         .shadowDepthTextureIndex = ShadowDepthPass->GetShadowDepthTexture().SrvIndex,
+        .rtShadowDepthTextureIndex = RaytracingShadowTexture ? RaytracingShadowTexture->SrvIndex : INVALID_INDEX_U32,
         .vsmMomentTextureIndex = Scene->bUseVSM ? ShadowDepthPass->GetMomentTexture().SrvIndex : INVALID_INDEX_U32,
         .ssaoTextureIndex = SSAOTexture ? SSAOTexture->SrvIndex : INVALID_INDEX_U32,
         .outputTextureIndex = SceneTexture.HDRTexture.UavIndex,
-        .dstTexelSize = {1.0f / Width, 1.0f / Height},
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
         .shadowBufferIndex = Scene->GetShadowBuffer().CbvIndex,

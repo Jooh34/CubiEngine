@@ -32,7 +32,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     }
     
     // Directional Light
-    float LightPosition[4] = { -0.3, -1, -0.4, 0 };
+    float LightPosition[4] = { -0.5, -1, -0.4, 0 };
     float LightColor[4] = { 1,1,1,1 };
     float Intensity = 5.f;
     AddLight(LightPosition, LightColor);
@@ -100,6 +100,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
     DebugVisualizeList.push_back(std::string("BloomYTexture 1/16"));
     DebugVisualizeList.push_back(std::string("BloomResultTexture"));
     DebugVisualizeList.push_back(std::string("SSAO Texture"));
+    DebugVisualizeList.push_back(std::string("RaytracingShadowTexture"));
 }
 
 FScene::~FScene()
@@ -183,7 +184,7 @@ void FScene::UpdateBuffers()
     
     const interlop::DebugBuffer DebugBufferData = {
         .bUseTaa = bUseTaa ? 1u : 0u,
-        .bUseShadow = bUseShadow ? 1u : 0u,
+        .ShadowMethod = (uint32_t)ShadowMethod,
     };
     GetDebugBuffer().Update(&DebugBufferData);
 }

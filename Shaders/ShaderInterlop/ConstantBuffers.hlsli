@@ -25,7 +25,7 @@ namespace interlop
     ConstantBufferStruct DebugBuffer
     {
         uint bUseTaa;
-        uint bUseShadow;
+        uint ShadowMethod;
         float2 padding;
     };
 
