@@ -6,14 +6,25 @@ class FGraphicsDevice;
 class FGraphicsContext;
 class FScene;
 class FMesh;
-struct FPBRMaterial;
+class FPBRMaterial;
 
 struct FRaytracingGeometryContext
 {
+    FRaytracingGeometryContext(
+        FMesh* InMesh,
+        FPBRMaterial* InMaterial,
+        ID3D12Resource* InBLASResource,
+        const XMMATRIX& InModelMatrix)
+        : Mesh(InMesh),
+        Material(InMaterial),
+        BLASResource(InBLASResource),
+        ModelMatrix(InModelMatrix)
+    {}
+
     FMesh* Mesh;
     FPBRMaterial* Material;
     ID3D12Resource* BLASResource;
-    XMMATRIX Transform;
+    XMMATRIX ModelMatrix;
 };
 typedef std::pair<ID3D12Resource*, Dx::XMMATRIX> BLASMatrixPairType;
 
@@ -56,7 +67,7 @@ public:
     ComPtr<ID3D12Resource> pResult;
     ComPtr<ID3D12Resource> pInstanceDesc;
 
-    uint32_t SrvIndex;
+    uint32_t SrvIndex{};
     D3D12_GPU_VIRTUAL_ADDRESS GPUVirtualAddress{};
     
     uint32_t GetGeometryInfoBufferSrv() { return GeometryInfoBuffer.SrvIndex; }

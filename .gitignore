@@ -40,3 +40,6 @@ External/DirectXAgilitySDK
 External/DirectXShaderCompiler
 out/
 *.zip
+
+# large files
+Assets/Models/Bistro/*

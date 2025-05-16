@@ -1,4 +1,4 @@
-#include "Scene/Model.h"
+#include "Scene/GLTFModelLoader.h"
 #include "Scene/Scene.h"
 #include "Core/FileSystem.h"
 #include "Graphics/Resource.h"
@@ -15,25 +15,12 @@ void FTransform::Update()
         Dx::XMMatrixRotationRollPitchYawFromVector(rotationVector) *
         Dx::XMMatrixTranslationFromVector(translationVector);
 
-    const interlop::TransformBuffer transformBufferData = {
-        .modelMatrix = modelMatrix,
-        .inverseModelMatrix = Dx::XMMatrixInverse(nullptr, modelMatrix),
-    };
-
     TransformMatrix = modelMatrix;
-
-    TransformBuffer.Update(&transformBufferData);
 }
 
-FModel::FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
+FGLTFModelLoader::FGLTFModelLoader(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
     :ModelName(ModelCreationDesc.ModelName)
 {
-    Transform.TransformBuffer =
-        GraphicsDevice->CreateBuffer<interlop::TransformBuffer>(FBufferCreationDesc{
-            .Usage = EBufferUsage::ConstantBuffer,
-            .Name = ModelName + L" Transform Buffer",
-            });
-
     Transform.Scale = ModelCreationDesc.Scale;
     Transform.Rotation = ModelCreationDesc.Rotation;
     Transform.Translate = ModelCreationDesc.Translate;
@@ -72,9 +59,9 @@ FModel::FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreation
     {
         const std::jthread loadSamplerThread([&]() { LoadSamplers(GraphicsDevice, GLTFModel); });
         const std::jthread loadMaterialThread([&]() { LoadMaterials(GraphicsDevice, GLTFModel); });
-
+    }
+    {
         const tinygltf::Scene& scene = GLTFModel.scenes[GLTFModel.defaultScene];
-
         const std::jthread loadMeshThread([&]() {
             for (const int& nodeIndex : scene.nodes)
             {
@@ -96,7 +83,7 @@ FModel::FModel(const FGraphicsDevice* const GraphicsDevice, const FModelCreation
     GraphicsDevice->GetDirectCommandQueue()->Flush();
 }
 
-void FModel::LoadSamplers(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel)
+void FGLTFModelLoader::LoadSamplers(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel)
 {
     Samplers.resize(GLTFModel.samplers.size());
     
@@ -164,7 +151,7 @@ void FModel::LoadSamplers(const FGraphicsDevice* const GraphicsDevice, const tin
     }
 }
 
-void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel)
+void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel)
 {
     const auto CreateTexture = [&](const tinygltf::Image& image, FTextureCreationDesc Desc)
         {
@@ -197,7 +184,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
     uint32_t MipLevels = 6u;
     for (const tinygltf::Material& material : GLTFModel.materials)
     {
-        FPBRMaterial PbrMaterial{};
+        std::shared_ptr<FPBRMaterial> PbrMaterial = std::make_shared<FPBRMaterial>();
         {
             // Albedo
             if (material.pbrMetallicRoughness.baseColorTexture.index >= 0)
@@ -206,13 +193,13 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                     GLTFModel.textures[material.pbrMetallicRoughness.baseColorTexture.index];
                 const tinygltf::Image& albedoImage = GLTFModel.images[albedoTexture.source];
 
-                PbrMaterial.AlbedoTexture =
+                PbrMaterial->AlbedoTexture =
                     CreateTexture(albedoImage, FTextureCreationDesc{
                                                    .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
                                                    .MipLevels = MipLevels,
                                                    .Name = ModelName + L" albedo texture",
                         });
-                PbrMaterial.AlbedoSampler = Samplers[albedoTexture.sampler];
+                PbrMaterial->AlbedoSampler = Samplers[albedoTexture.sampler];
             }
         }
         {
@@ -224,14 +211,14 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                     GLTFModel.textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index];
                 const tinygltf::Image& metalRoughnessImage = GLTFModel.images[metalRoughnessTexture.source];
 
-                PbrMaterial.MetalRoughnessTexture =
+                PbrMaterial->MetalRoughnessTexture =
                     CreateTexture(metalRoughnessImage, FTextureCreationDesc{
                                                            .Usage = ETextureUsage::TextureFromData,
                                                            .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
                                                            .MipLevels = MipLevels,
                                                            .Name = ModelName + L" metal roughness texture",
                     });
-                PbrMaterial.MetalRoughnessSampler = Samplers[metalRoughnessTexture.sampler];
+                PbrMaterial->MetalRoughnessSampler = Samplers[metalRoughnessTexture.sampler];
             }
         }
         {
@@ -241,7 +228,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                 const tinygltf::Texture& normalTexture = GLTFModel.textures[material.normalTexture.index];
                 const tinygltf::Image& normalImage = GLTFModel.images[normalTexture.source];
 
-                PbrMaterial.NormalTexture =
+                PbrMaterial->NormalTexture =
                     CreateTexture(normalImage, FTextureCreationDesc{
                                                .Usage = ETextureUsage::TextureFromData,
                                                .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -249,7 +236,7 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                                                .Name = ModelName + L" normal texture",
                     });
 
-                PbrMaterial.NormalSampler = Samplers[normalTexture.sampler];
+                PbrMaterial->NormalSampler = Samplers[normalTexture.sampler];
             }
         }
         {
@@ -259,13 +246,13 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                 const tinygltf::Texture& aoTexture = GLTFModel.textures[material.occlusionTexture.index];
                 const tinygltf::Image& aoImage = GLTFModel.images[aoTexture.source];
 
-                PbrMaterial.AOTexture = CreateTexture(aoImage, FTextureCreationDesc{
+                PbrMaterial->AOTexture = CreateTexture(aoImage, FTextureCreationDesc{
                                                                .Usage = ETextureUsage::TextureFromData,
                                                                .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
                                                                .MipLevels = MipLevels,
                                                                .Name = ModelName + L" occlusion texture",
                 });
-                PbrMaterial.AOSampler = Samplers[aoTexture.sampler];
+                PbrMaterial->AOSampler = Samplers[aoTexture.sampler];
             }
         }
         {
@@ -275,36 +262,36 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                 const tinygltf::Texture& emissiveTexture = GLTFModel.textures[material.emissiveTexture.index];
                 const tinygltf::Image& emissiveImage = GLTFModel.images[emissiveTexture.source];
 
-                PbrMaterial.EmissiveTexture = CreateTexture(emissiveImage, FTextureCreationDesc{
+                PbrMaterial->EmissiveTexture = CreateTexture(emissiveImage, FTextureCreationDesc{
                                                      .Usage = ETextureUsage::TextureFromData,
                                                      .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
                                                      .MipLevels = MipLevels,
                                                      .Name = ModelName + L" emissive texture",
                         });
-                PbrMaterial.EmissiveSampler = Samplers[emissiveTexture.sampler];
+                PbrMaterial->EmissiveSampler = Samplers[emissiveTexture.sampler];
             }
         }
         
         if (material.alphaMode.compare("BLEND") == 0)
         {
-            PbrMaterial.AlphaMode = EAlphaMode::Blend;
+            PbrMaterial->AlphaMode = EAlphaMode::Blend;
         }
         else if (material.alphaMode.compare("MASK") == 0)
         {
-            PbrMaterial.AlphaMode = EAlphaMode::Mask;
+            PbrMaterial->AlphaMode = EAlphaMode::Mask;
         }
         else
         {
-            PbrMaterial.AlphaMode = EAlphaMode::Opaque;
+            PbrMaterial->AlphaMode = EAlphaMode::Opaque;
         }
-        PbrMaterial.AlphaCutoff = material.alphaCutoff;
+        PbrMaterial->AlphaCutoff = material.alphaCutoff;
 
-        PbrMaterial.MaterialBuffer = GraphicsDevice->CreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
+        PbrMaterial->MaterialBuffer = GraphicsDevice->CreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
             .Usage = EBufferUsage::ConstantBuffer,
             .Name = ModelName + L"_MaterialBuffer" + std::to_wstring(index),
         });
 
-        PbrMaterial.MaterialBufferData = {
+        PbrMaterial->MaterialBufferData = {
                 .albedoColor = XMFLOAT3 {
                     material.pbrMetallicRoughness.baseColorFactor[0],
                     material.pbrMetallicRoughness.baseColorFactor[1],
@@ -315,14 +302,13 @@ void FModel::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const ti
                 .emissiveFactor = 0.0f,
         };
 
-        PbrMaterial.MaterialBuffer.Update(&PbrMaterial.MaterialBufferData);
-
-        PbrMaterial.MaterialIndex = index;
-        Materials[index++] = std::move(PbrMaterial);
+        PbrMaterial->MaterialBuffer.Update(&PbrMaterial->MaterialBufferData);
+        PbrMaterial->MaterialIndex = index;
+        Materials[index++] = PbrMaterial;
     }
 }
 
-void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc,
+void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc,
     const uint32_t NodeIndex, const tinygltf::Model& GLTFModel)
 {
     const tinygltf::Node& node = GLTFModel.nodes[NodeIndex];
@@ -558,8 +544,9 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
             Mesh.Indice);
 
         Mesh.IndicesCount = static_cast<uint32_t>(Mesh.Indice.size());
-        Mesh.MaterialIndex = primitive.material;
-        Mesh.TransformMatrix = Transform.TransformMatrix;
+        Mesh.Material = Materials[primitive.material];
+        Mesh.ModelMatrix = Transform.TransformMatrix;
+		Mesh.InverseModelMatrix = XMMatrixInverse(nullptr, Transform.TransformMatrix);
 
         Meshes.push_back(std::move(Mesh));
     }
@@ -567,91 +554,5 @@ void FModel::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelC
     for (const int& ChildIndex : node.children)
     {
         LoadNode(GraphicsDevice, ModelCreationDesc, ChildIndex, GLTFModel);
-    }
-}
-
-void FModel::Render(const FGraphicsContext* const GraphicsContext,
-    interlop::UnlitPassRenderResources& UnlitRenderResources)
-{
-    for (const FMesh& Mesh : Meshes)
-    {
-        GraphicsContext->SetIndexBuffer(Mesh.IndexBuffer);
-
-        UnlitRenderResources.albedoTextureIndex = Materials[Mesh.MaterialIndex].AlbedoTexture.SrvIndex;
-        UnlitRenderResources.albedoTextureSamplerIndex =
-            Materials[Mesh.MaterialIndex].AlbedoSampler.SamplerIndex;
-
-        UnlitRenderResources.materialBufferIndex = Materials[Mesh.MaterialIndex].MaterialBuffer.CbvIndex;
-
-        UnlitRenderResources.positionBufferIndex = Mesh.PositionBuffer.SrvIndex;
-        UnlitRenderResources.textureCoordBufferIndex = Mesh.TextureCoordsBuffer.SrvIndex;
-        UnlitRenderResources.transformBufferIndex = Transform.TransformBuffer.CbvIndex;
-        
-        GraphicsContext->SetGraphicsRoot32BitConstants(&UnlitRenderResources);
-        GraphicsContext->DrawIndexedInstanced(Mesh.IndicesCount);
-    }
-}
-
-void FModel::Render(const FGraphicsContext* const GraphicsContext, FScene* Scene,
-    interlop::DeferredGPassRenderResources& DeferredGPassRenderResources)
-{
-    for (const FMesh& Mesh : Meshes)
-    {
-        GraphicsContext->SetIndexBuffer(Mesh.IndexBuffer);
-
-        DeferredGPassRenderResources.albedoTextureIndex = Materials[Mesh.MaterialIndex].AlbedoTexture.SrvIndex;
-        DeferredGPassRenderResources.albedoTextureSamplerIndex =
-            Materials[Mesh.MaterialIndex].AlbedoSampler.SamplerIndex;
-
-        DeferredGPassRenderResources.metalRoughnessTextureIndex = Materials[Mesh.MaterialIndex].MetalRoughnessTexture.SrvIndex;
-        DeferredGPassRenderResources.metalRoughnessTextureSamplerIndex =
-            Materials[Mesh.MaterialIndex].MetalRoughnessSampler.SamplerIndex;
-
-        DeferredGPassRenderResources.normalTextureIndex = Materials[Mesh.MaterialIndex].NormalTexture.SrvIndex;
-        DeferredGPassRenderResources.normalTextureSamplerIndex =
-            Materials[Mesh.MaterialIndex].NormalSampler.SamplerIndex;
-
-        DeferredGPassRenderResources.aoTextureIndex = Materials[Mesh.MaterialIndex].AOTexture.SrvIndex;
-        DeferredGPassRenderResources.aoTextureSamplerIndex =
-            Materials[Mesh.MaterialIndex].AOSampler.SamplerIndex;
-
-        DeferredGPassRenderResources.emissiveTextureIndex = Materials[Mesh.MaterialIndex].EmissiveTexture.SrvIndex;
-        DeferredGPassRenderResources.emissiveTextureSamplerIndex =
-            Materials[Mesh.MaterialIndex].EmissiveSampler.SamplerIndex;
-
-        DeferredGPassRenderResources.materialBufferIndex = Materials[Mesh.MaterialIndex].MaterialBuffer.CbvIndex;
-
-        DeferredGPassRenderResources.positionBufferIndex = Mesh.PositionBuffer.SrvIndex;
-        DeferredGPassRenderResources.textureCoordBufferIndex = Mesh.TextureCoordsBuffer.SrvIndex;
-        DeferredGPassRenderResources.normalBufferIndex = Mesh.NormalBuffer.SrvIndex;
-        DeferredGPassRenderResources.tangentBufferIndex = Mesh.TangentBuffer.SrvIndex;
-        DeferredGPassRenderResources.transformBufferIndex = Transform.TransformBuffer.CbvIndex;
-        DeferredGPassRenderResources.debugBufferIndex = Scene->GetDebugBuffer().CbvIndex;
-
-        GraphicsContext->SetGraphicsRoot32BitConstants(&DeferredGPassRenderResources);
-        GraphicsContext->DrawIndexedInstanced(Mesh.IndicesCount);
-    }
-}
-
-void FModel::Render(const FGraphicsContext* const GraphicsContext,
-    interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource)
-{
-    for (const FMesh& Mesh : Meshes)
-    {
-        GraphicsContext->SetIndexBuffer(Mesh.IndexBuffer);
-
-        ShadowDepthPassRenderResource.positionBufferIndex = Mesh.PositionBuffer.SrvIndex;
-        ShadowDepthPassRenderResource.transformBufferIndex = Transform.TransformBuffer.CbvIndex;
-
-        GraphicsContext->SetGraphicsRoot32BitConstants(&ShadowDepthPassRenderResource);
-        GraphicsContext->DrawIndexedInstanced(Mesh.IndicesCount);
-    }
-}
-
-void FModel::GatherRaytracingGeometry(std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList)
-{
-    for (FMesh& Mesh : Meshes)
-    {
-        Mesh.GatherRaytracingGeometry(RaytracingGeometryContextList, &Materials[Mesh.MaterialIndex]);
     }
 }

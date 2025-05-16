@@ -21,26 +21,25 @@ namespace interlop
 
     struct UnlitPassRenderResources
     {
+        float4x4 modelMatrix;
         uint positionBufferIndex;
         uint textureCoordBufferIndex;
-
-        uint transformBufferIndex;
-
         uint sceneBufferIndex;
 
         uint albedoTextureIndex;
         uint albedoTextureSamplerIndex;
-
         uint materialBufferIndex;
     };
 
     struct DeferredGPassRenderResources
     {
+        float4x4 modelMatrix;
+        float4x4 inverseModelMatrix;
+
         uint positionBufferIndex;
         uint textureCoordBufferIndex;
         uint normalBufferIndex;
         uint tangentBufferIndex;
-        uint transformBufferIndex;
 
         uint debugBufferIndex;
         uint sceneBufferIndex;
@@ -186,10 +185,10 @@ namespace interlop
 
     struct ShadowDepthPassRenderResource
     {
+        float4x4 modelMatrix;
         float4x4 lightViewProjectionMatrix;
 
         uint positionBufferIndex;
-        uint transformBufferIndex;
     };
 
     struct TemporalAAResolveRenderResource

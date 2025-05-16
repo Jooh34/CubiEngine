@@ -1,6 +1,8 @@
 #include "Graphics/Raytracing.h"
 #include "Graphics/GraphicsDevice.h"
 #include "Graphics/GraphicsContext.h"
+#include "Graphics/Material.h"
+#include "Scene/Mesh.h"
 #include "Scene/Scene.h"
 
 FRaytracingGeometry::FRaytracingGeometry(const FGraphicsDevice* const GraphicsDevice,
@@ -64,7 +66,7 @@ void FRaytracingScene::GenerateRaytracingScene(
     {
         FRaytracingGeometryContext& Context = RaytracingGeometryContextList[i];
         topLevelASGenerator.AddInstance(Context.BLASResource,
-            Context.Transform, static_cast<UINT>(i),
+            Context.ModelMatrix, static_cast<UINT>(i),
             static_cast<UINT>(0));
     }
 
@@ -123,8 +125,8 @@ void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const Gr
         FRaytracingGeometryContext& Context = RaytracingGeometryContextList[i];
         FMesh* Mesh = Context.Mesh;
         FPBRMaterial* Material = Context.Material;
-        uint32_t MaterialIndex = Context.Material->AlbedoTexture.SrvIndex;
-        if (Material->AlphaMode != EAlphaMode::Opaque) MaterialIndex = 0;
+        uint32_t MaterialSrvIndex = Context.Material->AlbedoTexture.SrvIndex;
+        if (Material->AlphaMode != EAlphaMode::Opaque) MaterialSrvIndex = 0;
 
         if (Mesh)
         {            
@@ -139,7 +141,7 @@ void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const Gr
             // Material
             MaterialList.push_back(
                 interlop::FRaytracingMaterial{
-                    .albedoTextureIndex = MaterialIndex,
+                    .albedoTextureIndex = MaterialSrvIndex,
                     .albedoTextureSamplerIndex = Material->AlbedoSampler.SamplerIndex,
                     .metalRoughnessTextureIndex = Material->MetalRoughnessTexture.SrvIndex,
                     .metalRoughnessTextureSamplerIndex = Material->MetalRoughnessSampler.SamplerIndex,

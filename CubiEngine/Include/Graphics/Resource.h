@@ -232,9 +232,20 @@ struct FBufferCreationDesc
     std::wstring_view Name{};
 };
 
+struct FModelCreationDesc
+{
+    std::string_view ModelPath{};
+    std::wstring_view ModelName{};
+
+    Dx::XMFLOAT3 Rotation{ 0.0f, 0.0f, 0.0f };
+    Dx::XMFLOAT3 Scale{ 1.0f, 1.0f, 1.0f };
+    Dx::XMFLOAT3 Translate{ 0.0f, 0.0f, 0.0f };
+};
+
 enum class EShadowMethod
 {
     None = 0,
     ShadowMap,
     Raytracing,
 };
+

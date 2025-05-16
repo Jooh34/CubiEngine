@@ -18,9 +18,7 @@ VSOutput VsMain(uint vertexID : SV_VertexID)
 {
     StructuredBuffer<float3> positionBuffer = ResourceDescriptorHeap[renderResources.positionBufferIndex];
     
-    ConstantBuffer<interlop::TransformBuffer> transformBuffer = ResourceDescriptorHeap[renderResources.transformBufferIndex];
-
-    const matrix mvpMatrix = mul(transformBuffer.modelMatrix, renderResources.lightViewProjectionMatrix);
+    const matrix mvpMatrix = mul(renderResources.modelMatrix, renderResources.lightViewProjectionMatrix);
 
     VSOutput output;
     output.position = mul(float4(positionBuffer[vertexID], 1.0f), mvpMatrix);

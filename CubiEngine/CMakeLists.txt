@@ -23,8 +23,6 @@ set(SRC_FILES
     "Source/Core/Editor.cpp"
     "Include/Core/Editor.h"
 
-    "Source/Scene/Model.cpp"
-    "Include/Scene/Model.h"
     "Source/Scene/Scene.cpp"
     "Include/Scene/Scene.h"
     "Source/Scene/Camera.cpp"
@@ -33,6 +31,11 @@ set(SRC_FILES
     "Include/Scene/Light.h"
     "Source/Scene/Mesh.cpp"
     "Include/Scene/Mesh.h"
+    "Source/Scene/GLTFModelLoader.cpp"
+    "Include/Scene/GLTFModelLoader.h"
+    "Source/Scene/FBXLoader.cpp"
+    "Include/Scene/FBXLoader.h"
+
 
     "Include/Graphics/d3dx12.h"
     "Include/Graphics/Material.h"

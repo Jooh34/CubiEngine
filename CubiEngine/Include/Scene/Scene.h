@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Scene/Model.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Scene/Camera.h"
 #include "Scene/Light.h"
 #include "Renderer/CubeMap.h"
 #include "Graphics/Raytracing.h"
+#include "Scene/Mesh.h"
 
 class FGraphicsContext;
 class FCamera;
@@ -120,8 +120,8 @@ private:
     uint32_t Height;
 
     static constexpr uint32_t FRAMES_IN_FLIGHT = 3u;
-
-    std::unordered_map<std::wstring, std::unique_ptr<FModel>> Models{};
+    
+	std::vector<FMesh> Meshes{};
     FGraphicsDevice* Device;
 
     FCamera Camera;

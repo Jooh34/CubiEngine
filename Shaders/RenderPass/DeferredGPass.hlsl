@@ -25,11 +25,10 @@ VSOutput VsMain(uint vertexID : SV_VertexID)
     StructuredBuffer<float3> tangentBuffer = ResourceDescriptorHeap[renderResources.tangentBufferIndex];
 
     ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
-    ConstantBuffer<interlop::TransformBuffer> transformBuffer = ResourceDescriptorHeap[renderResources.transformBufferIndex];
 
-    const matrix mvpMatrix = mul(transformBuffer.modelMatrix, sceneBuffer.viewProjectionMatrix);
-    const float3x3 normalMatrix = (float3x3)transpose(transformBuffer.inverseModelMatrix);
-    const matrix prevMvpMatrix = mul(transformBuffer.modelMatrix, sceneBuffer.prevViewProjMatrix);
+    const matrix mvpMatrix = mul(renderResources.modelMatrix, sceneBuffer.viewProjectionMatrix);
+    const float3x3 normalMatrix = (float3x3)transpose(renderResources.inverseModelMatrix);
+    const matrix prevMvpMatrix = mul(renderResources.modelMatrix, sceneBuffer.prevViewProjMatrix);
 
     VSOutput output;
     float4 clipspacePosition = mul(float4(positionBuffer[vertexID], 1.0f), mvpMatrix);

@@ -2,8 +2,9 @@
 
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 
-struct FPBRMaterial
+class FPBRMaterial
 {
+public:
     FTexture AlbedoTexture{};
     FSampler AlbedoSampler{};
 
