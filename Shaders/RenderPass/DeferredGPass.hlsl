@@ -71,10 +71,23 @@ PsOutput PsMain(VSOutput psInput)
     float3 albedo = albedoEmissive.xyz;
     float3 normal = getNormal(psInput.textureCoord, renderResources.normalTextureIndex, renderResources.normalTextureSamplerIndex, psInput.normal, psInput.tbnMatrix).xyz;
     normal = mul(normal, psInput.viewMatrix);
-    float ao = getAO(psInput.textureCoord, renderResources.aoTextureIndex, renderResources.aoTextureSamplerIndex).x;
-    float2 metalRoughness = getMetalRoughness(psInput.textureCoord, renderResources.metalRoughnessTextureIndex, renderResources.metalRoughnessTextureSamplerIndex) * float2(materialBuffer.metallicFactor, materialBuffer.roughnessFactor).xy;
     float3 emissive = getEmissive(psInput.textureCoord, albedo, materialBuffer.emissiveFactor, renderResources.emissiveTextureIndex, renderResources.emissiveTextureSamplerIndex).xyz;
     float2 velocity = calculateVelocity(psInput.curPosition, psInput.prevPosition);
+    
+    float ao = 0.f;
+    float2 metalRoughness = float2(0.0f, 1.f);
+    if (renderResources.ormTextureIndex != INVALID_INDEX)
+    {
+        float3 orm = getORM(psInput.textureCoord, renderResources.ormTextureIndex, renderResources.ormTextureSamplerIndex);
+        ao = (1-orm.x);
+        metalRoughness = float2(orm.z, orm.y);
+    }
+    else
+    {
+        ao = getAO(psInput.textureCoord, renderResources.aoTextureIndex, renderResources.aoTextureSamplerIndex).x;
+        metalRoughness = getMetalRoughness(psInput.textureCoord, renderResources.metalRoughnessTextureIndex, renderResources.metalRoughnessTextureSamplerIndex) * float2(materialBuffer.metallicFactor, materialBuffer.roughnessFactor).xy;
+    }
+
     PsOutput output;
     packGBuffer(albedo, normal, ao, metalRoughness, emissive, velocity, output.GBufferA, output.GBufferB, output.GBufferC, output.Velocity);
     return output;

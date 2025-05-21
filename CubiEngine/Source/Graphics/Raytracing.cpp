@@ -147,6 +147,8 @@ void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const Gr
                     .metalRoughnessTextureSamplerIndex = Material->MetalRoughnessSampler.SamplerIndex,
                     .normalTextureIndex = Material->NormalTexture.SrvIndex,
                     .normalTextureSamplerIndex = Material->NormalSampler.SamplerIndex,
+					.ormTextureIndex = Material->ORMTexture.SrvIndex,
+					.ormTextureSamplerIndex = Material->ORMSampler.SamplerIndex,
                     .albedoColor = Material->MaterialBufferData.albedoColor
                 }
             );

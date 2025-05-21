@@ -32,21 +32,28 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .Name = L"Debug Buffer" + i,
         });
     }
-    
-    // Directional Light
-    float LightPosition[4] = { -0.5, -1, -0.4, 0 };
-    float LightColor[4] = { 1,1,1,1 };
-    float Intensity = 5.f;
-    AddLight(LightPosition, LightColor);
 
-    int Scene = 1;
+    int Scene = 3;
     FModelCreationDesc Desc;
+
+    // set environment map
+    EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
+        .EquirectangularTexturePath = L"Assets/Textures/pisa.hdr",
+        .Name = L"Environment Map"
+	});
+
     if (Scene == 0)
     {
         Desc = {
             .ModelPath = "Models/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
             .ModelName = L"MetalRoughSpheres",
         };
+
+        // Directional Light
+        float LightPosition[4] = { -0.5, -1, -0.4, 0 };
+        float LightColor[4] = { 1,1,1,1 };
+        float Intensity = 5.f;
+        AddLight(LightPosition, LightColor);
     }
     else if (Scene == 1)
     {
@@ -54,10 +61,17 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .ModelPath = "Models/Sponza/sponza.glb",
             .ModelName = L"Sponza",
         };
-        
-        float LightPosition[4] = { 0.f,100.f,0.f,1.f };
+
+        // Directional Light
+        float LightPosition[4] = { -0.5, -1, -0.4, 0 };
         float LightColor[4] = { 1,1,1,1 };
-        AddLight(LightPosition, LightColor, 1.f);
+        float Intensity = 5.f;
+        AddLight(LightPosition, LightColor);
+
+        // Point Light
+        float PointLightPosition[4] = { 0.f,100.f,0.f,1.f };
+        float PointLightColor[4] = { 1,1,1,1 };
+        AddLight(PointLightPosition, PointLightColor, 1.f);
     }
     else if (Scene == 2)
     {
@@ -65,6 +79,12 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .ModelPath = "Models/FlightHelmet/glTF/FlightHelmet.gltf",
             .ModelName = L"FlightHelmet",
         };
+
+        // Directional Light
+        float LightPosition[4] = { -0.5, -1, -0.4, 0 };
+        float LightColor[4] = { 1,1,1,1 };
+        float Intensity = 5.f;
+        AddLight(LightPosition, LightColor);
     }
     else if (Scene == 3)
     {
@@ -72,15 +92,25 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .ModelPath = "Models/Bistro/Bistro_v5_2/BistroExterior.fbx",
             .ModelName = L"Bistro Exterior",
         };
+
+        // Directional Light
+        float LightPosition[4] = { 0.5, -0.5, 0.5, 0 };
+        float LightColor[4] = { 1,1,1,1 };
+        float Intensity = 5.f;
+        AddLight(LightPosition, LightColor);
+
+        // use envmap
+        GIMethod = 0;
+        bUseEnvmap = true;
+
+        // set environment map
+        EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
+            .EquirectangularTexturePath = L"Assets/Models/Bistro/Bistro_v5_2/san_giuseppe_bridge_4k.hdr",
+            .Name = L"Bistro Environment Map"
+		});
     }
 
     AddModel(Desc);
-
-    // set environment map
-    EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
-        .EquirectangularTexturePath = L"Assets/Textures/pisa.hdr",
-        .Name = L"Environment Map"
-    });
 
     WhiteFurnaceMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
         .EquirectangularTexturePath = L"Assets/Textures/WhiteFurnace.hdr",

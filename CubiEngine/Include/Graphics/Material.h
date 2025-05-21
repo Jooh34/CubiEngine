@@ -22,6 +22,9 @@ public:
     FTexture EmissiveTexture{};
     FSampler EmissiveSampler{};
 
+    FTexture ORMTexture{}; // Bistro
+    FSampler ORMSampler{}; // Bistro
+
     FBuffer MaterialBuffer{};
     interlop::MaterialBuffer MaterialBufferData;
 

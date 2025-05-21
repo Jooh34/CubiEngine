@@ -49,6 +49,9 @@ void FMesh::Render(const FGraphicsContext* const GraphicsContext, FScene* Scene,
 	DeferredGPassRenderResources.emissiveTextureIndex = Material->EmissiveTexture.SrvIndex;
 	DeferredGPassRenderResources.emissiveTextureSamplerIndex = Material->EmissiveSampler.SamplerIndex;
 
+	DeferredGPassRenderResources.ormTextureIndex = Material->ORMTexture.SrvIndex;
+	DeferredGPassRenderResources.ormTextureSamplerIndex = Material->ORMSampler.SamplerIndex;
+
 	DeferredGPassRenderResources.materialBufferIndex = Material->MaterialBuffer.CbvIndex;
 
 	DeferredGPassRenderResources.positionBufferIndex = PositionBuffer.SrvIndex;

@@ -56,6 +56,9 @@ namespace interlop
         uint emissiveTextureIndex;
         uint emissiveTextureSamplerIndex;
 
+        uint ormTextureIndex;
+        uint ormTextureSamplerIndex;
+
         uint materialBufferIndex;
     };
 
@@ -119,6 +122,8 @@ namespace interlop
         uint debugBufferIndex;
 
         uint bUseEnvmap;
+        float EnvmapIntensity;
+
         uint bUseEnergyCompensation;
         uint WhiteFurnaceMethod;
         uint bCSMDebug;

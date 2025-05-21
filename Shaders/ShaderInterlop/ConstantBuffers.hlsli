@@ -110,10 +110,12 @@ namespace interlop
 
         uint normalTextureIndex;
         uint normalTextureSamplerIndex;
+        uint ormTextureIndex;
+        uint ormTextureSamplerIndex;
 
         float3 albedoColor;
 
-        float3 padding;
+        float padding;
     };
 
     struct MeshVertex

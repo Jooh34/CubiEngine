@@ -104,7 +104,22 @@ float2 getMetalRoughness(float2 textureCoord, uint metalRoughnessTextureIndex, u
         return metalRoughnessTexture.Sample(samplerState, textureCoord).bg;
     }
 
-    return float2(0.5f, 0.5f);
+    return float2(0.f, 1.f);
+}
+
+float3 getORM(float2 textureCoord, uint ormTextureIndex, uint ormTextureSamplerIndex)
+{
+    if (ormTextureIndex != INVALID_INDEX)
+    {
+        Texture2D<float4> ormTexture = ResourceDescriptorHeap[NonUniformResourceIndex(ormTextureIndex)];
+
+        SamplerState samplerState = SamplerDescriptorHeap[NonUniformResourceIndex(ormTextureSamplerIndex)];
+
+        // return ormTexture[uint2(0,0)].xyz;
+        return ormTexture.Sample(samplerState, textureCoord).xyz;
+    }
+
+    return float3(0.5f, 0.5f, 0.5f);
 }
 
 float2 calculateVelocity(float4 position, float4 prevPosition)

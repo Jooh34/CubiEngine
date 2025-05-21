@@ -7,22 +7,23 @@
 
 FFBXLoader::FFBXLoader(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
 {
-    std::string FullPath = FFileSystem::GetAssetPath() + ModelCreationDesc.ModelPath.data();
+    std::string ModelPath = "Assets/" + std::string(ModelCreationDesc.ModelPath.data());
 
-    if (FullPath.find_last_of("/") != std::string::npos)
+    if (ModelPath.find_last_of("/") != std::string::npos)
     {
-        ModelDir = FullPath.substr(0, FullPath.find_last_of("/")) + "/";
+        ModelDir = ModelPath.substr(0, ModelPath.find_last_of("/")) + "/";
     }
 
     Assimp::Importer Importer;
 
+    std::string FullPath = FFileSystem::GetFullPath(ModelPath);
     const aiScene* scene = Importer.ReadFile(FullPath,
         aiProcess_Triangulate |
+        //aiProcess_ConvertToLeftHanded |
+        aiProcess_FlipUVs |
         aiProcess_GenNormals |
-        aiProcess_CalcTangentSpace |
-        aiProcess_JoinIdenticalVertices |
-        aiProcess_ImproveCacheLocality |
-        aiProcess_ConvertToLeftHanded);
+        aiProcess_CalcTangentSpace
+    );
 
     if (!scene || !scene->HasMeshes())
     {
@@ -31,6 +32,18 @@ FFBXLoader::FFBXLoader(const FGraphicsDevice* const GraphicsDevice, const FModel
     
 	LoadMaterials(GraphicsDevice, scene);
 	LoadMeshes(GraphicsDevice, scene);
+
+    //FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
+    //GraphicsContext->Reset();
+
+    //for (auto& Mesh : Meshes)
+    //{
+    //    Mesh.GenerateRaytracingGeometry(GraphicsDevice);
+    //}
+
+    //// sync gpu immediatly
+    //GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
+    //GraphicsDevice->GetDirectCommandQueue()->Flush();
 }
 
 D3D12_TEXTURE_ADDRESS_MODE FFBXLoader::ConvertTextureAddressMode(aiTextureMapMode mode) const
@@ -74,14 +87,14 @@ void FFBXLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, cons
                 material->Get(AI_MATKEY_MAPPINGMODE_V(type, 0), wrapV);
 
                 FSamplerCreationDesc Desc{};
-                Desc.SamplerDesc.Filter = D3D12_FILTER_MIN_LINEAR_MAG_MIP_POINT;
+                Desc.SamplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
                 Desc.SamplerDesc.AddressU = ConvertTextureAddressMode(wrapU);
                 Desc.SamplerDesc.AddressV = ConvertTextureAddressMode(wrapV);
                 Desc.SamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
                 Desc.SamplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
                 Desc.SamplerDesc.MinLOD = 0.0f;
                 Desc.SamplerDesc.MipLODBias = 0.0f;
-                Desc.SamplerDesc.MaxAnisotropy = 16;
+                Desc.SamplerDesc.MaxAnisotropy = 1;
                 Desc.SamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
                 outSampler = GraphicsDevice->CreateSampler(Desc);
 
@@ -105,6 +118,7 @@ void FFBXLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, cons
 
 		std::string AlbedoName = PbrMaterial->Name + " Albedo";
 		std::string NormalName = PbrMaterial->Name + " Normal";
+		std::string ORMName = PbrMaterial->Name + " ORM";
 
         auto Result = LoadTexture(material, AlbedoName, aiTextureType_BASE_COLOR, DXGI_FORMAT_UNKNOWN, PbrMaterial->AlbedoTexture, PbrMaterial->AlbedoSampler);
         if (Result == AI_FAILURE)
@@ -112,6 +126,7 @@ void FFBXLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, cons
             LoadTexture(material, AlbedoName, aiTextureType_DIFFUSE, DXGI_FORMAT_UNKNOWN, PbrMaterial->AlbedoTexture, PbrMaterial->AlbedoSampler);
         }
         LoadTexture(material, NormalName, aiTextureType_NORMALS, DXGI_FORMAT_UNKNOWN, PbrMaterial->NormalTexture, PbrMaterial->NormalSampler);
+        LoadTexture(material, ORMName, aiTextureType_SPECULAR, DXGI_FORMAT_UNKNOWN, PbrMaterial->ORMTexture, PbrMaterial->ORMSampler);
 
 
         PbrMaterial->MaterialBuffer = GraphicsDevice->CreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
@@ -166,7 +181,8 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
 			for (int v = 0; v < mesh->mNumVertices; ++v)
 			{
 				aiVector3D pos = mesh->mVertices[v];
-				const XMFLOAT3 XMPosition = { pos.x, pos.y, pos.z };
+				//const XMFLOAT3 XMPosition = { pos.x, pos.y, pos.z };
+				const XMFLOAT3 XMPosition = { pos.x, pos.z, -pos.y };
 
 				Positions.push_back(XMPosition);
                 ResultMesh.MeshVertices[v].position = XMPosition;

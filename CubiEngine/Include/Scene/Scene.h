@@ -59,7 +59,6 @@ public:
 
     int WhiteFurnaceMethod = 0;
 
-    bool bUseEnvmap = false;
     bool bUseEnergyCompensation = true;
 
     int DiffuseMethod = 0;
@@ -71,6 +70,9 @@ public:
     // Light
     bool bLightDanceDebug = false;
     float bLightDanceSpeed = 0.3f;
+
+    bool bUseEnvmap = false;
+	float EnvmapIntensity = 0.5f;
 
     // Shadow
     int ShadowMethod = 1;

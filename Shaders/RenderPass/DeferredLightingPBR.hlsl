@@ -289,11 +289,11 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     {
         if (!renderResources.bUseEnergyCompensation)
         {
-            color += SingleScatteringIBL(F0, EnvBRDF.xy, diffuseColor, radiance, irradiance);
+            color += renderResources.EnvmapIntensity * SingleScatteringIBL(F0, EnvBRDF.xy, diffuseColor, radiance, irradiance);
         }
         else
         {
-            color += MultipleScatteringIBL(roughness, F0, context.NoV, EnvBRDF.xy, albedo.xyz, radiance, irradiance);
+            color += renderResources.EnvmapIntensity * MultipleScatteringIBL(roughness, F0, context.NoV, EnvBRDF.xy, albedo.xyz, radiance, irradiance);
         }
     }
 

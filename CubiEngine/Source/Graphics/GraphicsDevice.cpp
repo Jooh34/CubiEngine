@@ -6,6 +6,7 @@
 #include "Core/FileSystem.h"
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
+#include <DirectXTex.h>
 
 FGraphicsDevice::FGraphicsDevice(const uint32_t Width, const uint32_t Height,
     const DXGI_FORMAT SwapchainFormat, const HWND WindowHandle)
@@ -71,6 +72,8 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
 
     float* HdrTextureData{ nullptr };
 
+	DirectX::ScratchImage scratchImage;
+
     if (TextureCreationDesc.Usage == ETextureUsage::HDRTextureFromPath)
     {
 		int32_t Width, Height;
@@ -88,6 +91,40 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
 
         TextureCreationDesc.Width = Width;
         TextureCreationDesc.Height = Height;
+	}
+	else if (TextureCreationDesc.Usage == ETextureUsage::TextureFromPath)
+	{
+		int32_t Width, Height, Channels;
+		std::string FullPath = FFileSystem::GetFullPath(wStringToString(TextureCreationDesc.Path));
+		TextureData = stbi_load(FullPath.c_str(), &Width, &Height, &Channels, 0);
+
+		if (!TextureData)
+		{
+			FatalError(
+				std::format("Failed to load texture from path : {}.", wStringToString(TextureCreationDesc.Path)));
+		}
+
+		TextureCreationDesc.Width = Width;
+		TextureCreationDesc.Height = Height;
+	}
+    else if (TextureCreationDesc.Usage == ETextureUsage::DDSTextureFromPath)
+    {
+        std::string FullPath = FFileSystem::GetFullPath(wStringToString(TextureCreationDesc.Path));
+        std::wstring wFullPath = StringToWString(FullPath);
+
+        HRESULT hr = DirectX::LoadFromDDSFile(wFullPath.c_str(), DirectX::DDS_FLAGS_NONE, nullptr, scratchImage);
+        if (FAILED(hr)) {
+            FatalError(
+                std::format("LoadFromDDSFile Failed. : {}.", wStringToString(TextureCreationDesc.Path)));
+        }
+        const DirectX::TexMetadata& metadata = scratchImage.GetMetadata();
+
+		TextureCreationDesc.Width = static_cast<uint32_t>(metadata.width);
+		TextureCreationDesc.Height = static_cast<uint32_t>(metadata.height);
+		TextureCreationDesc.DepthOrArraySize = static_cast<uint32_t>(metadata.arraySize);
+		TextureCreationDesc.MipLevels = static_cast<uint32_t>(metadata.mipLevels);
+		TextureCreationDesc.Format = metadata.format;
+        TextureCreationDesc.InitialState = D3D12_RESOURCE_STATE_COPY_DEST;
     }
     
 	bool bUAVAllowed = FTexture::IsUAVAllowed(TextureCreationDesc.Usage, TextureCreationDesc.Format);
@@ -103,47 +140,55 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
     Texture.Format = TextureCreationDesc.Format;
     Texture.DebugName = TextureCreationDesc.Name;
     
-    if (TextureData || HdrTextureData) // Upload Texture Buffer
+    if (TextureData || HdrTextureData || TextureCreationDesc.Usage == ETextureUsage::DDSTextureFromPath) // Upload Texture Buffer
     {
+        std::vector<D3D12_SUBRESOURCE_DATA> TextureSubresourceData;
+
+        uint32_t BytesPerPixel = FTexture::GetBytesPerPixel(TextureCreationDesc.Format);
+        if (TextureCreationDesc.Usage == ETextureUsage::DDSTextureFromPath)
+        {
+            auto hr = DirectX::PrepareUpload(Device.Get(), scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), TextureSubresourceData);
+            if (FAILED(hr)) {
+                FatalError(
+                    std::format("PrepareUpload Failed. : {}.", wStringToString(TextureCreationDesc.Path)));
+            }
+        }
+        else if (TextureCreationDesc.Usage == ETextureUsage::HDRTextureFromPath)
+        {
+            TextureSubresourceData.push_back({
+                .pData = HdrTextureData,
+                .RowPitch = TextureCreationDesc.Width * BytesPerPixel,
+                .SlicePitch = TextureCreationDesc.Width * TextureCreationDesc.Height * BytesPerPixel,
+            });
+        }
+        else // TexureUsage:: TextureFromPath or TextureFromData (non HDR).
+        {
+            TextureSubresourceData.push_back({
+                .pData = TextureData,
+                .RowPitch = TextureCreationDesc.Width * BytesPerPixel,
+                .SlicePitch = TextureCreationDesc.Width * TextureCreationDesc.Height * BytesPerPixel,
+            });
+        }
+        
         // Create upload buffer.
         const FBufferCreationDesc UploadBufferCreationDesc = {
             .Usage = EBufferUsage::UploadBuffer,
             .Name = L"Upload buffer - " + std::wstring(TextureCreationDesc.Name),
         };
 
-        const UINT64 UploadBufferSize = GetRequiredIntermediateSize(Texture.Allocation.Resource.Get(), 0, 1);
+        const UINT64 UploadBufferSize = GetRequiredIntermediateSize(Texture.Allocation.Resource.Get(), 0, TextureSubresourceData.size());
         const FResourceCreationDesc ResourceCreationDesc = FResourceCreationDesc::CreateBufferResourceCreationDesc(UploadBufferSize);
 
         FAllocation UploadAllocation =
             MemoryAllocator->CreateBufferResourceAllocation(UploadBufferCreationDesc, ResourceCreationDesc);
 
-        D3D12_SUBRESOURCE_DATA TextureSubresourceData{};
-
-        uint32_t BytesPerPixel = FTexture::GetBytesPerPixel(TextureCreationDesc.Format);
-        if (TextureCreationDesc.Usage == ETextureUsage::HDRTextureFromPath)
-        {
-            TextureSubresourceData = {
-                .pData = HdrTextureData,
-                .RowPitch = TextureCreationDesc.Width * BytesPerPixel,
-                .SlicePitch = TextureCreationDesc.Width * TextureCreationDesc.Height * BytesPerPixel,
-            };
-        }
-        else // TexureUsage:: TextureFromPath or TextureFromData (non HDR).
-        {
-            TextureSubresourceData = {
-                .pData = TextureData,
-                .RowPitch = TextureCreationDesc.Width * BytesPerPixel,
-                .SlicePitch = TextureCreationDesc.Width * TextureCreationDesc.Height * BytesPerPixel,
-            };
-        }
-        
         // Use the copy context and execute UpdateSubresources functions on the copy command queue.
         std::scoped_lock<std::recursive_mutex> LockGuard(ResourceMutex);
 
         CopyContext->Reset();
 
         UpdateSubresources(CopyContext->GetCommandList(), Texture.Allocation.Resource.Get(),
-            UploadAllocation.Resource.Get(), 0u, 0u, 1u, &TextureSubresourceData);
+            UploadAllocation.Resource.Get(), 0u, 0u, TextureSubresourceData.size(), TextureSubresourceData.data());
 
         CopyCommandQueue->ExecuteContext(CopyContext.get());
         CopyCommandQueue->Flush();
@@ -275,7 +320,10 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
         }
     }
 
-    MipmapGenerator->GenerateMipmap(Texture);
+    if (bUAVAllowed && !FTexture::IsCompressedFormat(TextureCreationDesc.Format))
+    {
+		MipmapGenerator->GenerateMipmap(Texture);
+    }
 
     return Texture;
 }
