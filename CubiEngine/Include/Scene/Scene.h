@@ -73,7 +73,7 @@ public:
     float bLightDanceSpeed = 0.3f;
 
     // Shadow
-    int ShadowMethod = 2;
+    int ShadowMethod = 1;
     bool bUseVSM = false;
     bool bCSMDebug = false;
     float CSMExponentialFactor = 0.8f;

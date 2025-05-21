@@ -5,6 +5,8 @@
 class FPBRMaterial
 {
 public:
+    std::string Name{};
+
     FTexture AlbedoTexture{};
     FSampler AlbedoSampler{};
 

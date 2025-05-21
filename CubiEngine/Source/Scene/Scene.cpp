@@ -1,6 +1,7 @@
 #include "Scene/Scene.h"
 #include "Graphics/GraphicsDevice.h"
 #include "Scene/GLTFModelLoader.h"
+#include "Scene/FBXLoader.h"
 #include <thread>
 
 FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
@@ -63,6 +64,13 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         Desc = {
             .ModelPath = "Models/FlightHelmet/glTF/FlightHelmet.gltf",
             .ModelName = L"FlightHelmet",
+        };
+    }
+    else if (Scene == 3)
+    {
+        Desc = {
+            .ModelPath = "Models/Bistro/Bistro_v5_2/BistroExterior.fbx",
+            .ModelName = L"Bistro Exterior",
         };
     }
 
@@ -192,14 +200,30 @@ void FScene::UpdateBuffers()
 
 void FScene::AddModel(const FModelCreationDesc& Desc)
 {
-    const std::wstring Key{ Desc.ModelName };
+    std::string_view Extension = GetExtension(Desc.ModelPath);
+    if (Extension == "glb" || Extension == "gltf")
+    {
+		FGLTFModelLoader Model = FGLTFModelLoader(Device, Desc);
+		Meshes.insert(
+			Meshes.end(),
+			std::make_move_iterator(Model.Meshes.begin()),
+			std::make_move_iterator(Model.Meshes.end())
+		);
+    }
+	else if (Extension == "fbx")
+    {
+		FFBXLoader Model = FFBXLoader(Device, Desc);
+        Meshes.insert(
+			Meshes.end(),
+			std::make_move_iterator(Model.Meshes.begin()),
+			std::make_move_iterator(Model.Meshes.end())
+		);
+	}
+    else
+    {
+		throw std::runtime_error("Model format not supported");
+	}
 
-    FGLTFModelLoader Model = FGLTFModelLoader(Device, Desc);
-    Meshes.insert(
-        Meshes.end(),
-        std::make_move_iterator(Model.Meshes.begin()),
-        std::make_move_iterator(Model.Meshes.end())
-    );
 }
 
 void FScene::RenderModels(FGraphicsContext* const GraphicsContext,

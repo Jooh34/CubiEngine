@@ -53,33 +53,28 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
 {
     FTextureCreationDesc TextureCreationDesc = InTextureCreationDesc;
 
-    DXGI_FORMAT format = TextureCreationDesc.Format;
     DXGI_FORMAT dsFormat{};
 
-    if (format == DXGI_FORMAT_R32_FLOAT
-        || format == DXGI_FORMAT_D32_FLOAT
-        || format == DXGI_FORMAT_R32_TYPELESS)
+    if (TextureCreationDesc.Format == DXGI_FORMAT_R32_FLOAT
+        || TextureCreationDesc.Format == DXGI_FORMAT_D32_FLOAT
+        || TextureCreationDesc.Format == DXGI_FORMAT_R32_TYPELESS)
     {
         dsFormat = DXGI_FORMAT_D32_FLOAT;
-        format = DXGI_FORMAT_R32_FLOAT;
+        TextureCreationDesc.Format = DXGI_FORMAT_R32_FLOAT;
     }
-    else if (format == DXGI_FORMAT_D24_UNORM_S8_UINT)
+    else if (TextureCreationDesc.Format == DXGI_FORMAT_D24_UNORM_S8_UINT)
     {
         FatalError("Currently, the renderer does not support depth format of the type D24_S8_UINT. Please use one of the X32 types.");
     }
 
-    int32_t Width, Height;
     void* TextureData{ (void*)Data };
 
     float* HdrTextureData{ nullptr };
 
-    if (TextureCreationDesc.Usage == ETextureUsage::TextureFromData)
+    if (TextureCreationDesc.Usage == ETextureUsage::HDRTextureFromPath)
     {
-        Width = TextureCreationDesc.Width;
-        Height = TextureCreationDesc.Height;
-    }
-    else if (TextureCreationDesc.Usage == ETextureUsage::HDRTextureFromPath)
-    {
+		int32_t Width, Height;
+
         int ComponentCount = 4;
         std::string FullPath = FFileSystem::GetFullPath(wStringToString(TextureCreationDesc.Path));
         HdrTextureData =
@@ -94,18 +89,13 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
         TextureCreationDesc.Width = Width;
         TextureCreationDesc.Height = Height;
     }
-    else
-    {
-        Width = TextureCreationDesc.Width;
-        Height = TextureCreationDesc.Height;
-    }
-    // TODO: handle another usage
     
-    FTexture Texture{};
+	bool bUAVAllowed = FTexture::IsUAVAllowed(TextureCreationDesc.Usage, TextureCreationDesc.Format);
 
+    FTexture Texture{};
     // GPU only memory
     D3D12_RESOURCE_STATES ResourceState;
-    Texture.Allocation = MemoryAllocator->CreateTextureResourceAllocation(TextureCreationDesc, ResourceState);
+    Texture.Allocation = MemoryAllocator->CreateTextureResourceAllocation(TextureCreationDesc, ResourceState, bUAVAllowed);
     Texture.Width = TextureCreationDesc.Width;
     Texture.Height = TextureCreationDesc.Height;
     Texture.ResourceState = ResourceState;
@@ -129,20 +119,21 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
 
         D3D12_SUBRESOURCE_DATA TextureSubresourceData{};
 
+        uint32_t BytesPerPixel = FTexture::GetBytesPerPixel(TextureCreationDesc.Format);
         if (TextureCreationDesc.Usage == ETextureUsage::HDRTextureFromPath)
         {
             TextureSubresourceData = {
                 .pData = HdrTextureData,
-                .RowPitch = Width * TextureCreationDesc.BytesPerPixel,
-                .SlicePitch = Width * Height * TextureCreationDesc.BytesPerPixel,
+                .RowPitch = TextureCreationDesc.Width * BytesPerPixel,
+                .SlicePitch = TextureCreationDesc.Width * TextureCreationDesc.Height * BytesPerPixel,
             };
         }
         else // TexureUsage:: TextureFromPath or TextureFromData (non HDR).
         {
             TextureSubresourceData = {
                 .pData = TextureData,
-                .RowPitch = Width * TextureCreationDesc.BytesPerPixel,
-                .SlicePitch = Width * Height * TextureCreationDesc.BytesPerPixel,
+                .RowPitch = TextureCreationDesc.Width * BytesPerPixel,
+                .SlicePitch = TextureCreationDesc.Width * TextureCreationDesc.Height * BytesPerPixel,
             };
         }
         
@@ -168,7 +159,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
         {
             SrvCreationDesc = {
                 .SrvDesc = {
-                    .Format = format,
+                    .Format = TextureCreationDesc.Format,
                     .ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D,
                     .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
                     .Texture2D = {
@@ -182,7 +173,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
         {
             SrvCreationDesc = {
                 .SrvDesc = {
-                    .Format = format,
+                    .Format = TextureCreationDesc.Format,
                     .ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE,
                     .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
                     .Texture2D = {
@@ -221,7 +212,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
             const FRtvCreationDesc rtvCreationDesc = {
                 .RtvDesc =
                     {
-                        .Format = format,
+                        .Format = TextureCreationDesc.Format,
                         .ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
                         .Texture2D{.MipSlice = 0u, .PlaneSlice = 0u},
                     },
@@ -231,7 +222,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
         }
 
         // Create UAV
-        if (TextureCreationDesc.Usage != ETextureUsage::DepthStencil)
+        if (bUAVAllowed)
         {
             if (TextureCreationDesc.DepthOrArraySize > 1u)
             {
@@ -241,7 +232,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
                     const FUavCreationDesc UavCreationDesc = {
                         .UavDesc =
                             {
-                                .Format = FTexture::ConvertToLinearFormat(format),
+                                .Format = FTexture::ConvertToLinearFormat(TextureCreationDesc.Format),
                                 .ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY,
                                 .Texture2DArray{
                                     .MipSlice = i,
@@ -266,7 +257,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
                     const FUavCreationDesc UavCreationDesc = {
                         .UavDesc =
                             {
-                                .Format = FTexture::ConvertToLinearFormat(format),
+                                .Format = FTexture::ConvertToLinearFormat(TextureCreationDesc.Format),
                                 .ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D,
                                 .Texture2D = {.MipSlice = i, .PlaneSlice = 0u},
                             },

@@ -1,1 +1,268 @@
 #include "Scene/FBXLoader.h"
+#include "Core/FileSystem.h"
+#include "Graphics/Resource.h"
+#include "Graphics/Material.h"
+#include "Graphics/GraphicsDevice.h"
+#include <DirectXTex.h>
+
+FFBXLoader::FFBXLoader(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
+{
+    std::string FullPath = FFileSystem::GetAssetPath() + ModelCreationDesc.ModelPath.data();
+
+    if (FullPath.find_last_of("/") != std::string::npos)
+    {
+        ModelDir = FullPath.substr(0, FullPath.find_last_of("/")) + "/";
+    }
+
+    Assimp::Importer Importer;
+
+    const aiScene* scene = Importer.ReadFile(FullPath,
+        aiProcess_Triangulate |
+        aiProcess_GenNormals |
+        aiProcess_CalcTangentSpace |
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_ImproveCacheLocality |
+        aiProcess_ConvertToLeftHanded);
+
+    if (!scene || !scene->HasMeshes())
+    {
+        throw std::runtime_error("FBX load failed: " + std::string(Importer.GetErrorString()));
+    }
+    
+	LoadMaterials(GraphicsDevice, scene);
+	LoadMeshes(GraphicsDevice, scene);
+}
+
+D3D12_TEXTURE_ADDRESS_MODE FFBXLoader::ConvertTextureAddressMode(aiTextureMapMode mode) const
+{
+    switch (mode)
+    {
+        case aiTextureMapMode_Wrap:  return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        case aiTextureMapMode_Clamp: return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        case aiTextureMapMode_Mirror: return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+        default: return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    }
+}
+
+void FFBXLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const aiScene* Scene)
+{
+    auto LoadTexture = [&](aiMaterial* material, std::string& material_name, aiTextureType type, DXGI_FORMAT format, FTexture& outTexture, FSampler& outSampler)
+        {
+            if (material->GetTextureCount(type) > 0)
+            {
+                aiString texPath;
+                if (material->GetTexture(type, 0, &texPath) == AI_SUCCESS)
+                {
+                    FTextureCreationDesc TextureDesc{};
+                    TextureDesc.Name = StringToWString(std::string(material_name));
+                    TextureDesc.Path = StringToWString(ModelDir + std::string(texPath.C_Str()));
+                    TextureDesc.Usage = ETextureUsage::DDSTextureFromPath;
+                    TextureDesc.Format = format;
+                    TextureDesc.MipLevels = 6;
+
+                    outTexture = GraphicsDevice->CreateTexture(TextureDesc);
+                }
+                else
+                {
+                    return AI_FAILURE;
+                }
+
+                aiTextureMapMode wrapU = aiTextureMapMode_Wrap;
+                aiTextureMapMode wrapV = aiTextureMapMode_Wrap;
+
+                material->Get(AI_MATKEY_MAPPINGMODE_U(type, 0), wrapU);
+                material->Get(AI_MATKEY_MAPPINGMODE_V(type, 0), wrapV);
+
+                FSamplerCreationDesc Desc{};
+                Desc.SamplerDesc.Filter = D3D12_FILTER_MIN_LINEAR_MAG_MIP_POINT;
+                Desc.SamplerDesc.AddressU = ConvertTextureAddressMode(wrapU);
+                Desc.SamplerDesc.AddressV = ConvertTextureAddressMode(wrapV);
+                Desc.SamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+                Desc.SamplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+                Desc.SamplerDesc.MinLOD = 0.0f;
+                Desc.SamplerDesc.MipLODBias = 0.0f;
+                Desc.SamplerDesc.MaxAnisotropy = 16;
+                Desc.SamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+                outSampler = GraphicsDevice->CreateSampler(Desc);
+
+                return AI_SUCCESS;
+            }
+            else
+            {
+                return AI_FAILURE;
+            }
+        };
+
+	for (uint32_t materialIndex = 0; materialIndex < Scene->mNumMaterials; materialIndex++)
+	{
+		aiMaterial* material = Scene->mMaterials[materialIndex];
+
+		aiString name;
+		material->Get(AI_MATKEY_NAME, name);
+
+		std::shared_ptr<FPBRMaterial> PbrMaterial = std::make_shared<FPBRMaterial>();
+        PbrMaterial->Name = name.C_Str();
+
+		std::string AlbedoName = PbrMaterial->Name + " Albedo";
+		std::string NormalName = PbrMaterial->Name + " Normal";
+
+        auto Result = LoadTexture(material, AlbedoName, aiTextureType_BASE_COLOR, DXGI_FORMAT_UNKNOWN, PbrMaterial->AlbedoTexture, PbrMaterial->AlbedoSampler);
+        if (Result == AI_FAILURE)
+        {
+            LoadTexture(material, AlbedoName, aiTextureType_DIFFUSE, DXGI_FORMAT_UNKNOWN, PbrMaterial->AlbedoTexture, PbrMaterial->AlbedoSampler);
+        }
+        LoadTexture(material, NormalName, aiTextureType_NORMALS, DXGI_FORMAT_UNKNOWN, PbrMaterial->NormalTexture, PbrMaterial->NormalSampler);
+
+
+        PbrMaterial->MaterialBuffer = GraphicsDevice->CreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
+            .Usage = EBufferUsage::ConstantBuffer,
+            .Name = StringToWString(PbrMaterial->Name) + L"_MaterialBuffer",
+		});
+
+        aiColor4D baseColor(1.0f, 1.0f, 1.0f, 1.0f); 
+        if (material->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS)
+        {
+            PbrMaterial->MaterialBufferData = {
+				.albedoColor = XMFLOAT3 { baseColor.r, baseColor.g, baseColor.b },
+                .roughnessFactor = 1.0f,
+                .metallicFactor = 1.0f,
+                .emissiveFactor = 0.0f,
+            };
+        }
+
+        PbrMaterial->MaterialBuffer.Update(&PbrMaterial->MaterialBufferData);
+        PbrMaterial->MaterialIndex = materialIndex;
+
+		Materials.push_back(PbrMaterial);
+	}
+}
+
+void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const aiScene* Scene)
+{
+	for (uint32_t meshIndex = 0; meshIndex < Scene->mNumMeshes; meshIndex++)
+	{
+		aiMesh* mesh = Scene->mMeshes[meshIndex];
+        std::string sMeshName = mesh->mName.C_Str();
+        std::wstring MeshName = StringToWString(sMeshName);
+
+        std::wcout << MeshName << std::endl;
+        std::cout << " : " << mesh->mNumVertices << std::endl;
+
+		FMesh ResultMesh{};
+        ResultMesh.MeshVertices = std::vector<interlop::MeshVertex>(mesh->mNumVertices);
+
+        std::vector<XMFLOAT3> Positions{};
+        std::vector<XMFLOAT2> TextureCoords{};
+        std::vector<XMFLOAT3> Normals{};
+        std::vector<XMFLOAT3> Tangents{};
+
+        Positions.reserve(mesh->mNumVertices);
+        TextureCoords.reserve(mesh->mNumVertices);
+        Normals.reserve(mesh->mNumVertices);
+        Tangents.reserve(mesh->mNumVertices);
+
+        if (mesh->HasPositions())
+        {
+			for (int v = 0; v < mesh->mNumVertices; ++v)
+			{
+				aiVector3D pos = mesh->mVertices[v];
+				const XMFLOAT3 XMPosition = { pos.x, pos.y, pos.z };
+
+				Positions.push_back(XMPosition);
+                ResultMesh.MeshVertices[v].position = XMPosition;
+			}
+        }
+
+        if (mesh->HasNormals())
+        {
+			for (int v = 0; v < mesh->mNumVertices; ++v)
+			{
+				aiVector3D normal = mesh->mNormals[v];
+				const XMFLOAT3 XMNormal = { normal.x, normal.y, normal.z };
+
+				Normals.push_back(XMNormal);
+                ResultMesh.MeshVertices[v].normal = XMNormal;
+			}
+        }
+
+        if (mesh->HasTangentsAndBitangents())
+        {
+			for (int v = 0; v < mesh->mNumVertices; ++v)
+			{
+				aiVector3D tangent = mesh->mTangents[v];
+				const XMFLOAT3 XMTangent = { tangent.x, tangent.y, tangent.z };
+				Tangents.push_back(XMTangent);
+
+				aiVector3D bitangent = mesh->mBitangents[v];
+				const XMFLOAT3 XMBitangent = { bitangent.x, bitangent.y, bitangent.z };
+				//Bitangents.push_back(XMBitangent);
+
+                ResultMesh.MeshVertices[v].tangent = XMTangent;
+                ResultMesh.MeshVertices[v].bitangent = XMBitangent;
+			}
+        }
+
+        if (mesh->HasTextureCoords(0))
+        {
+            for (int v = 0; v < mesh->mNumVertices; ++v)
+            {
+                aiVector3D texCoord = mesh->mTextureCoords[0][v];
+                const XMFLOAT2 texCoord2D = { texCoord.x, texCoord.y };
+                TextureCoords.push_back(texCoord2D);
+            }
+        }
+
+        // ¿Œµ¶Ω∫ √≥∏Æ
+        for (unsigned int f = 0; f < mesh->mNumFaces; ++f)
+        {
+            const aiFace& face = mesh->mFaces[f];
+            for (unsigned int i = 0; i < face.mNumIndices; ++i)
+            {
+				ResultMesh.Indice.push_back(static_cast<uint16_t>(face.mIndices[i]));
+            }
+        }
+
+        ResultMesh.IndicesCount = static_cast<uint32_t>(ResultMesh.Indice.size());
+
+        ResultMesh.PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+            FBufferCreationDesc{
+                .Usage = EBufferUsage::StructuredBuffer,
+                .Name = MeshName + L" position buffer",
+            },
+            Positions);
+
+        ResultMesh.TextureCoordsBuffer = GraphicsDevice->CreateBuffer<XMFLOAT2>(
+            FBufferCreationDesc{
+                .Usage = EBufferUsage::StructuredBuffer,
+                .Name = MeshName + L" texture coord buffer",
+            },
+            TextureCoords);
+
+        ResultMesh.NormalBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+            FBufferCreationDesc{
+                .Usage = EBufferUsage::StructuredBuffer,
+                .Name = MeshName + L" normal buffer",
+            },
+            Normals);
+
+        ResultMesh.TangentBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>( // Add tangent buffer creation
+            FBufferCreationDesc{
+                .Usage = EBufferUsage::StructuredBuffer,
+                .Name = MeshName + L" tangent buffer",
+            },
+            Tangents);
+
+        ResultMesh.IndexBuffer = GraphicsDevice->CreateBuffer<uint16_t>(
+            FBufferCreationDesc{
+                .Usage = EBufferUsage::StructuredBuffer,
+                .Name = MeshName + L" index buffer",
+            },
+            ResultMesh.Indice);
+
+        ResultMesh.Material = Materials[mesh->mMaterialIndex];
+        ResultMesh.ModelMatrix = Dx::XMMatrixIdentity();
+        ResultMesh.InverseModelMatrix = Dx::XMMatrixIdentity();
+
+        Meshes.push_back(std::move(ResultMesh));
+    }
+}

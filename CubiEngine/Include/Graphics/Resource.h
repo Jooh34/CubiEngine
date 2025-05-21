@@ -86,8 +86,9 @@ enum class ETextureUsage
     TextureFromPath,
     TextureFromData,
     HDRTextureFromPath,
+    DDSTextureFromPath,
     CubeMap,
-    UAVTexture
+    UAVTexture,
 };
 
 enum class EAlphaMode
@@ -106,7 +107,6 @@ struct FTextureCreationDesc
     D3D12_RESOURCE_STATES InitialState { D3D12_RESOURCE_STATE_COMMON };
     uint32_t MipLevels{ 1u };
     uint32_t DepthOrArraySize{ 1u };
-    uint32_t BytesPerPixel{ 4u };
     std::wstring Name{};
     std::wstring Path{};
 };
@@ -131,10 +131,14 @@ struct FTexture
 
     std::wstring DebugName{};
 
-    static DXGI_FORMAT ConvertToLinearFormat(const DXGI_FORMAT Format);
     bool IsPowerOfTwo();
-    static bool IsSRGB(DXGI_FORMAT Format);
     bool IsDepthFormat();
+
+    static DXGI_FORMAT ConvertToLinearFormat(const DXGI_FORMAT Format);
+    static bool IsSRGB(DXGI_FORMAT Format);
+    static bool IsCompressedFormat(DXGI_FORMAT Format);
+	static uint32_t GetBytesPerPixel(DXGI_FORMAT Format);
+    static bool IsUAVAllowed(ETextureUsage Usage, DXGI_FORMAT Format);
 };
 
 struct FIntRect

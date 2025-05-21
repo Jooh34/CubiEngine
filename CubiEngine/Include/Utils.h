@@ -62,3 +62,12 @@ inline std::string wStringToString(const std::wstring_view inputWString)
 
     return std::move(result);
 }
+
+inline std::string_view GetExtension(std::string_view path)
+{
+    size_t lastDot = path.find_last_of('.');
+    if (lastDot == std::string_view::npos)
+        return {};
+
+    return path.substr(lastDot + 1);
+}

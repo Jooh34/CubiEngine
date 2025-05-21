@@ -39,7 +39,20 @@ FetchContent_Declare(
     GIT_TAG        544969b7324cd6bba29f6203c7d78c7ea92dbab0
 )
 
-FetchContent_MakeAvailable(tinygltf stb D3D12MemoryAllocator)
+FetchContent_Declare(
+    assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG        v5.4.3
+)
+
+FetchContent_Declare(
+    DirectXTex
+    GIT_REPOSITORY https://github.com/microsoft/DirectXTex.git
+    GIT_TAG        oct2024
+)
+
+FetchContent_MakeAvailable(tinygltf stb D3D12MemoryAllocator assimp DirectXTex)
+
 
 add_library(libimgui
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -60,5 +73,6 @@ target_include_directories(libimgui PUBLIC
 target_link_libraries(libimgui PUBLIC SDL2::SDL2main SDL2::SDL2-static)
 
 add_library(External INTERFACE)
-target_link_libraries(External INTERFACE D3D12MemoryAllocator tinygltf libimgui SDL2::SDL2main SDL2::SDL2test)
-target_include_directories(External INTERFACE ${sdl2_SOURCE_DIR}/include ${D3D12MemoryAllocator_SOURCE_DIR}/include ${stb_SOURCE_DIR} ${tinygltf_SOURCE_DIR})
+target_link_libraries(External INTERFACE D3D12MemoryAllocator tinygltf assimp DirectXTex libimgui SDL2::SDL2main SDL2::SDL2test)
+target_include_directories(External INTERFACE ${sdl2_SOURCE_DIR}/include ${D3D12MemoryAllocator_SOURCE_DIR}/include ${stb_SOURCE_DIR} ${tinygltf_SOURCE_DIR}
+    ${assimp_SOURCE_DIR}/include, ${DirectXTex_SOURCE_DIR}/include ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/include)

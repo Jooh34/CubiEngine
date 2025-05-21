@@ -9,7 +9,7 @@ public:
 
     FAllocation CreateBufferResourceAllocation(const FBufferCreationDesc& BufferCreationDesc,
         const FResourceCreationDesc& ResourceCreationDesc);
-    FAllocation CreateTextureResourceAllocation(const FTextureCreationDesc& TextureCreationDesc, D3D12_RESOURCE_STATES& ResourceState);
+    FAllocation CreateTextureResourceAllocation(const FTextureCreationDesc& TextureCreationDesc, D3D12_RESOURCE_STATES& ResourceState, bool bUAVAllowed);
 
 private:
     wrl::ComPtr<D3D12MA::Allocator> DmaAllocator{};

@@ -10,7 +10,6 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
         .Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
         .MipLevels = MipCount,
         .DepthOrArraySize = 1u,
-        .BytesPerPixel = 16u,
         .Name = Desc.Name,
         .Path = Desc.EquirectangularTexturePath,
     });

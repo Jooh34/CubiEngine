@@ -69,7 +69,7 @@ FAllocation FMemoryAllocator::CreateBufferResourceAllocation(const FBufferCreati
     return Allocation;
 }
 
-FAllocation FMemoryAllocator::CreateTextureResourceAllocation(const FTextureCreationDesc& TextureCreationDesc, D3D12_RESOURCE_STATES& ResourceState)
+FAllocation FMemoryAllocator::CreateTextureResourceAllocation(const FTextureCreationDesc& TextureCreationDesc, D3D12_RESOURCE_STATES& ResourceState, bool bUAVAllowed)
 {
     ResourceState = D3D12_RESOURCE_STATE_COMMON;
 
@@ -114,6 +114,11 @@ FAllocation FMemoryAllocator::CreateTextureResourceAllocation(const FTextureCrea
         .HeapType = heapType,
     };
 
+    if (bUAVAllowed)
+    {
+		ResourceCreationDesc.ResourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
+
     switch (TextureCreationDesc.Usage)
     {
     case ETextureUsage::DepthStencil: {
@@ -130,15 +135,6 @@ FAllocation FMemoryAllocator::CreateTextureResourceAllocation(const FTextureCrea
         AllocationDesc.ExtraHeapFlags = D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES;
         AllocationDesc.Flags |= D3D12MA::ALLOCATION_FLAG_COMMITTED;
         ResourceState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    }
-    break;
-
-    case ETextureUsage::TextureFromPath:
-    case ETextureUsage::TextureFromData:
-    case ETextureUsage::HDRTextureFromPath:
-    case ETextureUsage::CubeMap:
-    case ETextureUsage::UAVTexture: {
-        ResourceCreationDesc.ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
     break;
     };

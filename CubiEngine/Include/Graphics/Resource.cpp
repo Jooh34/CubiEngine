@@ -104,3 +104,58 @@ bool FTexture::IsDepthFormat()
 
     return false;
 }
+
+bool FTexture::IsCompressedFormat(DXGI_FORMAT Format)
+{
+    if (Format == DXGI_FORMAT_BC1_UNORM
+        || Format == DXGI_FORMAT_BC1_UNORM_SRGB
+		|| Format == DXGI_FORMAT_BC2_UNORM
+		|| Format == DXGI_FORMAT_BC3_UNORM
+		|| Format == DXGI_FORMAT_BC5_UNORM
+	)
+    {
+        return true;
+    }
+
+	return false;
+}
+
+uint32_t FTexture::GetBytesPerPixel(DXGI_FORMAT Format)
+{
+    if (Format == DXGI_FORMAT_R32G32B32A32_FLOAT)
+	{
+		return 16u;
+	}
+	else if (Format == DXGI_FORMAT_R32G32B32_FLOAT)
+	{
+		return 12u;
+	}
+	else if (Format == DXGI_FORMAT_R16G16B16A16_FLOAT)
+	{
+		return 8u;
+	}
+	else
+	{
+		return 4u;
+	}
+}
+
+bool FTexture::IsUAVAllowed(ETextureUsage Usage, DXGI_FORMAT Format)
+{
+    if (Usage == ETextureUsage::UAVTexture
+        || Usage == ETextureUsage::TextureFromPath
+        || Usage == ETextureUsage::TextureFromData
+        || Usage == ETextureUsage::HDRTextureFromPath
+        || Usage == ETextureUsage::CubeMap
+        // for mipmap generation
+        || Usage == ETextureUsage::RenderTarget
+    )
+    {
+        if (IsCompressedFormat(Format)) return false;
+        else return true;
+    }
+    else
+	{
+		return false;
+	}
+}
