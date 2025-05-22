@@ -80,6 +80,7 @@ constexpr uint32_t InitialHeight = 900;
 
 constexpr uint32_t GCubeMapTextureDimension = 1024u;
 constexpr uint32_t GPreFilteredCubeMapTextureDimension = 1024u;
+constexpr uint32_t GIrradianceCubeMapTextureDimension = 128u;
 constexpr uint32_t GBRDFLutTextureDimension = 32u;
 
 inline uint32_t GFrameCount = 0;

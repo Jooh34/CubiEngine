@@ -49,6 +49,11 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .ModelName = L"MetalRoughSpheres",
         };
 
+        // use envmap
+        GIMethod = 0;
+        bUseEnvmap = true;
+		EnvmapIntensity = 1.f;
+
         // Directional Light
         float LightPosition[4] = { -0.5, -1, -0.4, 0 };
         float LightColor[4] = { 1,1,1,1 };
@@ -80,6 +85,11 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
             .ModelName = L"FlightHelmet",
         };
 
+        // use envmap
+        GIMethod = 0;
+        bUseEnvmap = true;
+        EnvmapIntensity = 1.f;
+
         // Directional Light
         float LightPosition[4] = { -0.5, -1, -0.4, 0 };
         float LightColor[4] = { 1,1,1,1 };
@@ -102,12 +112,16 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         // use envmap
         GIMethod = 0;
         bUseEnvmap = true;
+        EnvmapIntensity = 0.05f;
 
         // set environment map
         EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
             .EquirectangularTexturePath = L"Assets/Models/Bistro/Bistro_v5_2/san_giuseppe_bridge_4k.hdr",
             .Name = L"Bistro Environment Map"
 		});
+
+        // Camera
+		GetCamera().FarZ = 10000.f;
     }
 
     AddModel(Desc);

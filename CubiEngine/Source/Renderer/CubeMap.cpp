@@ -192,8 +192,8 @@ void FCubeMap::GenerateIrradianceMap(const FCubeMapCreationDesc& Desc)
 
     IrradianceCubemapTexture = Device->CreateTexture(FTextureCreationDesc{
         .Usage = ETextureUsage::CubeMap,
-        .Width = GCubeMapTextureDimension,
-        .Height = GCubeMapTextureDimension,
+        .Width = GIrradianceCubeMapTextureDimension,
+        .Height = GIrradianceCubeMapTextureDimension,
         .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
         .MipLevels = 1u,
         .DepthOrArraySize = 6u,
@@ -210,12 +210,12 @@ void FCubeMap::GenerateIrradianceMap(const FCubeMapCreationDesc& Desc)
     const interlop::GeneratePrefilteredCubemapResource RenderResources = {
        .srcMipSrvIndex = CubeMapTexture.SrvIndex,
        .dstMipUavIndex = IrradianceCubemapTexture.UavIndex,
-       .texelSize = {1.0f / GCubeMapTextureDimension, 1.0f / GCubeMapTextureDimension},
+       .texelSize = {1.0f / IrradianceCubemapTexture.Width, 1.0f / IrradianceCubemapTexture.Height},
     };
 
     ComputeContext->Set32BitComputeConstants(&RenderResources);
 
-    const uint32_t numGroups = max(1u, GCubeMapTextureDimension / 8u);
+    const uint32_t numGroups = max(1u, GIrradianceCubeMapTextureDimension / 8u);
     ComputeContext->Dispatch(numGroups, numGroups, 6u);
 
     ComputeContext->AddResourceBarrier(IrradianceCubemapTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);

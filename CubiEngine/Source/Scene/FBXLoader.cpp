@@ -234,7 +234,12 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
             const aiFace& face = mesh->mFaces[f];
             for (unsigned int i = 0; i < face.mNumIndices; ++i)
             {
-				ResultMesh.Indice.push_back(static_cast<uint16_t>(face.mIndices[i]));
+                unsigned int face_index = face.mIndices[i];
+     //           if (face_index > 65535)
+     //           {
+					//FatalError("uint16_t index overflow! (FBXLoader.cpp:LoadMeshes)"); // 65535 is the max value for uint16_t
+     //           }
+                ResultMesh.Indice.push_back(static_cast<uint16_t>(face_index));
             }
         }
 

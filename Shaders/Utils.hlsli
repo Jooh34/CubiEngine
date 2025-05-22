@@ -437,3 +437,32 @@ float2 UVToClip(float2 UV)
 inline float pow2(float x) {
     return pow(x, 2.0);
 }
+
+// #define TWO_PI 6.2831853071795864769252867665590
+// #define HALF_PI 1.5707963267948966192313216916398
+
+// float3 GetIrradiance(float3 N, in TextureCube<float4> EnvMap)
+// {
+//     const float imgSize = 64.0;
+    
+//     float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
+//     const float3 right = normalize(cross(up, N));
+//     up = cross(N, right);
+
+//     float3 color = float3(0.0f, 0.0f, 0.0f);
+//     uint sampleCount = 0u;
+//     float deltaPhi = TWO_PI / 360.0;
+//     float deltaTheta = HALF_PI / 90.0;
+
+//     for (float phi = 0.0; phi < TWO_PI; phi += deltaPhi) {
+//         for (float theta = 0.0; theta < HALF_PI; theta += deltaTheta) {
+//             // Spherical to World Space in two steps...
+//             float3 tempVec = cos(phi) * right + sin(phi) * up;
+//             float3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
+//             color += EnvMap.SampleLevel(linearClampSampler, sampleVector, 0).rgb * cos(theta) * sin(theta);
+//             sampleCount++;
+//         }
+//     }
+
+//     return PI * color / float(sampleCount); // (c_diff/PI) * (2*PI)
+// }

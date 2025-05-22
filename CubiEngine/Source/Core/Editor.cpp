@@ -164,7 +164,7 @@ void FEditor::RenderCameraProperties(FScene* Scene)
     {
         ImGui::InputFloat3("Camera Position", &Scene->GetCamera().GetCameraPosition().x);
         ImGui::SliderFloat("Fov", &Scene->GetCamera().FovY, 30.0f, 120.0f);
-        ImGui::SliderFloat("Far Clip Distance", &Scene->GetCamera().FarZ, 10.0f, 5000.0f);
+        ImGui::SliderFloat("Far Clip Distance", &Scene->GetCamera().FarZ, 1000.0f, 10000.0f);
         ImGui::TreePop();
     }
 
