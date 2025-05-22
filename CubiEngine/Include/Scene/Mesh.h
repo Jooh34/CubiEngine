@@ -40,7 +40,7 @@ public:
 
     // Raytracing Buffers
     std::vector<interlop::MeshVertex> MeshVertices{};
-    std::vector<uint16_t> Indice{};
+    std::vector<UINT> Indice{};
 
 private:
     std::shared_ptr<FRaytracingGeometry> RaytracingGeometry;

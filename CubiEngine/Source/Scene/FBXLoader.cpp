@@ -235,11 +235,7 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
             for (unsigned int i = 0; i < face.mNumIndices; ++i)
             {
                 unsigned int face_index = face.mIndices[i];
-     //           if (face_index > 65535)
-     //           {
-					//FatalError("uint16_t index overflow! (FBXLoader.cpp:LoadMeshes)"); // 65535 is the max value for uint16_t
-     //           }
-                ResultMesh.Indice.push_back(static_cast<uint16_t>(face_index));
+                ResultMesh.Indice.push_back(static_cast<UINT>(face_index));
             }
         }
 
@@ -273,7 +269,7 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
             },
             Tangents);
 
-        ResultMesh.IndexBuffer = GraphicsDevice->CreateBuffer<uint16_t>(
+        ResultMesh.IndexBuffer = GraphicsDevice->CreateBuffer<UINT>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" index buffer",

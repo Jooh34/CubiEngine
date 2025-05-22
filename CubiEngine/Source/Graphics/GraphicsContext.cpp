@@ -149,7 +149,7 @@ void FGraphicsContext::SetIndexBuffer(const FBuffer& Buffer) const
     const D3D12_INDEX_BUFFER_VIEW indexBufferView = {
         .BufferLocation = Buffer.Allocation.Resource->GetGPUVirtualAddress(),
         .SizeInBytes = static_cast<UINT>(Buffer.SizeInBytes),
-        .Format = DXGI_FORMAT_R16_UINT,
+        .Format = DXGI_FORMAT_R32_UINT,
     };
 
     CommandList->IASetIndexBuffer(&indexBufferView);

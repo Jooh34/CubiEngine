@@ -437,9 +437,9 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
 
         for (size_t i = 0; i < Mesh.Indice.size(); i += 3)
         {
-            uint16_t index0 = Mesh.Indice[i];
-            uint16_t index1 = Mesh.Indice[i + 1];
-            uint16_t index2 = Mesh.Indice[i + 2];
+            UINT index0 = Mesh.Indice[i];
+            UINT index1 = Mesh.Indice[i + 1];
+            UINT index2 = Mesh.Indice[i + 2];
 
             const XMFLOAT3& pos0 = Positions[index0];
             const XMFLOAT3& pos1 = Positions[index1];
@@ -536,7 +536,7 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
             },
             Tangents);
 
-        Mesh.IndexBuffer = GraphicsDevice->CreateBuffer<uint16_t>(
+        Mesh.IndexBuffer = GraphicsDevice->CreateBuffer<UINT>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" index buffer",
