@@ -370,7 +370,7 @@ namespace interlop
         uint idxBufferIdx;
         uint sceneBufferIndex;
         uint lightBufferIndex;
-        float padding;
+        uint envmapTextureIndex;
     };
 
     struct RaytracingShadowRenderResource

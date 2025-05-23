@@ -34,7 +34,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         });
     }
 
-    ESceneType Scene = ESceneType::Suzanne;
+    ESceneType Scene = ESceneType::Sponza;
     FSceneLoader::LoadScene(Scene, this, Device);
 
     WhiteFurnaceMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{

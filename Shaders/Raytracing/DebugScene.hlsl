@@ -178,6 +178,10 @@ void ClosestHit(inout FPayload payload, in Attributes attr)
 [shader("miss")]
 void Miss(inout FPayload payload : SV_RayPayload)
 {
-    payload.radiance = float3(0.2f, 0.2f, 0.8f);
+    TextureCube<float4> EnvMapTexture = ResourceDescriptorHeap[renderResources.envmapTextureIndex];
+    float3 rayDir = WorldRayDirection();
+    float3 envRadiance = EnvMapTexture.SampleLevel(MeshSampler, rayDir, 0).rgb;
+
+    payload.radiance = envRadiance;
     payload.distance = -1;
 }

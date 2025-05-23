@@ -267,8 +267,7 @@ void BLASGenerator::AddVertexBuffer(ID3D12Resource* vertexBuffer,
     descriptor.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
     descriptor.Triangles.IndexBuffer =
         indexBuffer ? (indexBuffer->GetGPUVirtualAddress() + indexOffsetInBytes) : 0;
-    //descriptor.Triangles.IndexFormat = indexBuffer ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN;
-    descriptor.Triangles.IndexFormat = indexBuffer ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_UNKNOWN;
+    descriptor.Triangles.IndexFormat = indexBuffer ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN;
     descriptor.Triangles.IndexCount = indexCount;
     descriptor.Triangles.Transform3x4 =
         transformBuffer ? (transformBuffer->GetGPUVirtualAddress() + transformOffsetInBytes) : 0;
