@@ -2,6 +2,7 @@
 #include "Graphics/GraphicsDevice.h"
 #include "Scene/GLTFModelLoader.h"
 #include "Scene/FBXLoader.h"
+#include "Scene/SceneLoader.h"
 #include <thread>
 
 FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
@@ -33,98 +34,8 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         });
     }
 
-    int Scene = 3;
-    FModelCreationDesc Desc;
-
-    // set environment map
-    EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
-        .EquirectangularTexturePath = L"Assets/Textures/pisa.hdr",
-        .Name = L"Environment Map"
-	});
-
-    if (Scene == 0)
-    {
-        Desc = {
-            .ModelPath = "Models/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf",
-            .ModelName = L"MetalRoughSpheres",
-        };
-
-        // use envmap
-        GIMethod = 0;
-        bUseEnvmap = true;
-		EnvmapIntensity = 1.f;
-
-        // Directional Light
-        float LightPosition[4] = { -0.5, -1, -0.4, 0 };
-        float LightColor[4] = { 1,1,1,1 };
-        float Intensity = 5.f;
-        AddLight(LightPosition, LightColor);
-    }
-    else if (Scene == 1)
-    {
-        Desc = {
-            .ModelPath = "Models/Sponza/sponza.glb",
-            .ModelName = L"Sponza",
-        };
-
-        // Directional Light
-        float LightPosition[4] = { -0.5, -1, -0.4, 0 };
-        float LightColor[4] = { 1,1,1,1 };
-        float Intensity = 5.f;
-        AddLight(LightPosition, LightColor);
-
-        // Point Light
-        float PointLightPosition[4] = { 0.f,100.f,0.f,1.f };
-        float PointLightColor[4] = { 1,1,1,1 };
-        AddLight(PointLightPosition, PointLightColor, 1.f);
-    }
-    else if (Scene == 2)
-    {
-        Desc = {
-            .ModelPath = "Models/FlightHelmet/glTF/FlightHelmet.gltf",
-            .ModelName = L"FlightHelmet",
-        };
-
-        // use envmap
-        GIMethod = 0;
-        bUseEnvmap = true;
-        EnvmapIntensity = 1.f;
-
-        // Directional Light
-        float LightPosition[4] = { -0.5, -1, -0.4, 0 };
-        float LightColor[4] = { 1,1,1,1 };
-        float Intensity = 5.f;
-        AddLight(LightPosition, LightColor);
-    }
-    else if (Scene == 3)
-    {
-        Desc = {
-            .ModelPath = "Models/Bistro/Bistro_v5_2/BistroExterior.fbx",
-            .ModelName = L"Bistro Exterior",
-        };
-
-        // Directional Light
-        float LightPosition[4] = { 0.5, -0.5, 0.5, 0 };
-        float LightColor[4] = { 1,1,1,1 };
-        float Intensity = 5.f;
-        AddLight(LightPosition, LightColor);
-
-        // use envmap
-        GIMethod = 0;
-        bUseEnvmap = true;
-        EnvmapIntensity = 0.05f;
-
-        // set environment map
-        EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
-            .EquirectangularTexturePath = L"Assets/Models/Bistro/Bistro_v5_2/san_giuseppe_bridge_4k.hdr",
-            .Name = L"Bistro Environment Map"
-		});
-
-        // Camera
-		GetCamera().FarZ = 10000.f;
-    }
-
-    AddModel(Desc);
+    ESceneType Scene = ESceneType::Suzanne;
+    FSceneLoader::LoadScene(Scene, this, Device);
 
     WhiteFurnaceMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
         .EquirectangularTexturePath = L"Assets/Textures/WhiteFurnace.hdr",
@@ -238,7 +149,12 @@ void FScene::UpdateBuffers()
     const interlop::DebugBuffer DebugBufferData = {
         .bUseTaa = bUseTaa ? 1u : 0u,
         .ShadowMethod = (uint32_t)ShadowMethod,
+		.overrideRoughnessValue = OverrideRoughnessValue,
+		.overrideMetallicValue = OverrideMetallicValue,
+		.bOverrideBaseColor = bOverrideBaseColor ? 1u : 0u,
+		.overrideBaseColorValue = { OverrideBaseColorValue[0], OverrideBaseColorValue[1], OverrideBaseColorValue[2] },
     };
+
     GetDebugBuffer().Update(&DebugBufferData);
 }
 

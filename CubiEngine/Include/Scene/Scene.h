@@ -66,6 +66,11 @@ public:
     int MaxFPS = 60;
 
     bool bDebugRaytracingScene = false;
+
+    bool bOverrideBaseColor = false;
+    float OverrideBaseColorValue[3] = { 1.f, 1.f, 1.f };
+    float OverrideRoughnessValue = -1.f;
+    float OverrideMetallicValue = -1.f;
     
     // Light
     bool bLightDanceDebug = false;
@@ -117,6 +122,8 @@ public:
     float HistogramLogMax = 4.f;
     float TimeCoeff = 0.5f;
 
+    std::unique_ptr<FCubeMap> EnviromentMap{};
+
 private:
     uint32_t Width;
     uint32_t Height;
@@ -131,7 +138,6 @@ private:
     std::array<FBuffer, FRAMES_IN_FLIGHT> LightBuffer;
     std::array<FBuffer, FRAMES_IN_FLIGHT> ShadowBuffer;
     std::array<FBuffer, FRAMES_IN_FLIGHT> DebugBuffer;
-    std::unique_ptr<FCubeMap> EnviromentMap{};
     std::unique_ptr<FCubeMap> WhiteFurnaceMap{};
 
     std::chrono::high_resolution_clock::time_point PrevTime;

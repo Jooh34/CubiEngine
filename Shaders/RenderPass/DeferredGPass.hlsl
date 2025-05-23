@@ -61,6 +61,7 @@ struct PsOutput
 PsOutput PsMain(VSOutput psInput) 
 {
     ConstantBuffer<interlop::MaterialBuffer> materialBuffer = ResourceDescriptorHeap[renderResources.materialBufferIndex];
+    ConstantBuffer<interlop::DebugBuffer> debugBuffer = ResourceDescriptorHeap[renderResources.debugBufferIndex];
 
     float4 albedoEmissive = getAlbedo(psInput.textureCoord, renderResources.albedoTextureIndex, renderResources.albedoTextureSamplerIndex, materialBuffer.albedoColor);
     if (albedoEmissive.a < 0.9f)
@@ -86,6 +87,20 @@ PsOutput PsMain(VSOutput psInput)
     {
         ao = getAO(psInput.textureCoord, renderResources.aoTextureIndex, renderResources.aoTextureSamplerIndex).x;
         metalRoughness = getMetalRoughness(psInput.textureCoord, renderResources.metalRoughnessTextureIndex, renderResources.metalRoughnessTextureSamplerIndex) * float2(materialBuffer.metallicFactor, materialBuffer.roughnessFactor).xy;
+    }
+
+    if (debugBuffer.bOverrideBaseColor)
+    {
+        albedo = debugBuffer.overrideBaseColorValue;
+    }
+    if (debugBuffer.overrideRoughnessValue >= 0)
+    {
+        metalRoughness.y = debugBuffer.overrideRoughnessValue;
+    }
+    
+    if (debugBuffer.overrideMetallicValue >= 0)
+    {
+        metalRoughness.x = debugBuffer.overrideMetallicValue;
     }
 
     PsOutput output;

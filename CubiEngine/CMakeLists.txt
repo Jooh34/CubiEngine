@@ -35,7 +35,8 @@ set(SRC_FILES
     "Include/Scene/GLTFModelLoader.h"
     "Source/Scene/FBXLoader.cpp"
     "Include/Scene/FBXLoader.h"
-
+    "Source/Scene/SceneLoader.cpp"
+    "Include/Scene/SceneLoader.h"
 
     "Include/Graphics/d3dx12.h"
     "Include/Graphics/Material.h"
