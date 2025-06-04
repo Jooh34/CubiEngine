@@ -93,15 +93,26 @@ void ClosestHit(inout FPayload payload, in Attributes attr)
 {
     float3 color = float3(0.0f, 0.0f, 0.0f);
 
-    const interlop::MeshVertex hitSurface = GetHitSurface(attr, renderResources, InstanceID());
-    const interlop::FRaytracingMaterial material = GetGeometryMaterial(renderResources, InstanceID());
+    BufferIndexContext context = {
+        renderResources.geometryInfoBufferIdx,
+        renderResources.vtxBufferIdx,
+        renderResources.idxBufferIdx,
+        renderResources.materialBufferIdx
+    };
+    
+    ConstantBuffer<interlop::LightBuffer> lightBuffer = ResourceDescriptorHeap[renderResources.lightBufferIndex];
+    ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
+
+    const interlop::MeshVertex hitSurface = GetHitSurface(attr, context, InstanceID());
+    const interlop::FRaytracingMaterial material = GetGeometryMaterial(context, InstanceID());
 
     float2 textureCoords = hitSurface.texcoord;
     float4 albedoEmissive = getAlbedoSample(textureCoords, material.albedoTextureIndex, MeshSampler, material.albedoColor);
     float3 albedo = albedoEmissive.xyz;
     
-    float3x3 tangentToWorld = float3x3(hitSurface.tangent, hitSurface.bitangent, hitSurface.normal);
-    float3 N = getNormalSample(textureCoords, material.normalTextureIndex, MeshSampler, float3(0,0,1), tangentToWorld).xyz;
+    float3x3 tbnMatrix = float3x3(hitSurface.tangent, hitSurface.bitangent, hitSurface.normal);
+    float3 N = getNormalSample(textureCoords, material.normalTextureIndex, MeshSampler, float3(0,0,1), tbnMatrix).xyz;
+    N = mul(N, (float3x3)sceneBuffer.viewMatrix);
 
     Texture2D<float4> metalRoughnessTexture = ResourceDescriptorHeap[material.metalRoughnessTextureIndex];
     float2 metalRoughness = metalRoughnessTexture.SampleLevel(MeshSampler, textureCoords, 0.f).bg;
@@ -111,8 +122,6 @@ void ClosestHit(inout FPayload payload, in Attributes attr)
 
     const float3 positionWS = hitSurface.position;
 
-    ConstantBuffer<interlop::LightBuffer> lightBuffer = ResourceDescriptorHeap[renderResources.lightBufferIndex];
-    ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
 
     {
         // Directional Light

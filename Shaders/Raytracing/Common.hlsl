@@ -19,6 +19,13 @@ struct FShadowPayload
     float visibility;
 };
 
+struct FPathTracePayload
+{
+    float3 radiance;
+    float distance;
+    uint depth;
+};
+
 enum RayTypes {
     RayTypeRadiance = 0,
     RayTypeShadow = 1,
@@ -33,6 +40,13 @@ struct Attributes
   float2 barycentrics : SV_Barycentrics;
 };
 
+struct BufferIndexContext
+{
+    uint geometryInfoBufferIdx;
+    uint vtxBufferIdx;
+    uint idxBufferIdx;
+    uint materialBufferIdx;
+};
 
 float BarycentricLerp(in float v0, in float v1, in float v2, in float3 barycentrics)
 {
@@ -67,15 +81,15 @@ interlop::MeshVertex BarycentricLerp(in interlop::MeshVertex v0, in interlop::Me
 }
 
 // Loops up the vertex data for the hit triangle and interpolates its attributes
-interlop::MeshVertex GetHitSurface(in Attributes attr, in interlop::RTSceneDebugRenderResource renderResources, in uint geometryIdx)
+interlop::MeshVertex GetHitSurface(in Attributes attr, BufferIndexContext context, in uint geometryIdx)
 {
     float3 barycentrics = float3(1 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
 
-    StructuredBuffer<interlop::FRaytracingGeometryInfo> geoInfoBuffer = ResourceDescriptorHeap[renderResources.geometryInfoBufferIdx];
+    StructuredBuffer<interlop::FRaytracingGeometryInfo> geoInfoBuffer = ResourceDescriptorHeap[context.geometryInfoBufferIdx];
     const interlop::FRaytracingGeometryInfo geoInfo = geoInfoBuffer[geometryIdx];
 
-    StructuredBuffer<interlop::MeshVertex> vtxBuffer = ResourceDescriptorHeap[renderResources.vtxBufferIdx];
-    StructuredBuffer<uint> idxBuffer = ResourceDescriptorHeap[renderResources.idxBufferIdx];
+    StructuredBuffer<interlop::MeshVertex> vtxBuffer = ResourceDescriptorHeap[context.vtxBufferIdx];
+    StructuredBuffer<uint> idxBuffer = ResourceDescriptorHeap[context.idxBufferIdx];
 
     const uint primIdx = PrimitiveIndex();
     const uint idx0 = idxBuffer[primIdx * 3 + geoInfo.idxOffset + 0];
@@ -89,12 +103,12 @@ interlop::MeshVertex GetHitSurface(in Attributes attr, in interlop::RTSceneDebug
     return BarycentricLerp(vtx0, vtx1, vtx2, barycentrics);
 }
 
-interlop::FRaytracingMaterial GetGeometryMaterial(in interlop::RTSceneDebugRenderResource renderResources, in uint geometryIdx)
+interlop::FRaytracingMaterial GetGeometryMaterial(BufferIndexContext context, in uint geometryIdx)
 {
-    StructuredBuffer<interlop::FRaytracingGeometryInfo> geoInfoBuffer = ResourceDescriptorHeap[renderResources.geometryInfoBufferIdx];
+    StructuredBuffer<interlop::FRaytracingGeometryInfo> geoInfoBuffer = ResourceDescriptorHeap[context.geometryInfoBufferIdx];
     const interlop::FRaytracingGeometryInfo geoInfo = geoInfoBuffer[geometryIdx];
 
-    StructuredBuffer<interlop::FRaytracingMaterial> materialBuffer = ResourceDescriptorHeap[renderResources.materialBufferIdx];
+    StructuredBuffer<interlop::FRaytracingMaterial> materialBuffer = ResourceDescriptorHeap[context.materialBufferIdx];
     return materialBuffer[geoInfo.materialIdx];
 }
 
