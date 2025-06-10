@@ -113,12 +113,15 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     ImGui::Begin("Debug Properties");
     
     AddCombo("Debug Visualize", Scene->DebugVisualizeList, Scene->DebugVisualizeList.size(), Scene->DebugVisualizeIndex);
-    const char* wfItems[] = { "Off", "Sampling", "IBL", "Albedo only"};
     ImGui::SliderFloat("VisDebugMin", &Scene->VisualizeDebugMin, 0.f, 1.f);
     ImGui::SliderFloat("VisDebugMax", &Scene->VisualizeDebugMax, 0.f, 1.f);
 
+    const char* renderingModeItems[] = { "Rasterize", "Debug Raytracing", "PathTrace"};
+    AddCombo("Rendering Mode", renderingModeItems, IM_ARRAYSIZE(renderingModeItems), Scene->RenderingMode);
+
     ImGui::SliderInt("Max FPS", &Scene->MaxFPS, 30, 144);
 
+    const char* wfItems[] = { "Off", "Sampling", "IBL", "Albedo only"};
     AddCombo("White Furnace Method", wfItems, IM_ARRAYSIZE(wfItems), Scene->WhiteFurnaceMethod);
     /*if (ImGui::BeginCombo("White Furnace Method", wfItems[Scene->WhiteFurnaceMethod]))
     {
@@ -135,7 +138,6 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     }*/
 
     ImGui::Checkbox("Energy Compensation", &Scene->bUseEnergyCompensation);
-    ImGui::Checkbox("Debug RaytracingScene", &Scene->bDebugRaytracingScene);
 
     const char* diffuseItems[] = { "Lambertian", "Disney_Burley"};
     AddCombo("Diffuse Model", diffuseItems, IM_ARRAYSIZE(diffuseItems), Scene->DiffuseMethod);
@@ -218,7 +220,7 @@ void FEditor::RenderLightProperties(FScene* Scene)
 
     bool& bUseEnvmap = Scene->bUseEnvmap;
     ImGui::Checkbox("Use EnvMap", &bUseEnvmap);
-    ImGui::SliderFloat("Envmap Intensity", &Scene->EnvmapIntensity, 0.f, 1.f);
+    ImGui::SliderFloat("Envmap Intensity", &Scene->EnvmapIntensity, 0.f, 10.f);
 
     ImGui::Checkbox("Light Dance Debug", &Scene->bLightDanceDebug);
     ImGui::SliderFloat("Light Dance Speed", &Scene->bLightDanceSpeed, 0.1f, 10.0f);

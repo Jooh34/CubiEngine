@@ -79,7 +79,8 @@ void FScene::GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t H
     
     HandleMaxTickRate();
 
-    bool bApplyJitter = bUseTaa && !bDebugRaytracingScene;
+	bool bRasterizeMode = (RenderingMode == (int)ERenderingMode::Rasterize);
+    bool bApplyJitter = bUseTaa && bRasterizeMode;
 
     Camera.Update(DeltaTime, Input, Width, Height, bApplyJitter, CSMExponentialFactor);
 
@@ -134,6 +135,7 @@ void FScene::UpdateBuffers()
         .farZ = Camera.FarZ,
         .width = Width,
         .height = Height,
+		.cameraPosition = Camera.GetCameraPositionF3(),
         .frameCount = GFrameCount,
     };
 

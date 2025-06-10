@@ -24,6 +24,7 @@ struct FPathTracePayload
     float3 radiance;
     float distance;
     uint depth;
+    uint2 uv;
 };
 
 enum RayTypes {

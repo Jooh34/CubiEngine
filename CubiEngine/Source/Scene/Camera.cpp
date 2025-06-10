@@ -263,6 +263,22 @@ XMMATRIX FCamera::GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightDirect
     return LightViewProjectionMatrix;
 }
 
+bool FCamera::IsViewProjMatrixChanged(float Eps) const
+{
+	XMMATRIX A = GetViewProjMatrix();
+	XMMATRIX B = GetPrevViewProjMatrix();
+
+    XMVECTOR EpsVector = Dx::XMVectorReplicate(Eps);
+
+    for (int i = 0; i < 4; ++i)
+    {
+        if (!Dx::XMVector4NearEqual(A.r[i], B.r[i], EpsVector))
+            return true;
+    }
+
+    return false;
+}
+
 XMFLOAT4 FCamera::CreateInvDeviceZToWorldZTransform(const XMMATRIX& ProjMatrix)
 {
     float DepthMul = (float)XMVectorGetZ(ProjMatrix.r[2]); // [2][2]

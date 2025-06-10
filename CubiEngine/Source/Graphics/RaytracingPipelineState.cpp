@@ -41,9 +41,9 @@ FRaytracingPipelineState::FRaytracingPipelineState(ID3D12Device5* const device, 
     PipelineGenerator.AddHitGroup(L"ShadowHitGroup", L"ShadowClosestHit");
 
     // Todo:
-    PipelineGenerator.SetMaxPayloadSize(4 * sizeof(float)); // RGB + distance
+    PipelineGenerator.SetMaxPayloadSize(8 * sizeof(float)); // RGB + distance + path depth
     PipelineGenerator.SetMaxAttributeSize(2 * sizeof(float)); // barycentric coordinates
-    PipelineGenerator.SetMaxRecursionDepth(1);
+    PipelineGenerator.SetMaxRecursionDepth(10);
 
     PipelineGenerator.SetGlobalRootSignature(StaticGlobalRootSignature.Get());
 

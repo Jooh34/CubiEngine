@@ -6,16 +6,16 @@
 
 ConstantBuffer<interlop::TonemappingRenderResources> renderResources : register(b0);
 
-float4 Reinhard(float4 x) {
+float3 Reinhard(float3 x) {
     return x / (1.0 + x);
 }
 
-float4 ReinhardModifed(float4 x) {
+float3 ReinhardModifed(float3 x) {
     const float L_white = 4.0;
     return (x * (1.0 + x / (L_white * L_white))) / (1.0 + x);
 }
 
-float4 Tonemap_ACES(float4 x) {
+float3 Tonemap_ACES(float3 x) {
     // Narkowicz 2015, "ACES Filmic Tone Mapping Curve"
     const float a = 2.51;
     const float b = 0.03;
@@ -39,12 +39,12 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float2 invViewport = float2(1.f/(float)renderResources.width, 1.f/(float)renderResources.height);
     const float2 uv = (dispatchThreadID.xy + 0.5f) * invViewport;
     
-    float4 color = srcTexture.Sample(pointClampSampler, uv);
+    float3 color = srcTexture.Sample(pointClampSampler, uv).xyz;
     
     if (renderResources.bloomTextureIndex != INVALID_INDEX)
     {
         Texture2D<float4> bloomTexture = ResourceDescriptorHeap[renderResources.bloomTextureIndex];
-        color.xyz = color.xyz + bloomTexture.Sample(pointClampSampler, uv).xyz;
+        color = color + bloomTexture.Sample(pointClampSampler, uv).xyz;
     }
 
     if (renderResources.averageLuminanceBufferIndex != INVALID_INDEX)
@@ -77,5 +77,5 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         color = pow(color, gamma);
     }
 
-    dstTexture[dispatchThreadID.xy] = color;
+    dstTexture[dispatchThreadID.xy] = float4(color, 1.f);
 }

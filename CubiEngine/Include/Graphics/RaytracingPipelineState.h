@@ -166,7 +166,7 @@ private:
     /// intersection shader
     UINT m_maxAttributeSizeInBytes = 2 * sizeof(float);
     /// Maximum recursion depth, initialized to 1 to at least allow tracing primary rays
-    UINT m_maxRecursionDepth = 1;
+    UINT m_maxRecursionDepth = 10;
 
     ID3D12Device5* m_device;
     ID3D12RootSignature* m_dummyLocalRootSignature;

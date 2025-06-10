@@ -381,4 +381,26 @@ namespace interlop
         uint sceneBufferIndex;
         uint lightBufferIndex;
     };
+
+    struct PathTraceRenderResources
+    {
+        float4x4 invViewProjectionMatrix;
+
+        uint dstTextureIndex;
+        uint frameAccumulatedTextureIndex;
+        uint geometryInfoBufferIdx;
+        uint materialBufferIdx;
+
+        uint vtxBufferIdx;
+        uint idxBufferIdx;
+        uint sceneBufferIndex;
+        uint lightBufferIndex;
+
+        uint envmapTextureIndex;
+        float envmapIntensity;
+        uint maxPathDepth;
+        uint bRefreshPathTracingTexture;
+
+        float4 randomFloats[16];
+    };
 }

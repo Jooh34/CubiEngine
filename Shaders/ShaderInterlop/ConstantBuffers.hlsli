@@ -48,8 +48,8 @@ namespace interlop
         uint width;
         uint height;
 
+        float3 cameraPosition;
         uint frameCount;
-        float3 padding;
     };
 
     ConstantBufferStruct MaterialBuffer

@@ -13,6 +13,7 @@
 #include "Renderer/SSAO.h"
 #include "Renderer/RaytracingDebugScenePass.h"
 #include "Renderer/RaytracingShadowPass.h"
+#include "Renderer/PathTracing.h"
 
 class FInput;
 class FEditor;
@@ -30,6 +31,7 @@ public:
     void Render();
     void RenderDeferredShading(FGraphicsContext* GraphicsContext);
     void RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext);
+    void RenderPathTracingScene(FGraphicsContext* GraphicsContext);
 
     void RenderShadow(FGraphicsContext* GraphicsContext, FSceneTexture& SceneTexture);
 
@@ -64,6 +66,7 @@ private:
     std::unique_ptr<FSSAO> SSAOPass;
 
     std::unique_ptr<FRaytracingDebugScenePass> RaytracingDebugScenePass;
+    std::unique_ptr<FPathTracingPass> PathTracingPass;
 
     std::unique_ptr<FEditor> Editor;
 };

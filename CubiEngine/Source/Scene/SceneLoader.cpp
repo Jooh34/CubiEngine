@@ -22,8 +22,8 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             // Directional Light
             float LightPosition[4] = { -0.5, -1, -0.4, 0 };
             float LightColor[4] = { 1,1,1,1 };
-            float Intensity = 5.f;
-            Scene->AddLight(LightPosition, LightColor);
+            float Intensity = 50.f;
+            Scene->AddLight(LightPosition, LightColor, Intensity);
 
             // Point Light
             float PointLightPosition[4] = { 0.f,100.f,0.f,1.f };

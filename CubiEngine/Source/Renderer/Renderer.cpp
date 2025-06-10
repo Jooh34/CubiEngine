@@ -3,6 +3,8 @@
 #include "Core/Editor.h"
 #include "Graphics/Profiler.h"
 
+#include "Renderer/PathTracing.h"
+
 #define GI_METHOD_SSGI 1
 
 FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32_t Width, uint32_t Height)
@@ -22,6 +24,8 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32
 
     RaytracingDebugScenePass = std::make_unique<FRaytracingDebugScenePass>(GraphicsDevice, Scene.get(), Width, Height);
     RaytracingShadowPass = std::make_unique<FRaytracingShadowPass>(GraphicsDevice, Scene.get(), Width, Height);
+
+	PathTracingPass = std::make_unique<FPathTracingPass>(GraphicsDevice, Scene.get(), Width, Height);
 
     Editor = std::make_unique<FEditor>(GraphicsDevice, Window, Width, Height);
 
@@ -92,13 +96,18 @@ void FRenderer::Render()
         Scene->GenerateRaytracingScene(GraphicsContext);
     }
 
-    if (Scene->bDebugRaytracingScene)
+    if (Scene->GetRenderingMode() == ERenderingMode::Rasterize)
+    {
+        RenderDeferredShading(GraphicsContext);
+    }
+	else if (Scene->GetRenderingMode() == ERenderingMode::DebugRaytracing)
     {
         RenderDebugRaytracingScene(GraphicsContext);
     }
     else
     {
-        RenderDeferredShading(GraphicsContext);
+		// Path Tracing Mode
+        RenderPathTracingScene(GraphicsContext);
     }
 
     // ----- Editor ------
@@ -264,6 +273,39 @@ void FRenderer::RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext)
         SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
 
         FTexture* HDR = &RaytracingDebugScenePass->GetRaytracingDebugSceneTexture();
+        FTexture* LDR = &SceneTexture.LDRTexture;
+
+        {
+            SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
+            SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);
+            PostProcess->Tonemapping(GraphicsContext, Scene.get(), *HDR, *LDR, Width, Height);
+        }
+
+        FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
+
+        GraphicsContext->AddResourceBarrier(*LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
+        GraphicsContext->ExecuteResourceBarriers();
+        GraphicsContext->CopyResource(BackBuffer.GetResource(), LDR->GetResource());
+    }
+}
+
+void FRenderer::RenderPathTracingScene(FGraphicsContext* GraphicsContext)
+{
+    if (PathTracingPass)
+    {
+        SCOPED_NAMED_EVENT(GraphicsContext, PathTracing);
+        SCOPED_GPU_EVENT(GraphicsDevice, PathTracing);
+
+        PathTracingPass->AddPass(GraphicsContext, Scene.get());
+    }
+
+    // ----- Post Process -----
+    {
+        SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
+        SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
+
+        FTexture* HDR = &PathTracingPass->GetPathTracingSceneTexture();
         FTexture* LDR = &SceneTexture.LDRTexture;
 
         {

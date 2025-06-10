@@ -33,6 +33,8 @@ public:
     }
 
     XMFLOAT4& GetCameraPosition() { return CamPosition; }
+	XMFLOAT3 GetCameraPositionF3() const { return XMFLOAT3(CamPosition.x, CamPosition.y, CamPosition.z); }
+
     XMVECTOR GetCameraPositionXMV() const { return CamPositionXMV; }
     
     XMMATRIX CalculateLightViewProjMatrix(XMVECTOR LightDirection, XMVECTOR Focus, XMVECTOR FrustumCorners[], float MaxZ);
@@ -41,6 +43,8 @@ public:
 
     XMMATRIX GetDirectionalShadowViewProjMatrix(const XMFLOAT4& LightPosition, float MaxDistance, int CascadeIndex, float& NearDistance);
     
+    bool IsViewProjMatrixChanged(float Eps = 1e-3f) const;
+
     // from UE5
     XMFLOAT4 CreateInvDeviceZToWorldZTransform(const XMMATRIX& ProjMatrix);
     XMMATRIX GetClipToPrevClip();

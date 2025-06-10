@@ -11,6 +11,13 @@ class FGraphicsContext;
 class FCamera;
 class FInput;
 
+enum class ERenderingMode
+{
+    Rasterize,
+    DebugRaytracing,
+    PathTracing
+};
+
 class FScene
 {
 public:
@@ -49,8 +56,9 @@ public:
     FLight Light;
     float CPUFrameMsTime = 0;
 
-    // UI control
+    inline ERenderingMode GetRenderingMode() const { return (ERenderingMode)RenderingMode; };
 
+    // UI control
     // Debug
     std::vector<std::string> DebugVisualizeList;
     int DebugVisualizeIndex = 0;
@@ -65,7 +73,7 @@ public:
     
     int MaxFPS = 60;
 
-    bool bDebugRaytracingScene = false;
+    int RenderingMode = 0;
 
     bool bOverrideBaseColor = false;
     float OverrideBaseColorValue[3] = { 1.f, 1.f, 1.f };
@@ -118,8 +126,8 @@ public:
 
     // auto exposure
     bool bUseEyeAdaptation = true;
-    float HistogramLogMin = -8.f;
-    float HistogramLogMax = 4.f;
+    float HistogramLogMin = -2.f;
+    float HistogramLogMax = 2.f;
     float TimeCoeff = 0.5f;
 
     std::unique_ptr<FCubeMap> EnviromentMap{};
