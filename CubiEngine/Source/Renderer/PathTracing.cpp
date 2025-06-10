@@ -78,18 +78,22 @@ void FPathTracingPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene)
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
         .envmapTextureIndex = Scene->GetEnvironmentMap()->CubeMapTexture.SrvIndex,
 		.envmapIntensity = Scene->EnvmapIntensity,
-        .maxPathDepth = 5,
+        .maxPathDepth = 10,
+        .numSamples = (uint32_t)Scene->PathTracingSamplePerPixel,
 		.bRefreshPathTracingTexture = IsViewProjectChanged ? 1u : 0u,
     };
 
-    RenderResources.randomFloats[0] = XMFLOAT4{
-        static_cast<float>(rand()) / RAND_MAX,
-        static_cast<float>(rand()) / RAND_MAX,
-        static_cast<float>(rand()) / RAND_MAX,
-        static_cast<float>(rand()) / RAND_MAX
-    };
+    for (int i = 0; i < 16; i++)
+    {
+		RenderResources.randomFloats[i] = XMFLOAT4{
+			static_cast<float>(rand()) / RAND_MAX,
+			static_cast<float>(rand()) / RAND_MAX,
+			static_cast<float>(rand()) / RAND_MAX,
+			static_cast<float>(rand()) / RAND_MAX
+		};
+    }
 
-    GraphicsContext->SetComputeRoot32BitConstants(RTParams_CBuffer, 32u, &RenderResources);
+    GraphicsContext->SetComputeRoot32BitConstants(RTParams_CBuffer, 48u, &RenderResources);
 
     // Dispatch the rays and write to the raytracing output
     GraphicsContext->DispatchRays(RayDesc);

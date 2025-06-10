@@ -119,6 +119,7 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     const char* renderingModeItems[] = { "Rasterize", "Debug Raytracing", "PathTrace"};
     AddCombo("Rendering Mode", renderingModeItems, IM_ARRAYSIZE(renderingModeItems), Scene->RenderingMode);
 
+    ImGui::SliderInt("PathTracing SamplePerPixel", &Scene->PathTracingSamplePerPixel, 1, 64);
     ImGui::SliderInt("Max FPS", &Scene->MaxFPS, 30, 144);
 
     const char* wfItems[] = { "Off", "Sampling", "IBL", "Albedo only"};
@@ -229,7 +230,7 @@ void FEditor::RenderLightProperties(FScene* Scene)
     {
         constexpr uint32_t DirectionalLightIndex = 0u;
         
-        ImGui::SliderFloat("Intensity", &LightBuffer.intensityDistance[DirectionalLightIndex].x, 0.0f, 100.0f);
+        ImGui::SliderFloat("Intensity", &LightBuffer.intensityDistance[DirectionalLightIndex].x, 0.0f, 10000.0f);
         ImGui::SliderFloat("MaxDistance", &LightBuffer.intensityDistance[DirectionalLightIndex].y, 100.0f, 5000.0f);
 
         DirectX::XMFLOAT4& Position = LightBuffer.lightPosition[DirectionalLightIndex];
@@ -252,7 +253,7 @@ void FEditor::RenderLightProperties(FScene* Scene)
     {
         if (ImGui::TreeNode(("Point Light " + std::to_string(i)).c_str()))
         {
-            ImGui::SliderFloat("Intensity", &LightBuffer.intensityDistance[i].x, 0.0f, 100.0f);
+            ImGui::SliderFloat("Intensity", &LightBuffer.intensityDistance[i].x, 0.0f, 10000.0f);
             ImGui::SliderFloat("MaxDistance", &LightBuffer.intensityDistance[i].y, 100.0f, 5000.0f);
             DirectX::XMFLOAT4& Position = LightBuffer.lightPosition[i];
             ImGui::SliderFloat3("Light Position", &Position.x, -500, 500);

@@ -74,6 +74,7 @@ public:
     int MaxFPS = 60;
 
     int RenderingMode = 0;
+	int PathTracingSamplePerPixel = 1;
 
     bool bOverrideBaseColor = false;
     float OverrideBaseColorValue[3] = { 1.f, 1.f, 1.f };

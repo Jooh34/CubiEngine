@@ -92,7 +92,7 @@ void FRaytracingPipelineState::CreateGlobalRootSignature(ID3D12Device* const dev
     // RootConstants Buffer
     rootParameters[RTParams_CBuffer].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
     rootParameters[RTParams_CBuffer].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-    rootParameters[RTParams_CBuffer].Constants.Num32BitValues = 32;
+    rootParameters[RTParams_CBuffer].Constants.Num32BitValues = 48;
     rootParameters[RTParams_CBuffer].Descriptor.RegisterSpace = 0;
     rootParameters[RTParams_CBuffer].Descriptor.ShaderRegister = 0;
 

@@ -63,7 +63,7 @@ void FRaytracingShadowPass::AddPass(FGraphicsContext* GraphicsContext, FScene* S
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex
     };
 
-    GraphicsContext->SetComputeRoot32BitConstants(RTParams_CBuffer, 32u, &RenderResources);
+    GraphicsContext->SetComputeRoot32BitConstants(RTParams_CBuffer, 48u, &RenderResources);
 
     // Dispatch the rays and write to the raytracing output
     GraphicsContext->DispatchRays(RayDesc);

@@ -399,7 +399,10 @@ namespace interlop
         uint envmapTextureIndex;
         float envmapIntensity;
         uint maxPathDepth;
+        uint numSamples;
+
         uint bRefreshPathTracingTexture;
+        float3 padding;
 
         float4 randomFloats[16];
     };

@@ -31,6 +31,9 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             Scene->AddLight(PointLightPosition, PointLightColor, 1.f);
 
             Scene->AddModel(Desc);
+
+            Scene->GetCamera().SetCamPosition(750, 600, 100);
+            Scene->GetCamera().SetCamRotation(0.03, -1.7, 0.f);
 			break;
 		}
 		case ESceneType::MetalRoughness:

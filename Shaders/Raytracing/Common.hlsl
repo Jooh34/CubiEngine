@@ -25,6 +25,7 @@ struct FPathTracePayload
     float distance;
     uint depth;
     uint2 uv;
+    uint sampleIndex;
 };
 
 enum RayTypes {
@@ -141,4 +142,25 @@ float3 getNormalSample(float2 textureCoord, uint normalTextureIndex, SamplerStat
     }
 
     return normalize(normal);
+}
+
+float hashIntFloatCombo(float baseRand, int3 uvz)
+{
+    float3 p = float3(uvz) + baseRand * float3(1.0f, 17.0f, 113.0f); // mix scaling
+    return frac(sin(dot(p, float3(12.9898, 78.233, 37.719))) * 43758.5453);
+}
+
+float pcgHash(float baseRand, int3 p)
+{
+    uint state = uint(p.x) * 747796405u + uint(p.y) * 2891336453u + uint(p.z) * 11863279u;
+    state ^= uint(baseRand * 1234567.0f); // inject baseRand entropy
+    state ^= (state >> 17);
+    state *= 0xed5ad4bb;
+    state ^= (state >> 11);
+    return float(state & 0x00FFFFFFu) / float(0x01000000); // map to [0,1)
+}
+
+int3 createUniqueUVZ(FPathTracePayload payload, uint maxPathDepth)
+{
+    return int3(payload.uv, maxPathDepth * payload.sampleIndex + payload.depth);
 }

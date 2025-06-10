@@ -13,39 +13,16 @@ ConstantBuffer<interlop::PathTraceRenderResources> renderResources : register(b0
 SamplerState MeshSampler : register(s0);
 SamplerState LinearSampler : register(s1);
 
-#define RANDOM_INDEX_GET_NEXT_RAY 0
+#define RANDOM_INDEX_PIXEL_JITTER 0
+#define RANDOM_INDEX_GET_NEXT_RAY 1
 
 [shader("raygeneration")] 
 void RayGen()
 {
     RWTexture2D<float4> dstTexture = ResourceDescriptorHeap[renderResources.dstTextureIndex];
     RWTexture2D<uint> frameAccumulatedTexture = ResourceDescriptorHeap[renderResources.frameAccumulatedTextureIndex];
+
     const uint2 pixelCoord = DispatchRaysIndex().xy;
-
-    float2 ncdXY = (float2(pixelCoord) + 0.5f) / DispatchRaysDimensions().xy; // [0,1]
-    ncdXY = ncdXY * 2.0f - 1.0f; // [-1,1]
-    ncdXY.y = -ncdXY.y;
-    
-    float4 rayStart = mul(float4(ncdXY, 1.0f, 1.0f), renderResources.invViewProjectionMatrix);
-    float4 rayEnd = mul(float4(ncdXY, 0.0f, 1.0f), renderResources.invViewProjectionMatrix);
-
-    rayStart.xyz /= rayStart.w;
-    rayEnd.xyz /= rayEnd.w;
-    float3 rayDir = normalize(rayEnd.xyz - rayStart.xyz);
-    float rayLength = length(rayEnd.xyz - rayStart.xyz);
-    
-    // Trace a primary ray
-    RayDesc ray;
-    ray.Origin = rayStart.xyz;
-    ray.Direction = rayDir;
-    ray.TMin = 0.01f;
-    ray.TMax = rayLength;
-
-    FPathTracePayload payload;
-    payload.radiance = 0.0f;
-    payload.distance = 0.0f;
-    payload.depth = 0;
-    payload.uv = pixelCoord;
     
     uint traceRayFlags = RAY_FLAG_NONE;
 
@@ -53,10 +30,49 @@ void RayGen()
     const uint hitGroupGeoMultiplier = 2;
     const uint missShaderIdx = 0;
 
-    int numSamples = 1;
+    uint numSamples = renderResources.numSamples;
     float3 radianceSum = float3(0.0f, 0.0f, 0.0f);
-    for (int s=0; s<numSamples; s++)
+
+    for (uint s=0; s<numSamples; s++)
     {
+        FPathTracePayload payload;
+        payload.radiance = 0.0f;
+        payload.distance = 0.0f;
+        payload.depth = 0;
+        payload.uv = pixelCoord;
+        payload.sampleIndex = s;
+
+        int3 uvz = createUniqueUVZ(payload, renderResources.maxPathDepth);
+
+        float4 randomFloat = renderResources.randomFloats[RANDOM_INDEX_PIXEL_JITTER];
+        float ru = pcgHash(randomFloat.x, uvz);
+        float rv = pcgHash(randomFloat.y, uvz);
+
+        // add jitter to the pixel coordinates
+        float2 jitteredPixelCoord = float2(pixelCoord) + float2(ru-0.5f, rv-0.5f);
+
+        float2 ncdXY = (jitteredPixelCoord + 0.5f) / DispatchRaysDimensions().xy; // [0,1]
+
+        ncdXY = ncdXY * 2.0f - 1.0f; // [-1,1]
+        ncdXY.y = -ncdXY.y;
+        
+        // Ray generation
+        float4 rayStart = mul(float4(ncdXY, 1.0f, 1.0f), renderResources.invViewProjectionMatrix);
+        float4 rayEnd = mul(float4(ncdXY, 0.0f, 1.0f), renderResources.invViewProjectionMatrix);
+
+        rayStart.xyz /= rayStart.w;
+        rayEnd.xyz /= rayEnd.w;
+        float3 rayDir = normalize(rayEnd.xyz - rayStart.xyz);
+        float rayLength = length(rayEnd.xyz - rayStart.xyz);
+        
+        // primary ray desc
+        RayDesc ray;
+        ray.Origin = rayStart.xyz;
+        ray.Direction = rayDir;
+        ray.TMin = 0.01f;
+        ray.TMax = rayLength;
+
+
         TraceRay(
             SceneBVH,
             traceRayFlags,
@@ -111,24 +127,10 @@ void RayGen()
 
     int newFrameAccumulated = frameAccumulated + numSamples;
 
-    dstTexture[pixelCoord] = dstTexture[pixelCoord] * frameAccumulated / newFrameAccumulated + float4(radianceSum, 1.0f) / newFrameAccumulated;
-    frameAccumulatedTexture[pixelCoord] = frameAccumulated + numSamples;
-}
+    float3 result = (dstTexture[pixelCoord].xyz * frameAccumulated + radianceSum) / newFrameAccumulated;
 
-float hashIntFloatCombo(float baseRand, int3 uvz)
-{
-    float3 p = float3(uvz) + baseRand * float3(1.0f, 17.0f, 113.0f); // mix scaling
-    return frac(sin(dot(p, float3(12.9898, 78.233, 37.719))) * 43758.5453);
-}
-
-float pcgHash(float baseRand, int3 p)
-{
-    uint state = uint(p.x) * 747796405u + uint(p.y) * 2891336453u + uint(p.z) * 11863279u;
-    state ^= uint(baseRand * 1234567.0f); // inject baseRand entropy
-    state ^= (state >> 17);
-    state *= 0xed5ad4bb;
-    state ^= (state >> 11);
-    return float(state & 0x00FFFFFFu) / float(0x01000000); // map to [0,1)
+    dstTexture[pixelCoord] = float4(result, 1.0f);
+    frameAccumulatedTexture[pixelCoord] = newFrameAccumulated;
 }
 
 float3 getNextRay(float3 inRay, float3 N, float roughness, int3 uvz)
@@ -147,23 +149,20 @@ float3 getNextRay(float3 inRay, float3 N, float roughness, int3 uvz)
         float e1 = ry - 0.5;
         float e2 = rz - 0.5;
         float e3 = rw - 0.5;
-        float3 rand_vec = float3(e1 * roughness, e2 * roughness, e3 * roughness);
+        float3 rand_vec = float3(e1, e2, e3);
 
         return normalize(reflected_ray + rand_vec);
     }
     else
     {
         // diffuse ray
-        float3 nl = dot(N, inRay) < 0 ? N : -N;
-        float r1 = 2 * PI * ry;
-        float r2 = rz;
-        float r2s = sqrt(r2);
+        float2 u = float2(ry, rz);
+        float pdf;
+        float NoL;
+        float3 d;
 
-        float3 w = nl;
-        float3 u = normalize(cross((abs(w.x) > 0.1f ? float3(0,1,0) : float3(1,1,1)), w));
-        float3 v=cross(w, u);
-        
-        float3 d = normalize(u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1-r2));
+        // The PDF of sampling a cosine hemisphere is NdotL / Pi, which cancels out those terms
+        ImportanceSampleCosDir(u, N, d, NoL, pdf);
 
         return d;
     }
@@ -178,7 +177,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
         return;
     }
 
-    int3 uvz = int3(payload.uv, payload.depth);
+    int3 uvz = createUniqueUVZ(payload, renderResources.maxPathDepth);
 
     BufferIndexContext context = {
         renderResources.geometryInfoBufferIdx,
@@ -193,8 +192,21 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     float2 textureCoords = hitSurface.texcoord;
     float4 albedoEmissive = getAlbedoSample(textureCoords, material.albedoTextureIndex, MeshSampler, material.albedoColor);
     float3 albedo = albedoEmissive.xyz;
-    
-    payload.radiance = albedo;
+
+    // Russian Roulette
+    float p = max(albedo.x, max(albedo.y, albedo.z));
+    float4 randomFloat = renderResources.randomFloats[RANDOM_INDEX_PIXEL_JITTER];
+    float rnd = pcgHash(randomFloat.z, uvz);
+
+    // if (rnd > p) {
+    //     // terminate path
+    //     payload.radiance = float3(0.f, 0.f, 0.f);
+    //     payload.distance = 0;
+    //     return;
+    // }
+    // else { // Add the energy we 'lose' by randomly terminating paths
+    //     albedo = albedo / p;
+    // }
     
     float3x3 tangentToWorld = float3x3(hitSurface.tangent, hitSurface.bitangent, hitSurface.normal);
     float3 N = getNormalSample(textureCoords, material.normalTextureIndex, MeshSampler, float3(0,0,1), tangentToWorld).xyz;
@@ -223,6 +235,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     nextPayload.distance = 0.0f;
     nextPayload.depth = payload.depth+1;
     nextPayload.uv = payload.uv;
+    nextPayload.sampleIndex = payload.sampleIndex;
 
     uint traceRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH;
     
@@ -252,7 +265,7 @@ void Miss(inout FPayload payload : SV_RayPayload)
     float4 lightColor = lightBuffer.lightColor[DLIndex];
     float lightIntensity = lightBuffer.intensityDistance[DLIndex][0];
     float3 lightDir = normalize(-lightBuffer.lightPosition[DLIndex].xyz);
-    if (dot(rayDir, lightDir) > 0.99f) // ray is facing the directional light.
+    if (dot(rayDir, lightDir) > 0.999f) // ray is facing the directional light.
     {
         payload.radiance += lightColor.xyz * lightIntensity;
     }
