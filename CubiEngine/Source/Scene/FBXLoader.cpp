@@ -33,17 +33,17 @@ FFBXLoader::FFBXLoader(const FGraphicsDevice* const GraphicsDevice, const FModel
 	LoadMaterials(GraphicsDevice, scene);
 	LoadMeshes(GraphicsDevice, scene);
 
-    //FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
-    //GraphicsContext->Reset();
+    FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
+    GraphicsContext->Reset();
 
-    //for (auto& Mesh : Meshes)
-    //{
-    //    Mesh.GenerateRaytracingGeometry(GraphicsDevice);
-    //}
+    for (auto& Mesh : Meshes)
+    {
+        Mesh.GenerateRaytracingGeometry(GraphicsDevice);
+    }
 
-    //// sync gpu immediatly
-    //GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
-    //GraphicsDevice->GetDirectCommandQueue()->Flush();
+    // sync gpu immediatly
+    GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
+    GraphicsDevice->GetDirectCommandQueue()->Flush();
 }
 
 D3D12_TEXTURE_ADDRESS_MODE FFBXLoader::ConvertTextureAddressMode(aiTextureMapMode mode) const

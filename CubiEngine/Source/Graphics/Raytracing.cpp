@@ -149,7 +149,9 @@ void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const Gr
                     .normalTextureSamplerIndex = Material->NormalSampler.SamplerIndex,
 					.ormTextureIndex = Material->ORMTexture.SrvIndex,
 					.ormTextureSamplerIndex = Material->ORMSampler.SamplerIndex,
-                    .albedoColor = Material->MaterialBufferData.albedoColor
+                    .albedoColor = Material->MaterialBufferData.albedoColor,
+					.metallic = Material->MaterialBufferData.metallicFactor,
+					.roughness = Material->MaterialBufferData.roughnessFactor,
                 }
             );
 

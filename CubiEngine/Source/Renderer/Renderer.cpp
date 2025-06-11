@@ -43,6 +43,7 @@ FRenderer::~FRenderer()
 void FRenderer::GameTick(float DeltaTime, FInput* Input)
 {
     Scene->GameTick(DeltaTime, Input, Width, Height);
+    Editor->GameTick(DeltaTime, Input);
 }
 
 void FRenderer::BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer)

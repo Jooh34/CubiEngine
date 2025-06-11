@@ -44,8 +44,18 @@ FEditor::~FEditor()
     ImGui::DestroyContext();
 }
 
+void FEditor::GameTick(float DeltaTime, FInput* Input)
+{
+    if (Input->GetKeyDown(SDL_SCANCODE_X))
+    {
+		bShowUI = !bShowUI;
+    }
+}
+
 void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
 {
+    if (!bShowUI) return;
+
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplSDL2_NewFrame(Window);
     ImGui::NewFrame();
@@ -221,7 +231,7 @@ void FEditor::RenderLightProperties(FScene* Scene)
 
     bool& bUseEnvmap = Scene->bUseEnvmap;
     ImGui::Checkbox("Use EnvMap", &bUseEnvmap);
-    ImGui::SliderFloat("Envmap Intensity", &Scene->EnvmapIntensity, 0.f, 10.f);
+    ImGui::SliderFloat("Envmap Intensity", &Scene->EnvmapIntensity, 0.f, 100.f);
 
     ImGui::Checkbox("Light Dance Debug", &Scene->bLightDanceDebug);
     ImGui::SliderFloat("Light Dance Speed", &Scene->bLightDanceSpeed, 0.1f, 10.0f);

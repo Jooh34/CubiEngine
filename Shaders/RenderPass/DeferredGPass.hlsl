@@ -76,17 +76,17 @@ PsOutput PsMain(VSOutput psInput)
     float2 velocity = calculateVelocity(psInput.curPosition, psInput.prevPosition);
     
     float ao = 0.f;
-    float2 metalRoughness = float2(0.0f, 1.f);
+    float2 metalRoughness = float2(materialBuffer.metallicFactor, materialBuffer.roughnessFactor);
     if (renderResources.ormTextureIndex != INVALID_INDEX)
     {
-        float3 orm = getORM(psInput.textureCoord, renderResources.ormTextureIndex, renderResources.ormTextureSamplerIndex);
+        float3 orm = getORM(psInput.textureCoord, renderResources.ormTextureIndex, renderResources.ormTextureSamplerIndex, metalRoughness);
         ao = (1-orm.x);
         metalRoughness = float2(orm.z, orm.y);
     }
     else
     {
         ao = getAO(psInput.textureCoord, renderResources.aoTextureIndex, renderResources.aoTextureSamplerIndex).x;
-        metalRoughness = getMetalRoughness(psInput.textureCoord, renderResources.metalRoughnessTextureIndex, renderResources.metalRoughnessTextureSamplerIndex) * float2(materialBuffer.metallicFactor, materialBuffer.roughnessFactor).xy;
+        metalRoughness = getMetallicRoughness(psInput.textureCoord, renderResources.metalRoughnessTextureIndex, renderResources.metalRoughnessTextureSamplerIndex, metalRoughness);
     }
 
     if (debugBuffer.bOverrideBaseColor)
@@ -97,7 +97,6 @@ PsOutput PsMain(VSOutput psInput)
     {
         metalRoughness.y = debugBuffer.overrideRoughnessValue;
     }
-    
     if (debugBuffer.overrideMetallicValue >= 0)
     {
         metalRoughness.x = debugBuffer.overrideMetallicValue;

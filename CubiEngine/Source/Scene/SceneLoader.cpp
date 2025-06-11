@@ -14,11 +14,6 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
 	{
         case ESceneType::Sponza:
 		{
-            FModelCreationDesc Desc = {
-                .ModelPath = "Models/Sponza/sponza.glb",
-                .ModelName = L"Sponza",
-            };
-
             // Directional Light
             float LightPosition[4] = { -0.5, -1, -0.4, 0 };
             float LightColor[4] = { 1,1,1,1 };
@@ -30,7 +25,23 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             float PointLightColor[4] = { 1,1,1,1 };
             Scene->AddLight(PointLightPosition, PointLightColor, 1.f);
 
-            Scene->AddModel(Desc);
+            FModelCreationDesc SponzaDesc = {
+                .ModelPath = "Models/Sponza/sponza.glb",
+                .ModelName = L"Sponza",
+            };
+            Scene->AddModel(SponzaDesc);
+
+            FModelCreationDesc MirrorSuzanne = {
+                 .ModelPath = "Models/Suzanne/glTF/Suzanne.gltf",
+                 .ModelName = L"Suzanne",
+				 .Rotation = { 0.f, 90.f, 0.f },
+                 .Scale = {100.f, 100.f, 100.f},
+				 .Translate = { 0.f, 300.f, 0.f },
+				 .OverrideBaseColorFactor = { 1.f, 1.f, 1.f },
+                 .OverrideRoughnessValue=  0.f,
+                 .OverrideMetallicValue = 0.f,
+            };
+            Scene->AddModel(MirrorSuzanne);
 
             Scene->GetCamera().SetCamPosition(750, 600, 100);
             Scene->GetCamera().SetCamRotation(0.03, -1.7, 0.f);
@@ -95,7 +106,6 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             float LightColor[4] = { 1,1,1,1 };
             float Intensity = 1.f;
             Scene->AddLight(LightPosition, LightColor);
-
             Scene->AddModel(Desc);
 
             Scene->bOverrideBaseColor = true;
@@ -120,6 +130,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             float LightColor[4] = { 1,1,1,1 };
             float Intensity = 5.f;
             Scene->AddLight(LightPosition, LightColor);
+            Scene->AddModel(Desc);
 
             // use envmap
             Scene->GIMethod = 0;

@@ -86,7 +86,7 @@ public:
     float bLightDanceSpeed = 0.3f;
 
     bool bUseEnvmap = false;
-	float EnvmapIntensity = 0.5f;
+	float EnvmapIntensity = 1.f;
 
     // Shadow
     int ShadowMethod = 1;

@@ -244,6 +244,10 @@ struct FModelCreationDesc
     Dx::XMFLOAT3 Rotation{ 0.0f, 0.0f, 0.0f };
     Dx::XMFLOAT3 Scale{ 1.0f, 1.0f, 1.0f };
     Dx::XMFLOAT3 Translate{ 0.0f, 0.0f, 0.0f };
+
+    Dx::XMFLOAT3 OverrideBaseColorFactor{ -1.0f, -1.0f, -1.0f };
+    float OverrideRoughnessValue{ -1.0f };
+    float OverrideMetallicValue{ -1.0f };
 };
 
 enum class EShadowMethod

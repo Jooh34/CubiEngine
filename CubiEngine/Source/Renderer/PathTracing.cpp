@@ -81,6 +81,7 @@ void FPathTracingPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene)
         .maxPathDepth = 10,
         .numSamples = (uint32_t)Scene->PathTracingSamplePerPixel,
 		.bRefreshPathTracingTexture = IsViewProjectChanged ? 1u : 0u,
+        .debugBufferIndex = Scene->GetDebugBuffer().CbvIndex,
     };
 
     for (int i = 0; i < 16; i++)

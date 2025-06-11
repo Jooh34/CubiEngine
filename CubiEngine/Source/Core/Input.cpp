@@ -13,6 +13,7 @@ void FInput::Reset()
 {
     DX = 0;
     DY = 0;
+    ResetKeyDown();
 }
 
 void FInput::ProcessEvent(const SDL_Event& event)
@@ -20,6 +21,7 @@ void FInput::ProcessEvent(const SDL_Event& event)
     switch (event.type) {
         case SDL_KEYDOWN:
             KeyStates[event.key.keysym.scancode] = true;
+			KeyDown[event.key.keysym.scancode] = true;
             break;
         case SDL_KEYUP:
             KeyStates[event.key.keysym.scancode] = false;

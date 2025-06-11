@@ -45,11 +45,11 @@ void RayGen()
         int3 uvz = createUniqueUVZ(payload, renderResources.maxPathDepth);
 
         float4 randomFloat = renderResources.randomFloats[RANDOM_INDEX_PIXEL_JITTER];
-        float ru = pcgHash(randomFloat.x, uvz);
-        float rv = pcgHash(randomFloat.y, uvz);
+        float du = pcgHash(randomFloat.x, uvz) - 0.5f;
+        float dv = pcgHash(randomFloat.y, uvz) - 0.5f;
 
         // add jitter to the pixel coordinates
-        float2 jitteredPixelCoord = float2(pixelCoord) + float2(ru-0.5f, rv-0.5f);
+        float2 jitteredPixelCoord = float2(pixelCoord) + float2(du, dv);
 
         float2 ncdXY = (jitteredPixelCoord + 0.5f) / DispatchRaysDimensions().xy; // [0,1]
 
@@ -149,7 +149,7 @@ float3 getNextRay(float3 inRay, float3 N, float roughness, int3 uvz)
         float e1 = ry - 0.5;
         float e2 = rz - 0.5;
         float e3 = rw - 0.5;
-        float3 rand_vec = float3(e1, e2, e3);
+        float3 rand_vec = float3(e1 * roughness, e2 * roughness, e3 * roughness);
 
         return normalize(reflected_ray + rand_vec);
     }
@@ -192,38 +192,52 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     float2 textureCoords = hitSurface.texcoord;
     float4 albedoEmissive = getAlbedoSample(textureCoords, material.albedoTextureIndex, MeshSampler, material.albedoColor);
     float3 albedo = albedoEmissive.xyz;
+    ConstantBuffer<interlop::DebugBuffer> debugBuffer = ResourceDescriptorHeap[renderResources.debugBufferIndex];
+    if (debugBuffer.bOverrideBaseColor)
+    {
+        albedo = debugBuffer.overrideBaseColorValue;
+    }
 
     // Russian Roulette
-    float p = max(albedo.x, max(albedo.y, albedo.z));
-    float4 randomFloat = renderResources.randomFloats[RANDOM_INDEX_PIXEL_JITTER];
-    float rnd = pcgHash(randomFloat.z, uvz);
+    float RandomFloatForRoulette = pcgHash(renderResources.randomFloats[RANDOM_INDEX_PIXEL_JITTER].z, uvz);
+    bool bTerminate = TerminateByRussianRoulette(RandomFloatForRoulette, albedo);
+    if (bTerminate)
+    {
+        payload.radiance = float3(0.f, 0.f, 0.f);
+        payload.distance = 0;
+        return;
+    }
 
-    // if (rnd > p) {
-    //     // terminate path
-    //     payload.radiance = float3(0.f, 0.f, 0.f);
-    //     payload.distance = 0;
-    //     return;
-    // }
-    // else { // Add the energy we 'lose' by randomly terminating paths
-    //     albedo = albedo / p;
-    // }
+    float2 metallicRoughness = getMetallicRoughnessSample(textureCoords, material.metalRoughnessTextureIndex, MeshSampler, float2(material.metallic, material.roughness));
+    if (debugBuffer.overrideRoughnessValue >= 0)
+    {
+        metallicRoughness.y = debugBuffer.overrideRoughnessValue;
+    }
+    if (debugBuffer.overrideMetallicValue >= 0)
+    {
+        metallicRoughness.x = debugBuffer.overrideMetallicValue;
+    }
     
-    float3x3 tangentToWorld = float3x3(hitSurface.tangent, hitSurface.bitangent, hitSurface.normal);
-    float3 N = getNormalSample(textureCoords, material.normalTextureIndex, MeshSampler, float3(0,0,1), tangentToWorld).xyz;
+    // float3x3 tangentToWorld = float3x3(hitSurface.tangent, hitSurface.bitangent, hitSurface.normal);
+    float3x4 ObjectToWorld3x4 = ObjectToWorld(); 
 
-    Texture2D<float4> metalRoughnessTexture = ResourceDescriptorHeap[material.metalRoughnessTextureIndex];
-    float2 metalRoughness = metalRoughnessTexture.SampleLevel(MeshSampler, textureCoords, 0.f).bg;
+    const float3 tangent = normalize(hitSurface.tangent);
+    const float3 biTangent = normalize(cross(hitSurface.normal, tangent));
+    const float3 t = normalize(mul(tangent, ObjectToWorld3x4).xyz);
+    const float3 b = normalize(mul(biTangent, ObjectToWorld3x4).xyz);
+    const float3 n = normalize(mul(hitSurface.normal, ObjectToWorld3x4).xyz);
+    float3x3 tangentToWorld = float3x3(t, b, n);
+
+    float3 N = getNormalSample(textureCoords, material.normalTextureIndex, MeshSampler, n, tangentToWorld).xyz;
     
-    float metalic = metalRoughness.x;
-    float roughness = metalRoughness.y;
-    
-    const float3 positionWS = hitSurface.position;
+    float metalic = metallicRoughness.x;
+    float roughness = metallicRoughness.y;
+    const float3 positionWS = mul(hitSurface.position, ObjectToWorld3x4).xyz;
 
     // next ray
     float3 inRay = WorldRayDirection();
     float3 nextRay = getNextRay(inRay, N, roughness, uvz);
     
-    // next ray
     RayDesc ray;
     ray.Origin = positionWS;
     ray.Direction = nextRay;
@@ -259,14 +273,14 @@ void Miss(inout FPayload payload : SV_RayPayload)
     payload.distance = -1;
 
     // Directional Light
-    ConstantBuffer<interlop::LightBuffer> lightBuffer = ResourceDescriptorHeap[renderResources.lightBufferIndex];
+    // ConstantBuffer<interlop::LightBuffer> lightBuffer = ResourceDescriptorHeap[renderResources.lightBufferIndex];
 
-    uint DLIndex = 0;
-    float4 lightColor = lightBuffer.lightColor[DLIndex];
-    float lightIntensity = lightBuffer.intensityDistance[DLIndex][0];
-    float3 lightDir = normalize(-lightBuffer.lightPosition[DLIndex].xyz);
-    if (dot(rayDir, lightDir) > 0.999f) // ray is facing the directional light.
-    {
-        payload.radiance += lightColor.xyz * lightIntensity;
-    }
+    // uint DLIndex = 0;
+    // float4 lightColor = lightBuffer.lightColor[DLIndex];
+    // float lightIntensity = lightBuffer.intensityDistance[DLIndex][0];
+    // float3 lightDir = normalize(-lightBuffer.lightPosition[DLIndex].xyz);
+    // if (dot(rayDir, lightDir) > 0.99f) // ray is facing the directional light.
+    // {
+    //     payload.radiance += lightColor.xyz * lightIntensity;
+    // }
 }

@@ -123,10 +123,20 @@ float4 getAlbedoSample(const float2 textureCoords, const uint albedoTextureIndex
     }
 
     Texture2D<float4> albedoTexture = ResourceDescriptorHeap[albedoTextureIndex];
-
     return albedoTexture.SampleLevel(MeshSampler, textureCoords, 0.f);
 }
 
+float2 getMetallicRoughnessSample(const float2 textureCoords, const uint metallicRoughnessTextureIndex, SamplerState MeshSampler, const float2 metallicRoughness)
+{
+    uint InvalidIndex = 4294967295;
+    if (metallicRoughnessTextureIndex == InvalidIndex)
+    {
+        return metallicRoughness;
+    }
+
+    Texture2D<float4> metallicRoughnessTexture = ResourceDescriptorHeap[metallicRoughnessTextureIndex];
+    return metallicRoughnessTexture.SampleLevel(MeshSampler, textureCoords, 0.f).bg;
+}
 
 float3 getNormalSample(float2 textureCoord, uint normalTextureIndex, SamplerState MeshSampler, float3 normal, float3x3 tbnMatrix)
 {
@@ -163,4 +173,18 @@ float pcgHash(float baseRand, int3 p)
 int3 createUniqueUVZ(FPathTracePayload payload, uint maxPathDepth)
 {
     return int3(payload.uv, maxPathDepth * payload.sampleIndex + payload.depth);
+}
+
+bool TerminateByRussianRoulette(in float rnd, inout float3 albedo)
+{
+    float p = max(albedo.x, max(albedo.y, albedo.z));
+
+    if (rnd > p) {
+        // terminate the path
+        return true;
+    }
+    else { // Add the energy we 'lose' by randomly terminating paths
+        albedo = albedo / p;
+        return false;
+    }
 }

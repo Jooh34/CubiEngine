@@ -19,8 +19,12 @@ void FTransform::Update()
 }
 
 FGLTFModelLoader::FGLTFModelLoader(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
-    :ModelName(ModelCreationDesc.ModelName)
+	:ModelName(ModelCreationDesc.ModelName)
 {
+	OverrideBaseColorFactor = ModelCreationDesc.OverrideBaseColorFactor;
+    OverrideRoughnessValue = ModelCreationDesc.OverrideRoughnessValue;
+	OverrideMetallicValue = ModelCreationDesc.OverrideMetallicValue;
+
     Transform.Scale = ModelCreationDesc.Scale;
     Transform.Rotation = ModelCreationDesc.Rotation;
     Transform.Translate = ModelCreationDesc.Translate;
@@ -184,10 +188,14 @@ void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice
     uint32_t MipLevels = 6u;
     for (const tinygltf::Material& material : GLTFModel.materials)
     {
+        bool bOverrideBaseColor = OverrideBaseColorFactor.x >= 0.f;
+		bool bOverrideRoughness = OverrideRoughnessValue >= 0.f;
+		bool bOverrideMetallic = OverrideMetallicValue >= 0.f;
+
         std::shared_ptr<FPBRMaterial> PbrMaterial = std::make_shared<FPBRMaterial>();
         {
             // Albedo
-            if (material.pbrMetallicRoughness.baseColorTexture.index >= 0)
+            if (material.pbrMetallicRoughness.baseColorTexture.index >= 0 && !bOverrideBaseColor)
             {
                 const tinygltf::Texture& albedoTexture =
                     GLTFModel.textures[material.pbrMetallicRoughness.baseColorTexture.index];
@@ -204,7 +212,7 @@ void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice
         }
         {
             // MetalicRoughness
-            if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0)
+            if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 && !bOverrideRoughness && !bOverrideMetallic)
             {
 
                 const tinygltf::Texture& metalRoughnessTexture =
@@ -292,13 +300,14 @@ void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice
         });
 
         PbrMaterial->MaterialBufferData = {
-                .albedoColor = XMFLOAT3 {
-                    material.pbrMetallicRoughness.baseColorFactor[0],
-                    material.pbrMetallicRoughness.baseColorFactor[1],
-                    material.pbrMetallicRoughness.baseColorFactor[2],
+                .albedoColor = bOverrideBaseColor ? OverrideBaseColorFactor :
+                XMFLOAT3 {
+                    (float)material.pbrMetallicRoughness.baseColorFactor[0],
+                    (float)material.pbrMetallicRoughness.baseColorFactor[1],
+                    (float)material.pbrMetallicRoughness.baseColorFactor[2],
                 },
-                .roughnessFactor = 1.0f,
-                .metallicFactor = 1.0f,
+                .roughnessFactor = bOverrideRoughness ? OverrideRoughnessValue : (float)material.pbrMetallicRoughness.roughnessFactor,
+                .metallicFactor = bOverrideMetallic ? OverrideMetallicValue : (float)material.pbrMetallicRoughness.metallicFactor,
                 .emissiveFactor = 0.0f,
         };
 

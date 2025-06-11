@@ -40,4 +40,8 @@ private:
     void LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel);
     void LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc,
          const uint32_t NodeIndex, const tinygltf::Model& GLTFModel);
+
+	XMFLOAT3 OverrideBaseColorFactor{ -1.0f, -1.0f, -1.0f };
+	float OverrideRoughnessValue = -1.0f;
+	float OverrideMetallicValue = -1.0f;
 };

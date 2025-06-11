@@ -92,7 +92,7 @@ float getAO(float2 textureCoord, uint aoTextureIndex, uint aoTextureSamplerIndex
     return 1.0f;
 }
 
-float2 getMetalRoughness(float2 textureCoord, uint metalRoughnessTextureIndex, uint metalRoughnessTextureSamplerIndex)
+float2 getMetallicRoughness(float2 textureCoord, uint metalRoughnessTextureIndex, uint metalRoughnessTextureSamplerIndex, float2 metalRoughnessValue)
 {
     if (metalRoughnessTextureIndex != INVALID_INDEX)
     {
@@ -104,10 +104,10 @@ float2 getMetalRoughness(float2 textureCoord, uint metalRoughnessTextureIndex, u
         return metalRoughnessTexture.Sample(samplerState, textureCoord).bg;
     }
 
-    return float2(0.f, 1.f);
+    return metalRoughnessValue;
 }
 
-float3 getORM(float2 textureCoord, uint ormTextureIndex, uint ormTextureSamplerIndex)
+float3 getORM(float2 textureCoord, uint ormTextureIndex, uint ormTextureSamplerIndex, float2 metalRoughnessValue)
 {
     if (ormTextureIndex != INVALID_INDEX)
     {
@@ -119,7 +119,7 @@ float3 getORM(float2 textureCoord, uint ormTextureIndex, uint ormTextureSamplerI
         return ormTexture.Sample(samplerState, textureCoord).xyz;
     }
 
-    return float3(0.5f, 0.5f, 0.5f);
+    return float3(0.f, metalRoughnessValue);
 }
 
 float2 calculateVelocity(float4 position, float4 prevPosition)
