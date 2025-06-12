@@ -39,21 +39,21 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
 				 .Translate = { 0.f, 300.f, 0.f },
 				 .OverrideBaseColorFactor = { 1.f, 1.f, 1.f },
                  .OverrideRoughnessValue=  0.f,
-                 .OverrideMetallicValue = 0.f,
+                 .OverrideMetallicValue = 1.f,
             };
             Scene->AddModel(MirrorSuzanne);
 
-   //         FModelCreationDesc BoxDesc = {
-   //              .ModelPath = "Models/Box/Box.gltf",
-   //              .ModelName = L"Box",
-   //              .Rotation = { 0.f, 0.f, 0.f },
-   //              .Scale = {100.f, 500.f, 100.f},
-   //              .Translate = { 0.f, 0.f, 0.f },
-   //              .OverrideBaseColorFactor = { 1.f, 1.f, 1.f },
-   //              .OverrideRoughnessValue = 0.f,
-   //              .OverrideMetallicValue = 0.f,
-   //         };
-			//Scene->AddModel(BoxDesc);
+            /*FModelCreationDesc BoxDesc = {
+                 .ModelPath = "Models/Box/Box.gltf",
+                 .ModelName = L"Box",
+                 .Rotation = { 0.f, 0.f, 0.f },
+                 .Scale = {100.f, 500.f, 100.f},
+                 .Translate = { 0.f, 0.f, 0.f },
+                 .OverrideBaseColorFactor = { 1.f, 1.f, 1.f },
+                 .OverrideRoughnessValue = 0.f,
+                 .OverrideMetallicValue = 1.f,
+            };
+			Scene->AddModel(BoxDesc);*/
 
             Scene->GetCamera().SetCamPosition(750, 600, 100);
             Scene->GetCamera().SetCamRotation(0.03, -1.7, 0.f);

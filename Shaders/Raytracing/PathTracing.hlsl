@@ -256,7 +256,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     nextPayload.uv = payload.uv;
     nextPayload.sampleIndex = payload.sampleIndex;
 
-    uint traceRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH;
+    uint traceRayFlags = RAY_FLAG_NONE;
     
     const uint hitGroupOffset = RayTypeRadiance;
     const uint hitGroupGeoMultiplier = NumRayTypes;
