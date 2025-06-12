@@ -110,9 +110,24 @@ void ClosestHit(inout FPayload payload, in Attributes attr)
     float4 albedoEmissive = getAlbedoSample(textureCoords, material.albedoTextureIndex, MeshSampler, material.albedoColor);
     float3 albedo = albedoEmissive.xyz;
     
-    float3x3 tbnMatrix = float3x3(hitSurface.tangent, hitSurface.bitangent, hitSurface.normal);
-    float3 N = getNormalSample(textureCoords, material.normalTextureIndex, MeshSampler, float3(0,0,1), tbnMatrix).xyz;
-    N = mul(N, (float3x3)sceneBuffer.viewMatrix);
+    float3x4 ObjectToWorld3x4 = ObjectToWorld();
+    float3x3 ObjectToWorld3x3 = float3x3(
+        ObjectToWorld3x4[0].xyz,
+        ObjectToWorld3x4[1].xyz,
+        ObjectToWorld3x4[2].xyz
+    );
+
+    float3x3 ObjectToWorld = transpose(Inverse3x3(ObjectToWorld3x3));
+
+    const float3 normalWS = normalize(mul(hitSurface.normal, ObjectToWorld).xyz);
+    const float3 tangentWS = normalize(mul(hitSurface.tangent, ObjectToWorld).xyz);
+    const float3 biTangentWS = normalize(cross(normalWS, tangentWS));
+    
+    float3x3 tangentToWorld = float3x3(tangentWS, biTangentWS, normalWS);
+
+    float3 N = getNormalSample(textureCoords, material.normalTextureIndex, MeshSampler, normalWS, tangentToWorld).xyz;
+    float3x3 viewMatrix = (float3x3)transpose(sceneBuffer.inverseViewMatrix);
+    N = mul(N, viewMatrix);
 
     Texture2D<float4> metalRoughnessTexture = ResourceDescriptorHeap[material.metalRoughnessTextureIndex];
     float2 metalRoughness = metalRoughnessTexture.SampleLevel(MeshSampler, textureCoords, 0.f).bg;
@@ -122,65 +137,64 @@ void ClosestHit(inout FPayload payload, in Attributes attr)
 
     const float3 positionWS = hitSurface.position;
 
+    // {
+    //     // Directional Light
+    //     uint DLIndex = 0;
+    //     float4 lightColor = lightBuffer.lightColor[DLIndex];
+    //     float lightIntensity = lightBuffer.intensityDistance[DLIndex][0];
 
-    {
-        // Directional Light
-        uint DLIndex = 0;
-        float4 lightColor = lightBuffer.lightColor[DLIndex];
-        float lightIntensity = lightBuffer.intensityDistance[DLIndex][0];
-
-        const float3 viewSpacePosition = mul(float4(positionWS, 1.0f), sceneBuffer.viewMatrix).xyz;
-        const float3 V = normalize(-viewSpacePosition);
+    //     const float3 viewSpacePosition = mul(float4(positionWS, 1.0f), sceneBuffer.viewMatrix).xyz;
+    //     const float3 V = normalize(-viewSpacePosition);
         
-        BxDFContext context = (BxDFContext)0;
-        context.NoV = saturate(dot(N,V)); 
+    //     BxDFContext context = (BxDFContext)0;
+    //     context.NoV = saturate(dot(N,V)); 
         
-        float3 DIELECTRIC_SPECULAR = float3(0.04f, 0.04f, 0.04f);
-        const float3 F0 = lerp(DIELECTRIC_SPECULAR, albedo.xyz, metalic);
-        float3 diffuseColor = albedo.rgb * (1.0 - DIELECTRIC_SPECULAR) * (1.0 - metalic);
+    //     float3 DIELECTRIC_SPECULAR = float3(0.04f, 0.04f, 0.04f);
+    //     const float3 F0 = lerp(DIELECTRIC_SPECULAR, albedo.xyz, metalic);
+    //     float3 diffuseColor = albedo.rgb * (1.0 - DIELECTRIC_SPECULAR) * (1.0 - metalic);
 
-        if (lightIntensity > 0.f)
-        {
-            float3 directionalResult = float3(0.f, 0.f, 0.f);
-            const float3 L = normalize(-lightBuffer.viewSpaceLightPosition[DLIndex].xyz);
-            const float3 H = normalize(V+L);
+    //     if (lightIntensity > 0.f)
+    //     {
+    //         float3 directionalResult = float3(0.f, 0.f, 0.f);
+    //         const float3 L = normalize(-lightBuffer.viewSpaceLightPosition[DLIndex].xyz);
+    //         const float3 H = normalize(V+L);
 
-            context.VoH = saturate(dot(V,H));
-            context.NoH = saturate(dot(N,H));
-            context.NoL = saturate(dot(N,L));
+    //         context.VoH = saturate(dot(V,H));
+    //         context.NoH = saturate(dot(N,H));
+    //         context.NoL = saturate(dot(N,L));
 
-            const float4 worldspaceL_ = mul(float4(L, 0.0f), sceneBuffer.inverseViewMatrix);
-            const float3 worldspaceL = normalize(worldspaceL_.xyz);
+    //         const float4 worldspaceL_ = mul(float4(L, 0.0f), sceneBuffer.inverseViewMatrix);
+    //         const float3 worldspaceL = normalize(worldspaceL_.xyz);
             
-            float3 diffuseTerm = lambertianDiffuseBRDF(albedo.xyz, context.VoH, metalic);
-            float energyCompensation = 1.f;
-            float3 specularTerm = CookTorrenceSpecular(roughness, metalic, F0, context) * energyCompensation;
+    //         float3 diffuseTerm = lambertianDiffuseBRDF(albedo.xyz, context.VoH, metalic);
+    //         float energyCompensation = 1.f;
+    //         float3 specularTerm = CookTorrenceSpecular(roughness, metalic, F0, context) * energyCompensation;
             
-            directionalResult += lightColor.xyz * lightIntensity * context.NoL * (diffuseTerm + max(specularTerm, float3(0,0,0)));
+    //         directionalResult += lightColor.xyz * lightIntensity * context.NoL * (diffuseTerm + max(specularTerm, float3(0,0,0)));
 
-            // shadow ray
-            RayDesc ray;
-            ray.Origin = positionWS;
-            ray.Direction = worldspaceL;
-            ray.TMin = 0.001f;
-            ray.TMax = FP32Max;
+    //         // shadow ray
+    //         RayDesc ray;
+    //         ray.Origin = positionWS;
+    //         ray.Direction = worldspaceL;
+    //         ray.TMin = 0.001f;
+    //         ray.TMax = FP32Max;
 
-            FShadowPayload shadowPayload;
-            shadowPayload.visibility = 1.0f;
+    //         FShadowPayload shadowPayload;
+    //         shadowPayload.visibility = 1.0f;
 
-            uint traceRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH;
+    //         uint traceRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH;
             
-            const uint hitGroupOffset = RayTypeShadow;
-            const uint hitGroupGeoMultiplier = NumRayTypes;
-            const uint missShaderIdx = RayTypeShadow;
-            TraceRay(SceneBVH, traceRayFlags, 0xFFFFFFFF, hitGroupOffset, hitGroupGeoMultiplier, missShaderIdx, ray, shadowPayload);
+    //         const uint hitGroupOffset = RayTypeShadow;
+    //         const uint hitGroupGeoMultiplier = NumRayTypes;
+    //         const uint missShaderIdx = RayTypeShadow;
+    //         TraceRay(SceneBVH, traceRayFlags, 0xFFFFFFFF, hitGroupOffset, hitGroupGeoMultiplier, missShaderIdx, ray, shadowPayload);
 
-            directionalResult *= shadowPayload.visibility;
-            color += directionalResult;
-        }
-    }
+    //         directionalResult *= shadowPayload.visibility;
+    //         color += directionalResult;
+    //     }
+    // }
 
-    payload.radiance = color;
+    payload.radiance = N;
     payload.distance = (InstanceID()/103.f);
 }
 

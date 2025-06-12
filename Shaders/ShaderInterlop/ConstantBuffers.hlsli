@@ -131,7 +131,6 @@ namespace interlop
         float2 texcoord;
 
         float3 tangent;
-        float3 bitangent;
-        float2 padding;
+        float padding;
     };
 } // namespace interlop

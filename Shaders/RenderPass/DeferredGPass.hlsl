@@ -8,7 +8,6 @@ struct VSOutput
     float4 position : SV_Position;
     float2 textureCoord : TEXTURE_COORD;
     float3 normal : NORMAL;
-    float3x3 viewMatrix : VIEW_MATRIX;
     float3x3 tbnMatrix : TBN_MATRIX;
     float4 curPosition : CUR_POSITION;
     float4 prevPosition : PREV_POSITION;
@@ -37,7 +36,6 @@ VSOutput VsMain(uint vertexID : SV_VertexID)
     output.prevPosition = mul(float4(positionBuffer[vertexID], 1.0f), prevMvpMatrix);
     output.textureCoord = textureCoordBuffer[vertexID];
     output.normal = normalBuffer[vertexID];
-    output.viewMatrix = (float3x3)sceneBuffer.viewMatrix;
 
     const float3 tangent = normalize(tangentBuffer[vertexID]);
     const float3 biTangent = normalize(cross(output.normal, tangent));
@@ -62,6 +60,7 @@ PsOutput PsMain(VSOutput psInput)
 {
     ConstantBuffer<interlop::MaterialBuffer> materialBuffer = ResourceDescriptorHeap[renderResources.materialBufferIndex];
     ConstantBuffer<interlop::DebugBuffer> debugBuffer = ResourceDescriptorHeap[renderResources.debugBufferIndex];
+    ConstantBuffer<interlop::SceneBuffer> sceneBuffer = ResourceDescriptorHeap[renderResources.sceneBufferIndex];
 
     float4 albedoEmissive = getAlbedo(psInput.textureCoord, renderResources.albedoTextureIndex, renderResources.albedoTextureSamplerIndex, materialBuffer.albedoColor);
     if (albedoEmissive.a < 0.9f)
@@ -71,7 +70,9 @@ PsOutput PsMain(VSOutput psInput)
 
     float3 albedo = albedoEmissive.xyz;
     float3 normal = getNormal(psInput.textureCoord, renderResources.normalTextureIndex, renderResources.normalTextureSamplerIndex, psInput.normal, psInput.tbnMatrix).xyz;
-    normal = mul(normal, psInput.viewMatrix);
+    float3x3 viewMatrix = (float3x3)transpose(sceneBuffer.inverseViewMatrix);
+    normal = mul(normal, viewMatrix);
+    
     float3 emissive = getEmissive(psInput.textureCoord, albedo, materialBuffer.emissiveFactor, renderResources.emissiveTextureIndex, renderResources.emissiveTextureSamplerIndex).xyz;
     float2 velocity = calculateVelocity(psInput.curPosition, psInput.prevPosition);
     

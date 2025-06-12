@@ -493,28 +493,11 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
         for (int i=0; i<Tangents.size(); i++)
         {
             XMFLOAT3& tangent = Tangents[i];
-
-            float length = std::sqrt(tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z);
-            if (length > 0.0f)
-            {
-                tangent.x /= length;
-                tangent.y /= length;
-                tangent.z /= length;
-            }
+            XMVECTOR tangentVec = XMLoadFloat3(&tangent);
+            XMVECTOR normalizedTangentVec = XMVector3Normalize(tangentVec);
+            XMStoreFloat3(&tangent, normalizedTangentVec);
 
             Mesh.MeshVertices[i].tangent = tangent;
-
-            XMVECTOR normalVec = XMLoadFloat3(&Mesh.MeshVertices[i].normal);
-            XMVECTOR tangentVec = XMLoadFloat3(&tangent);
-
-            // normal x tangent
-            XMVECTOR bitangentVec = Dx::XMVector3Cross(normalVec, tangentVec);
-            bitangentVec = XMVector3Normalize(bitangentVec);
-
-            XMFLOAT3 bitangent;
-            XMStoreFloat3(&bitangent, bitangentVec);
-
-            Mesh.MeshVertices[i].bitangent = bitangent;
         }
 
         Mesh.PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(

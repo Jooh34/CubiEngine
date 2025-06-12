@@ -218,17 +218,22 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
         metallicRoughness.x = debugBuffer.overrideMetallicValue;
     }
     
-    // float3x3 tangentToWorld = float3x3(hitSurface.tangent, hitSurface.bitangent, hitSurface.normal);
-    float3x4 ObjectToWorld3x4 = ObjectToWorld(); 
+    float3x4 ObjectToWorld3x4 = ObjectToWorld();
+    float3x3 ObjectToWorld3x3 = float3x3(
+        ObjectToWorld3x4[0].xyz,
+        ObjectToWorld3x4[1].xyz,
+        ObjectToWorld3x4[2].xyz
+    );
 
-    const float3 tangent = normalize(hitSurface.tangent);
-    const float3 biTangent = normalize(cross(hitSurface.normal, tangent));
-    const float3 t = normalize(mul(tangent, ObjectToWorld3x4).xyz);
-    const float3 b = normalize(mul(biTangent, ObjectToWorld3x4).xyz);
-    const float3 n = normalize(mul(hitSurface.normal, ObjectToWorld3x4).xyz);
-    float3x3 tangentToWorld = float3x3(t, b, n);
+    float3x3 ObjectToWorld = transpose(Inverse3x3(ObjectToWorld3x3));
 
-    float3 N = getNormalSample(textureCoords, material.normalTextureIndex, MeshSampler, n, tangentToWorld).xyz;
+    const float3 normalWS = normalize(mul(hitSurface.normal, ObjectToWorld).xyz);
+    const float3 tangentWS = normalize(mul(hitSurface.tangent, ObjectToWorld).xyz);
+    const float3 biTangentWS = normalize(cross(normalWS, tangentWS));
+    
+    float3x3 tangentToWorld = float3x3(tangentWS, biTangentWS, normalWS);
+    
+    float3 N = getNormalSample(textureCoords, material.normalTextureIndex, MeshSampler, normalWS, tangentToWorld).xyz;
     
     float metalic = metallicRoughness.x;
     float roughness = metallicRoughness.y;
@@ -273,14 +278,14 @@ void Miss(inout FPayload payload : SV_RayPayload)
     payload.distance = -1;
 
     // Directional Light
-    // ConstantBuffer<interlop::LightBuffer> lightBuffer = ResourceDescriptorHeap[renderResources.lightBufferIndex];
+    ConstantBuffer<interlop::LightBuffer> lightBuffer = ResourceDescriptorHeap[renderResources.lightBufferIndex];
 
-    // uint DLIndex = 0;
-    // float4 lightColor = lightBuffer.lightColor[DLIndex];
-    // float lightIntensity = lightBuffer.intensityDistance[DLIndex][0];
-    // float3 lightDir = normalize(-lightBuffer.lightPosition[DLIndex].xyz);
-    // if (dot(rayDir, lightDir) > 0.99f) // ray is facing the directional light.
-    // {
-    //     payload.radiance += lightColor.xyz * lightIntensity;
-    // }
+    uint DLIndex = 0;
+    float4 lightColor = lightBuffer.lightColor[DLIndex];
+    float lightIntensity = lightBuffer.intensityDistance[DLIndex][0];
+    float3 lightDir = normalize(-lightBuffer.lightPosition[DLIndex].xyz);
+    if (dot(rayDir, lightDir) > 0.99f) // ray is facing the directional light.
+    {
+        payload.radiance += lightColor.xyz * lightIntensity;
+    }
 }

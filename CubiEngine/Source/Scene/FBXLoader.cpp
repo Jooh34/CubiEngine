@@ -209,12 +209,7 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
 				const XMFLOAT3 XMTangent = { tangent.x, tangent.y, tangent.z };
 				Tangents.push_back(XMTangent);
 
-				aiVector3D bitangent = mesh->mBitangents[v];
-				const XMFLOAT3 XMBitangent = { bitangent.x, bitangent.y, bitangent.z };
-				//Bitangents.push_back(XMBitangent);
-
                 ResultMesh.MeshVertices[v].tangent = XMTangent;
-                ResultMesh.MeshVertices[v].bitangent = XMBitangent;
 			}
         }
 
