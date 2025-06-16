@@ -61,6 +61,7 @@ using Dx::XMVectorGetX;
 using Dx::XMVectorGetY;
 using Dx::XMVectorGetZ;
 using Dx::XMVectorGetW;
+using Dx::XMVector3Cross;
 
 #ifdef _DEBUG
 #define ENABLE_PIX_EVENT 1

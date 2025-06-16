@@ -217,6 +217,8 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     {
         metallicRoughness.x = debugBuffer.overrideMetallicValue;
     }
+    float metalic = metallicRoughness.x;
+    float roughness = metallicRoughness.y;
     
     float3x4 ObjectToWorld3x4 = ObjectToWorld();
     float3x3 ObjectToWorld3x3 = float3x3(
@@ -227,25 +229,27 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
 
     float3x3 ObjectToWorld = transpose(Inverse3x3(ObjectToWorld3x3));
 
-    const float3 normalWS = normalize(mul(hitSurface.normal, ObjectToWorld).xyz);
-    const float3 tangentWS = normalize(mul(hitSurface.tangent, ObjectToWorld).xyz);
+    float3x3 tangentToWorld;
+    float3 normalWS = normalize(mul(hitSurface.normal, ObjectToWorld).xyz);
+    float3 tangentWS = normalize(mul(hitSurface.tangent, ObjectToWorld).xyz);
     const float3 biTangentWS = normalize(cross(normalWS, tangentWS));
+
+    tangentToWorld = float3x3(tangentWS, biTangentWS, normalWS);
+    float3x3 worldToTangent = transpose(tangentToWorld);
     
-    float3x3 tangentToWorld = float3x3(tangentWS, biTangentWS, normalWS);
-    
-    float3 N = getNormalSample(textureCoords, material.normalTextureIndex, MeshSampler, normalWS, tangentToWorld).xyz;
-    
-    float metalic = metallicRoughness.x;
-    float roughness = metallicRoughness.y;
-    const float3 positionWS = mul(hitSurface.position, ObjectToWorld3x4).xyz;
+    float3 normal = getNormalSample(textureCoords, material.normalTextureIndex, MeshSampler, normalWS, tangentToWorld);
+    float3 normalTS = normalize(mul(normal, worldToTangent));
 
     // next ray
     float3 inRay = WorldRayDirection();
-    float3 nextRay = getNextRay(inRay, N, roughness, uvz);
+    float3 inRayTS = normalize(mul(inRay, worldToTangent));
+    float3 nextRay = getNextRay(inRayTS, normalTS, roughness, uvz);
+    float3 nextRayWS = normalize(mul(nextRay, tangentToWorld));
     
+    const float3 positionWS = mul(hitSurface.position, ObjectToWorld3x4).xyz;
     RayDesc ray;
     ray.Origin = positionWS;
-    ray.Direction = nextRay;
+    ray.Direction = nextRayWS;
     ray.TMin = 0.1f;
     ray.TMax = FP32Max;
 

@@ -34,3 +34,14 @@ void CreateRandomFloats(float* RandomFloats, int NumFloats)
         RandomFloats[i] = value;
     }
 }
+
+void GenerateSimpleTangentVector(XMFLOAT3& InNormal, XMFLOAT3* OutTangent)
+{
+    XMVECTOR NormalVector = XMLoadFloat3(&InNormal);
+    NormalVector = XMVector3Normalize(NormalVector);
+
+    XMVECTOR UpVector = (fabs(XMVectorGetZ(NormalVector)) < 0.999f) ? XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f) : XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+    XMVECTOR Tangent = XMVector3Normalize(XMVector3Cross(UpVector, NormalVector));
+
+    XMStoreFloat3(OutTangent, Tangent);
+}

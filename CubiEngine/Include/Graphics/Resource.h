@@ -139,6 +139,11 @@ struct FTexture
     static bool IsCompressedFormat(DXGI_FORMAT Format);
 	static uint32_t GetBytesPerPixel(DXGI_FORMAT Format);
     static bool IsUAVAllowed(ETextureUsage Usage, DXGI_FORMAT Format);
+
+    operator bool() const
+    {
+        return GetResource() != nullptr;
+    }
 };
 
 struct FIntRect

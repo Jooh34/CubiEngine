@@ -4,6 +4,7 @@
 #include "Graphics/Resource.h"
 #include "Graphics/GraphicsDevice.h"
 #include "ShaderInterlop/ConstantBuffers.hlsli"
+#include "CubiMath.h"
 
 void FTransform::Update()
 {
@@ -443,50 +444,67 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
         
         // Calculate tangents for each vertex
         Tangents.resize(Positions.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
-
-        for (size_t i = 0; i < Mesh.Indice.size(); i += 3)
+        auto* M = Materials[primitive.material].get();
+        if (M->NormalTexture)
         {
-            UINT index0 = Mesh.Indice[i];
-            UINT index1 = Mesh.Indice[i + 1];
-            UINT index2 = Mesh.Indice[i + 2];
+            for (size_t i = 0; i < Mesh.Indice.size(); i += 3)
+            {
+                UINT index0 = Mesh.Indice[i];
+                UINT index1 = Mesh.Indice[i + 1];
+                UINT index2 = Mesh.Indice[i + 2];
 
-            const XMFLOAT3& pos0 = Positions[index0];
-            const XMFLOAT3& pos1 = Positions[index1];
-            const XMFLOAT3& pos2 = Positions[index2];
+                const XMFLOAT3& pos0 = Positions[index0];
+                const XMFLOAT3& pos1 = Positions[index1];
+                const XMFLOAT3& pos2 = Positions[index2];
 
-            const XMFLOAT2& uv0 = TextureCoords[index0];
-            const XMFLOAT2& uv1 = TextureCoords[index1];
-            const XMFLOAT2& uv2 = TextureCoords[index2];
+                const XMFLOAT2& uv0 = TextureCoords[index0];
+                const XMFLOAT2& uv1 = TextureCoords[index1];
+                const XMFLOAT2& uv2 = TextureCoords[index2];
 
-            // Calculate edges
-            XMFLOAT3 edge1 = XMFLOAT3(pos1.x - pos0.x, pos1.y - pos0.y, pos1.z - pos0.z);
-            XMFLOAT3 edge2 = XMFLOAT3(pos2.x - pos0.x, pos2.y - pos0.y, pos2.z - pos0.z);
+                // Calculate edges
+                XMFLOAT3 edge1 = XMFLOAT3(pos1.x - pos0.x, pos1.y - pos0.y, pos1.z - pos0.z);
+                XMFLOAT3 edge2 = XMFLOAT3(pos2.x - pos0.x, pos2.y - pos0.y, pos2.z - pos0.z);
 
-            float deltaU1 = uv1.x - uv0.x;
-            float deltaV1 = uv1.y - uv0.y;
-            float deltaU2 = uv2.x - uv0.x;
-            float deltaV2 = uv2.y - uv0.y;
+                float deltaU1 = uv1.x - uv0.x;
+                float deltaV1 = uv1.y - uv0.y;
+                float deltaU2 = uv2.x - uv0.x;
+                float deltaV2 = uv2.y - uv0.y;
 
-            float f = 1.0f / (deltaU1 * deltaV2 - deltaU2 * deltaV1);
+                float f = 1.0f / (deltaU1 * deltaV2 - deltaU2 * deltaV1);
 
-            XMFLOAT3 tangent = {
-                f * (deltaV2 * edge1.x - deltaV1 * edge2.x),
-                f * (deltaV2 * edge1.y - deltaV1 * edge2.y),
-                f * (deltaV2 * edge1.z - deltaV1 * edge2.z)
-            };
+                XMFLOAT3 tangent = {
+                    f * (deltaV2 * edge1.x - deltaV1 * edge2.x),
+                    f * (deltaV2 * edge1.y - deltaV1 * edge2.y),
+                    f * (deltaV2 * edge1.z - deltaV1 * edge2.z)
+                };
 
-            // Accumulate the tangent
-            Tangents[index0].x += tangent.x;
-            Tangents[index0].y += tangent.y;
-            Tangents[index0].z += tangent.z;
+                // Accumulate the tangent
+                Tangents[index0].x += tangent.x;
+                Tangents[index0].y += tangent.y;
+                Tangents[index0].z += tangent.z;
 
-            Tangents[index1].x += tangent.x;
-            Tangents[index1].y += tangent.y;
-            Tangents[index1].z += tangent.z;
+                Tangents[index1].x += tangent.x;
+                Tangents[index1].y += tangent.y;
+                Tangents[index1].z += tangent.z;
 
-            Tangents[index2].x += tangent.x;
-            Tangents[index2].y += tangent.y;
-            Tangents[index2].z += tangent.z;
+                Tangents[index2].x += tangent.x;
+                Tangents[index2].y += tangent.y;
+                Tangents[index2].z += tangent.z;
+            }
+        }
+        else
+        {
+			// If no normal texture, set tangents to fake
+			for (size_t i = 0; i < Mesh.Indice.size(); i=i+3)
+			{
+                UINT index0 = Mesh.Indice[i];
+                UINT index1 = Mesh.Indice[i + 1];
+                UINT index2 = Mesh.Indice[i + 2];
+
+				GenerateSimpleTangentVector(Normals[index0], &Tangents[index0]);
+				GenerateSimpleTangentVector(Normals[index1], &Tangents[index1]);
+				GenerateSimpleTangentVector(Normals[index2], &Tangents[index2]);
+			}
         }
 
         // Normalize tangents

@@ -153,6 +153,22 @@ float3 getNormalSample(float2 textureCoord, uint normalTextureIndex, SamplerStat
     return normalize(normal);
 }
 
+float3 getNormalSampleTS(float2 textureCoord, uint normalTextureIndex, SamplerState MeshSampler)
+{
+    uint InvalidIndex = 4294967295;
+    if (normalTextureIndex != InvalidIndex)
+    {
+        Texture2D<float4> normalTexture = ResourceDescriptorHeap[normalTextureIndex];
+
+        // Make the normal into a -1 to 1 range.
+        float3 normal = 2.0f * normalTexture.SampleLevel(MeshSampler, textureCoord, 0).xyz - float3(1.0f, 1.0f, 1.0f);
+        return normalize(normal);
+    }
+
+    return float3(0.0f, 0.0f, 1.0f); // Default normal in tangent space
+}
+
+
 float hashIntFloatCombo(float baseRand, int3 uvz)
 {
     float3 p = float3(uvz) + baseRand * float3(1.0f, 17.0f, 113.0f); // mix scaling
