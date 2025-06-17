@@ -246,7 +246,8 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     float3 nextRay = getNextRay(inRayTS, normalTS, roughness, uvz);
     float3 nextRayWS = normalize(mul(nextRay, tangentToWorld));
     
-    const float3 positionWS = mul(hitSurface.position, ObjectToWorld3x4).xyz;
+    float4x3 ObjectToWorld4x3 = ObjectToWorld4x3();
+    const float3 positionWS = mul(float4(hitSurface.position,1), ObjectToWorld4x3).xyz;
     RayDesc ray;
     ray.Origin = positionWS;
     ray.Direction = nextRayWS;
