@@ -78,10 +78,11 @@ void FPathTracingPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene)
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
         .envmapTextureIndex = Scene->GetEnvironmentMap()->CubeMapTexture.SrvIndex,
 		.envmapIntensity = Scene->EnvmapIntensity,
+        .envBRDFTextureIndex = Scene->GetEnvironmentMap()->BRDFLutTexture.SrvIndex,
+        .debugBufferIndex = Scene->GetDebugBuffer().CbvIndex,
         .maxPathDepth = 10,
         .numSamples = (uint32_t)Scene->PathTracingSamplePerPixel,
 		.bRefreshPathTracingTexture = IsViewProjectChanged ? 1u : 0u,
-        .debugBufferIndex = Scene->GetDebugBuffer().CbvIndex,
     };
 
     for (int i = 0; i < 16; i++)

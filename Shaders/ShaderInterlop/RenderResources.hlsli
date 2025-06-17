@@ -398,12 +398,13 @@ namespace interlop
 
         uint envmapTextureIndex;
         float envmapIntensity;
+        uint envBRDFTextureIndex;
+        uint debugBufferIndex;
+
         uint maxPathDepth;
         uint numSamples;
-        
         uint bRefreshPathTracingTexture;
-        uint debugBufferIndex;
-        float2 padding;
+        float padding;
 
         float4 randomFloats[16];
     };

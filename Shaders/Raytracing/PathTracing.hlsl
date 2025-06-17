@@ -4,6 +4,7 @@
 #include "Raytracing/Common.hlsl"
 #include "Utils.hlsli"
 #include "Shading/BRDF.hlsli"
+#include "Shading/Sampling.hlsli"
 
 // Raytracing acceleration structure, accessed as a SRV
 RaytracingAccelerationStructure SceneBVH : register(t0, space200);
@@ -168,6 +169,68 @@ float3 getNextRay(float3 inRay, float3 N, float roughness, int3 uvz)
     }
 }
 
+float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, float metallic, float roughness, float3 F0, float3 energyCompensation, out float3 throughput)
+{
+    float reflectionFactor = 1.0f - roughness;
+
+    float4 randomFloat = renderResources.randomFloats[RANDOM_INDEX_GET_NEXT_RAY];
+    float rx = pcgHash(randomFloat.x, uvz);
+    float ry = pcgHash(randomFloat.y, uvz);
+    float rz = pcgHash(randomFloat.z, uvz);
+    float rw = pcgHash(randomFloat.w, uvz);
+
+    if (-inRayTS.z < 0.0f)
+    {
+        // If the incoming ray is below the surface, we discard it.
+        throughput = float3(0.0f, 0.0f, 0.0f);
+        return float3(0.0f, 0.0f, 1.0f);
+    }
+
+    if (rx < 0.5f)
+    {
+        // diffuse ray
+        float2 u = float2(ry, rz);
+        float pdf;
+        float NoL;
+        float3 d;
+
+        // The PDF of sampling a cosine hemisphere is NdotL / Pi, which cancels out those terms
+        // from the diffuse BRDF and the irradiance integral
+        ImportanceSampleCosDir(u, normalTS, d, NoL, pdf);
+
+        float3 V = -inRayTS;
+        float3 H = normalize(V + d);
+        float VoH = saturate(dot(V, H));
+        float3 diffuse = lambertianDiffuseBRDF(albedo, VoH, metallic);
+        throughput = 2.f * diffuse * NoL / pdf;
+        return d;
+    }
+    else
+    {
+        float3 microfacetNormalTS = SampleGGXVisibleNormal(-inRayTS, roughness, roughness, ry, rz);
+        float3 sampleDirTS = reflect(inRayTS, microfacetNormalTS);
+        if (sampleDirTS.z < 0.0) sampleDirTS = -sampleDirTS; // Ensure the sample direction is above the surface
+        
+        float NoL = saturate(dot(normalTS, sampleDirTS));
+        float NoV = saturate(dot(normalTS, -inRayTS));
+        float NoH = saturate(dot(normalTS, microfacetNormalTS));
+
+        if (NoL <= 0.0f || NoV <= 0.0f)
+        {
+            // If the sample direction is below the surface, we discard it.
+            throughput = float3(0.0f, 0.0f, 0.0f);
+            return float3(0.0f, 0.0f, 1.0f);
+        }
+
+        float3 F = Fresnel(F0, microfacetNormalTS, sampleDirTS);
+        float G1 = SmithGGXMasking(normalTS, sampleDirTS, -inRayTS, roughness * roughness);
+        float G2 = SmithGGXMaskingShadowing(normalTS, sampleDirTS, -inRayTS, roughness * roughness);
+
+        throughput = (F * energyCompensation) * (G2 / max(G1,EPS)) * 2.f; 
+        return sampleDirTS;
+    }
+}
+
 [shader("closesthit")] 
 void ClosestHit(inout FPathTracePayload payload, in Attributes attr) 
 {
@@ -217,14 +280,20 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     {
         metallicRoughness.x = debugBuffer.overrideMetallicValue;
     }
-    float metalic = metallicRoughness.x;
+    float metallic = metallicRoughness.x;
     float roughness = metallicRoughness.y;
     
-    float3x4 ObjectToWorld3x4 = ObjectToWorld();
+    const float3 DIELECTRIC_SPECULAR = float3(0.04f, 0.04f, 0.04f);
+    const float3 F0 = lerp(DIELECTRIC_SPECULAR, albedo.xyz, metallic);
+    
+    Texture2D<float4> EnvBRDFTexture = ResourceDescriptorHeap[renderResources.envBRDFTextureIndex];
+    
+    // float3x4 ObjectToWorld3x4 = ObjectToWorld();
+    float4x3 OTW4x3 = ObjectToWorld4x3();
     float3x3 ObjectToWorld3x3 = float3x3(
-        ObjectToWorld3x4[0].xyz,
-        ObjectToWorld3x4[1].xyz,
-        ObjectToWorld3x4[2].xyz
+        OTW4x3[0].xyz,
+        OTW4x3[1].xyz,
+        OTW4x3[2].xyz
     );
 
     float3x3 ObjectToWorld = transpose(Inverse3x3(ObjectToWorld3x3));
@@ -243,11 +312,21 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     // next ray
     float3 inRay = WorldRayDirection();
     float3 inRayTS = normalize(mul(inRay, worldToTangent));
-    float3 nextRay = getNextRay(inRayTS, normalTS, roughness, uvz);
+    
+    // energy compensation
+    float NoV = saturate(dot(normalTS, -inRayTS));
+    NoV = min(NoV, 0.9f); // TODO: temp
+    float4 EnvBRDF = EnvBRDFTexture.SampleLevel(MeshSampler, float2(NoV, roughness), 0);
+    float3 energyCompensation = 1.0 + F0 * (1.0 / EnvBRDF.z - 1.0);
+
+    float3 throughput = albedo;
+    // float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, float metallic, float roughness, float3 F0, float energyCompensation, out float3 throughput)
+    float3 nextRay = sampleNextRay(inRayTS, normalTS, uvz, albedo, metallic, roughness, F0, energyCompensation, throughput);
+    // float3 nextRay = getNextRay(inRayTS, normalTS, roughness, uvz);
+
     float3 nextRayWS = normalize(mul(nextRay, tangentToWorld));
     
-    float4x3 ObjectToWorld4x3 = ObjectToWorld4x3();
-    const float3 positionWS = mul(float4(hitSurface.position,1), ObjectToWorld4x3).xyz;
+    const float3 positionWS = mul(float4(hitSurface.position,1), OTW4x3).xyz;
     RayDesc ray;
     ray.Origin = positionWS;
     ray.Direction = nextRayWS;
@@ -268,7 +347,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     const uint missShaderIdx = RayTypeRadiance;
     TraceRay(SceneBVH, traceRayFlags, 0xFFFFFFFF, hitGroupOffset, hitGroupGeoMultiplier, missShaderIdx, ray, nextPayload);
 
-    payload.radiance = albedo * nextPayload.radiance;
+    payload.radiance = throughput * nextPayload.radiance;
     payload.distance = 0;
 }
 
