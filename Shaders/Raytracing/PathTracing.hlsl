@@ -18,6 +18,8 @@ SamplerState LinearSampler : register(s1);
 #define RANDOM_INDEX_PIXEL_JITTER 0
 #define RANDOM_INDEX_GET_NEXT_RAY 1
 
+#define PathTracingRayFlag RAY_FLAG_CULL_BACK_FACING_TRIANGLES
+
 [shader("raygeneration")] 
 void RayGen()
 {
@@ -26,7 +28,7 @@ void RayGen()
 
     const uint2 pixelCoord = DispatchRaysIndex().xy;
     
-    uint traceRayFlags = RAY_FLAG_NONE;
+    uint traceRayFlags = PathTracingRayFlag;
 
     const uint hitGroupOffset = 0;
     const uint hitGroupGeoMultiplier = 2;
@@ -58,36 +60,10 @@ void RayGen()
         TraceRay(
             SceneBVH,
             traceRayFlags,
-
-            // Parameter name: InstanceInclusionMask
-            // Instance inclusion mask, which can be used to mask out some geometry to this ray by
-            // and-ing the mask with a geometry mask. The 0xFF flag then indicates no geometry will be
-            // masked
             0xFF,
-
-            // Parameter name: RayContributionToHitGroupIndex
-            // Depending on the type of ray, a given object can have several hit groups attached
-            // (ie. what to do when hitting to compute regular shading, and what to do when hitting
-            // to compute shadows). Those hit groups are specified sequentially in the SBT, so the value
-            // below indicates which offset (on 4 bits) to apply to the hit groups for this ray. In this
-            // sample we only have one hit group per object, hence an offset of 0.
             hitGroupOffset,
-
-            // Parameter name: MultiplierForGeometryContributionToHitGroupIndex
-            // The offsets in the SBT can be computed from the object ID, its instance ID, but also simply
-            // by the order the objects have been pushed in the acceleration structure. This allows the
-            // application to group shaders in the SBT in the same order as they are added in the AS, in
-            // which case the value below represents the stride (4 bits representing the number of hit
-            // groups) between two consecutive objects.
             hitGroupGeoMultiplier,
-
-            // Parameter name: MissShaderIndex
-            // Index of the miss shader to use in case several consecutive miss shaders are present in the
-            // SBT. This allows to change the behavior of the program when no geometry have been hit, for
-            // example one to return a sky color for regular rendering, and another returning a full
-            // visibility value for shadow rays. This sample has only one miss shader, hence an index 0
             missShaderIdx,
-
             rayDesc,
             payload
         );
@@ -257,7 +233,6 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     
     Texture2D<float4> EnvBRDFTexture = ResourceDescriptorHeap[renderResources.envBRDFTextureIndex];
     
-    // float3x4 ObjectToWorld3x4 = ObjectToWorld();
     float4x3 OTW4x3 = ObjectToWorld4x3();
     float3x3 ObjectToWorld3x3 = float3x3(
         OTW4x3[0].xyz,
@@ -309,7 +284,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     nextPayload.uv = payload.uv;
     nextPayload.sampleIndex = payload.sampleIndex;
 
-    uint traceRayFlags = RAY_FLAG_NONE;
+    uint traceRayFlags = PathTracingRayFlag;
     
     const uint hitGroupOffset = RayTypeRadiance;
     const uint hitGroupGeoMultiplier = NumRayTypes;
@@ -321,7 +296,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
 }
 
 [shader("miss")]
-void Miss(inout FPayload payload : SV_RayPayload)
+void Miss(inout FPathTracePayload payload : SV_RayPayload)
 {
     TextureCube<float4> EnvMapTexture = ResourceDescriptorHeap[renderResources.envmapTextureIndex];
     float3 rayDir = WorldRayDirection();
@@ -340,5 +315,37 @@ void Miss(inout FPayload payload : SV_RayPayload)
     if (dot(rayDir, lightDir) > 0.99f) // ray is facing the directional light.
     {
         payload.radiance += lightColor.xyz * lightIntensity;
+    }
+}
+
+[shader("anyhit")]
+void AnyHit(inout FPathTracePayload payload, in Attributes attr)
+{
+    if (payload.depth >= renderResources.maxPathDepth)
+    {
+        payload.radiance = float3(0.0f, 0.0f, 0.0f);
+        return;
+    }
+
+    int3 uvz = createUniqueUVZ(payload, renderResources.maxPathDepth);
+
+    BufferIndexContext context = {
+        renderResources.geometryInfoBufferIdx,
+        renderResources.vtxBufferIdx,
+        renderResources.idxBufferIdx,
+        renderResources.materialBufferIdx
+    };
+
+    const interlop::MeshVertex hitSurface = GetHitSurface(attr, context, InstanceID());
+    const interlop::FRaytracingMaterial material = GetGeometryMaterial(context, InstanceID());
+
+    float2 textureCoords = hitSurface.texcoord;
+    float4 albedoEmissive = getAlbedoSample(textureCoords, material.albedoTextureIndex, MeshSampler, material.albedoColor);
+    float alpha = albedoEmissive.a;
+
+    static const float AlphaThreshold = 0.9f;
+    if (alpha < AlphaThreshold)
+    {
+        IgnoreHit();
     }
 }

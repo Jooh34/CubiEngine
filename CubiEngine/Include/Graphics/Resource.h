@@ -47,6 +47,7 @@ struct FRaytracingPipelineStateCreationDesc
     std::wstring_view EntryPointRGS{ L"RayGen" };
     std::wstring_view EntryPointCHS{ L"Hit" };
     std::wstring_view EntryPointRMS{ L"Miss" };
+	std::wstring_view EntryPointAHS{ L"" }; // empty means no any AHS
 };
 
 struct FAllocation

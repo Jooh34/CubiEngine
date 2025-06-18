@@ -13,6 +13,8 @@ ConstantBuffer<interlop::RTSceneDebugRenderResource> renderResources : register(
 SamplerState MeshSampler : register(s0);
 SamplerState LinearSampler : register(s1);
 
+#define TraceRayFlag RAY_FLAG_CULL_BACK_FACING_TRIANGLES
+
 [shader("raygeneration")] 
 void RayGen()
 {
@@ -42,47 +44,19 @@ void RayGen()
     payload.radiance = 0.0f;
     payload.distance = 0.0f;
     
-    uint traceRayFlags = RAY_FLAG_NONE;
-
     const uint hitGroupOffset = RayTypeRadiance;
     const uint hitGroupGeoMultiplier = NumRayTypes;
     const uint missShaderIdx = RayTypeRadiance;
 
     TraceRay(
-      SceneBVH,
-      traceRayFlags,
-
-      // Parameter name: InstanceInclusionMask
-      // Instance inclusion mask, which can be used to mask out some geometry to this ray by
-      // and-ing the mask with a geometry mask. The 0xFF flag then indicates no geometry will be
-      // masked
-      0xFF,
-
-      // Parameter name: RayContributionToHitGroupIndex
-      // Depending on the type of ray, a given object can have several hit groups attached
-      // (ie. what to do when hitting to compute regular shading, and what to do when hitting
-      // to compute shadows). Those hit groups are specified sequentially in the SBT, so the value
-      // below indicates which offset (on 4 bits) to apply to the hit groups for this ray. In this
-      // sample we only have one hit group per object, hence an offset of 0.
-      hitGroupOffset,
-
-      // Parameter name: MultiplierForGeometryContributionToHitGroupIndex
-      // The offsets in the SBT can be computed from the object ID, its instance ID, but also simply
-      // by the order the objects have been pushed in the acceleration structure. This allows the
-      // application to group shaders in the SBT in the same order as they are added in the AS, in
-      // which case the value below represents the stride (4 bits representing the number of hit
-      // groups) between two consecutive objects.
-      hitGroupGeoMultiplier,
-
-      // Parameter name: MissShaderIndex
-      // Index of the miss shader to use in case several consecutive miss shaders are present in the
-      // SBT. This allows to change the behavior of the program when no geometry have been hit, for
-      // example one to return a sky color for regular rendering, and another returning a full
-      // visibility value for shadow rays. This sample has only one miss shader, hence an index 0
-      missShaderIdx,
-
-      ray,
-      payload
+        SceneBVH,
+        TraceRayFlag,
+        0xFF,
+        hitGroupOffset,
+        hitGroupGeoMultiplier,
+        missShaderIdx,
+        ray,
+        payload
     );
 
     dstTexture[pixelCoord] = float4(payload.radiance, 1.f);
@@ -110,11 +84,11 @@ void ClosestHit(inout FPayload payload, in Attributes attr)
     float4 albedoEmissive = getAlbedoSample(textureCoords, material.albedoTextureIndex, MeshSampler, material.albedoColor);
     float3 albedo = albedoEmissive.xyz;
     
-    float3x4 ObjectToWorld3x4 = ObjectToWorld();
+    float4x3 OTW4x3 = ObjectToWorld4x3();
     float3x3 ObjectToWorld3x3 = float3x3(
-        ObjectToWorld3x4[0].xyz,
-        ObjectToWorld3x4[1].xyz,
-        ObjectToWorld3x4[2].xyz
+        OTW4x3[0].xyz,
+        OTW4x3[1].xyz,
+        OTW4x3[2].xyz
     );
 
     float3x3 ObjectToWorld = transpose(Inverse3x3(ObjectToWorld3x3));

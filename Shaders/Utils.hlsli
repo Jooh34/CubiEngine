@@ -320,3 +320,35 @@ float2 UVToClip(float2 UV)
 inline float pow2(float x) {
     return pow(x, 2.0);
 }
+
+
+float3x3 Inverse3x3(float3x3 m)
+{
+    float a00 = m[0].x, a01 = m[0].y, a02 = m[0].z;
+    float a10 = m[1].x, a11 = m[1].y, a12 = m[1].z;
+    float a20 = m[2].x, a21 = m[2].y, a22 = m[2].z;
+
+    float det =
+        a00 * (a11 * a22 - a12 * a21) -
+        a01 * (a10 * a22 - a12 * a20) +
+        a02 * (a10 * a21 - a11 * a20);
+
+    if (abs(det) < 1e-6)
+        return float3x3(0,0,0, 0,0,0, 0,0,0); // 혹은 fallback 처리
+
+    float invDet = 1.0 / det;
+
+    return float3x3(
+        (a11 * a22 - a12 * a21) * invDet,
+        (a02 * a21 - a01 * a22) * invDet,
+        (a01 * a12 - a02 * a11) * invDet,
+
+        (a12 * a20 - a10 * a22) * invDet,
+        (a00 * a22 - a02 * a20) * invDet,
+        (a02 * a10 - a00 * a12) * invDet,
+
+        (a10 * a21 - a11 * a20) * invDet,
+        (a01 * a20 - a00 * a21) * invDet,
+        (a00 * a11 - a01 * a10) * invDet
+    );
+}

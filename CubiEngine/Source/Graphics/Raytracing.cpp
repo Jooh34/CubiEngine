@@ -67,7 +67,7 @@ void FRaytracingScene::GenerateRaytracingScene(
         FRaytracingGeometryContext& Context = RaytracingGeometryContextList[i];
         topLevelASGenerator.AddInstance(Context.BLASResource,
             Context.ModelMatrix, static_cast<UINT>(i),
-            static_cast<UINT>(0));
+            static_cast<UINT>(0), Context.Material->AlphaMode == EAlphaMode::Opaque);
     }
 
     UINT64 scratchSize, resultSize, instanceDescsSize;
@@ -126,7 +126,6 @@ void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const Gr
         FMesh* Mesh = Context.Mesh;
         FPBRMaterial* Material = Context.Material;
         uint32_t MaterialSrvIndex = Context.Material->AlbedoTexture.SrvIndex;
-        if (Material->AlphaMode != EAlphaMode::Opaque) MaterialSrvIndex = 0;
 
         if (Mesh)
         {            
@@ -410,12 +409,13 @@ void TopLevelASGenerator::AddInstance(
     // positions
     UINT instanceID,                    // Instance ID, which can be used in the shaders to
     // identify this specific instance
-    UINT hitGroupIndex                  // Hit group index, corresponding the the index of the
+    UINT hitGroupIndex,                  // Hit group index, corresponding the the index of the
     // hit group in the Shader Binding Table that will be
     // invocated upon hitting the geometry
+    bool bOpaque
 )
 {
-    m_instances.emplace_back(Instance(bottomLevelAS, transform, instanceID, hitGroupIndex));
+    m_instances.emplace_back(Instance(bottomLevelAS, transform, instanceID, hitGroupIndex, bOpaque));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -525,7 +525,7 @@ void TopLevelASGenerator::Generate(
         instanceDescs[i].InstanceContributionToHitGroupIndex = m_instances[i].hitGroupIndex;
         // Instance flags, including backface culling, winding, etc - TODO: should
         // be accessible from outside
-        instanceDescs[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+        instanceDescs[i].Flags = m_instances[i].bOpaque ? D3D12_RAYTRACING_INSTANCE_FLAG_FORCE_OPAQUE : D3D12_RAYTRACING_INSTANCE_FLAG_FORCE_NON_OPAQUE;
         // Instance transform matrix
         DirectX::XMMATRIX m = XMMatrixTranspose(
             m_instances[i].transform); // GLM is column major, the INSTANCE_DESC is row major
@@ -590,8 +590,8 @@ void TopLevelASGenerator::Generate(
 //
 //
 TopLevelASGenerator::Instance::Instance(ID3D12Resource* blAS, const DirectX::XMMATRIX& tr, UINT iID,
-    UINT hgId)
-    : bottomLevelAS(blAS), transform(tr), instanceID(iID), hitGroupIndex(hgId)
+    UINT hgId, bool bOpaque)
+    : bottomLevelAS(blAS), transform(tr), instanceID(iID), hitGroupIndex(hgId), bOpaque(bOpaque)
 {
 }
 

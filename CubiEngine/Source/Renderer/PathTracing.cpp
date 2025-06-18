@@ -11,6 +11,7 @@ FPathTracingPass::FPathTracingPass(const FGraphicsDevice* const Device, FScene* 
       .EntryPointRGS = L"RayGen",
       .EntryPointCHS = L"ClosestHit",
       .EntryPointRMS = L"Miss",
+      .EntryPointAHS = L"AnyHit",
 	}),
     PathTracingPassSBT(Device, PathTracingPassPipelineState.GetRTStateObjectProps())
 {
