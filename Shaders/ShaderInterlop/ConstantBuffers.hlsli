@@ -26,11 +26,7 @@ namespace interlop
     {
         uint bUseTaa;
         uint ShadowMethod;
-        float overrideRoughnessValue;
-        float overrideMetallicValue;
-
-        uint bOverrideBaseColor;
-        float3 overrideBaseColorValue;
+        float2 padding;
     };
 
     ConstantBufferStruct SceneBuffer
@@ -58,8 +54,7 @@ namespace interlop
         float roughnessFactor;
 
         float metallicFactor;
-        float emissiveFactor;
-        float2 padding;
+        float3 padding;
     };
 
     ConstantBufferStruct TransformBuffer

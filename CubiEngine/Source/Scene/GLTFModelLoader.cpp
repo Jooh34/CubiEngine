@@ -309,7 +309,6 @@ void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice
                 },
                 .roughnessFactor = bOverrideRoughness ? OverrideRoughnessValue : (float)material.pbrMetallicRoughness.roughnessFactor,
                 .metallicFactor = bOverrideMetallic ? OverrideMetallicValue : (float)material.pbrMetallicRoughness.metallicFactor,
-                .emissiveFactor = 0.0f,
         };
 
         PbrMaterial->MaterialBuffer.Update(&PbrMaterial->MaterialBufferData);

@@ -141,7 +141,6 @@ void FFBXLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, cons
 				.albedoColor = XMFLOAT3 { baseColor.r, baseColor.g, baseColor.b },
                 .roughnessFactor = 1.0f,
                 .metallicFactor = 1.0f,
-                .emissiveFactor = 0.0f,
             };
         }
 

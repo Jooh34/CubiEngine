@@ -5,6 +5,7 @@
 #include "Utils.hlsli"
 #include "Shading/BRDF.hlsli"
 #include "Shading/Sampling.hlsli"
+#include "Raytracing/RaytracingUtils.hlsli"
 
 // Raytracing acceleration structure, accessed as a SRV
 RaytracingAccelerationStructure SceneBVH : register(t0, space200);
@@ -36,12 +37,7 @@ void RayGen()
 
     for (uint s=0; s<numSamples; s++)
     {
-        FPathTracePayload payload;
-        payload.radiance = 0.0f;
-        payload.distance = 0.0f;
-        payload.depth = 0;
-        payload.uv = pixelCoord;
-        payload.sampleIndex = s;
+        FPathTracePayload payload = defaultPathTracePayload(pixelCoord, s);
 
         int3 uvz = createUniqueUVZ(payload, renderResources.maxPathDepth);
 
@@ -49,29 +45,14 @@ void RayGen()
         float du = pcgHash(randomFloat.x, uvz) - 0.5f;
         float dv = pcgHash(randomFloat.y, uvz) - 0.5f;
 
-        // add jitter to the pixel coordinates
+        // view ray generation
         float2 jitteredPixelCoord = float2(pixelCoord) + float2(du, dv);
 
         float2 ncdXY = (jitteredPixelCoord + 0.5f) / DispatchRaysDimensions().xy; // [0,1]
-
         ncdXY = ncdXY * 2.0f - 1.0f; // [-1,1]
         ncdXY.y = -ncdXY.y;
-        
-        // Ray generation
-        float4 rayStart = mul(float4(ncdXY, 1.0f, 1.0f), renderResources.invViewProjectionMatrix);
-        float4 rayEnd = mul(float4(ncdXY, 0.0f, 1.0f), renderResources.invViewProjectionMatrix);
 
-        rayStart.xyz /= rayStart.w;
-        rayEnd.xyz /= rayEnd.w;
-        float3 rayDir = normalize(rayEnd.xyz - rayStart.xyz);
-        float rayLength = length(rayEnd.xyz - rayStart.xyz);
-        
-        // primary ray desc
-        RayDesc ray;
-        ray.Origin = rayStart.xyz;
-        ray.Direction = rayDir;
-        ray.TMin = 0.01f;
-        ray.TMax = rayLength;
+        RayDesc rayDesc = generateViewRay(renderResources.invViewProjectionMatrix, ncdXY);
 
 
         TraceRay(
@@ -107,7 +88,7 @@ void RayGen()
             // visibility value for shadow rays. This sample has only one miss shader, hence an index 0
             missShaderIdx,
 
-            ray,
+            rayDesc,
             payload
         );
 
@@ -256,10 +237,6 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     float4 albedoEmissive = getAlbedoSample(textureCoords, material.albedoTextureIndex, MeshSampler, material.albedoColor);
     float3 albedo = albedoEmissive.xyz;
     ConstantBuffer<interlop::DebugBuffer> debugBuffer = ResourceDescriptorHeap[renderResources.debugBufferIndex];
-    if (debugBuffer.bOverrideBaseColor)
-    {
-        albedo = debugBuffer.overrideBaseColorValue;
-    }
 
     // Russian Roulette
     float RandomFloatForRoulette = pcgHash(renderResources.randomFloats[RANDOM_INDEX_PIXEL_JITTER].z, uvz);
@@ -272,14 +249,6 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     }
 
     float2 metallicRoughness = getMetallicRoughnessSample(textureCoords, material.metalRoughnessTextureIndex, MeshSampler, float2(material.metallic, material.roughness));
-    if (debugBuffer.overrideRoughnessValue >= 0)
-    {
-        metallicRoughness.y = debugBuffer.overrideRoughnessValue;
-    }
-    if (debugBuffer.overrideMetallicValue >= 0)
-    {
-        metallicRoughness.x = debugBuffer.overrideMetallicValue;
-    }
     float metallic = metallicRoughness.x;
     float roughness = metallicRoughness.y;
     

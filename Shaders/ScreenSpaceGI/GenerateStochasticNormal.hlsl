@@ -3,6 +3,8 @@
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Utils.hlsli"
+#include "Shading/Sampling.hlsli"
+
 ConstantBuffer<interlop::GenerateStochasticNormalRenderResource> renderResources : register(b0);
 
 [numthreads(8, 8, 1)]

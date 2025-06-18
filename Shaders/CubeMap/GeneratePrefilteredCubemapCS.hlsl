@@ -4,7 +4,7 @@
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Utils.hlsli"
-#include "Shading/BRDF.hlsli"
+#include "Shading/Sampling.hlsli"
 
 float3 PrefilterEnvMap(float Roughness, float3 V, in TextureCube<float4> EnvMap)
 {

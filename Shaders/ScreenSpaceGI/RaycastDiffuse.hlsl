@@ -3,6 +3,8 @@
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Utils.hlsli"
+#include "Shading/Sampling.hlsli"
+
 ConstantBuffer<interlop::RaycastDiffuseRenderResource> renderResources : register(b0);
 
 static const int stepCount = 32;

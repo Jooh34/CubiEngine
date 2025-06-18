@@ -4,7 +4,7 @@
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Utils.hlsli"
-#include "Shading/BRDF.hlsli"
+#include "Shading/Sampling.hlsli"
 
 ConstantBuffer<interlop::GeneratePrefilteredCubemapResource> renderResources : register(b0);
 

@@ -73,37 +73,18 @@ PsOutput PsMain(VSOutput psInput)
     float3x3 viewMatrix = (float3x3)transpose(sceneBuffer.inverseViewMatrix);
     normal = mul(normal, viewMatrix);
     
-    float3 emissive = getEmissive(psInput.textureCoord, albedo, materialBuffer.emissiveFactor, renderResources.emissiveTextureIndex, renderResources.emissiveTextureSamplerIndex).xyz;
+    float3 emissive = getEmissive(psInput.textureCoord, renderResources.emissiveTextureIndex, renderResources.emissiveTextureSamplerIndex).xyz;
     float2 velocity = calculateVelocity(psInput.curPosition, psInput.prevPosition);
     
-    float ao = 0.f;
-    float2 metalRoughness = float2(materialBuffer.metallicFactor, materialBuffer.roughnessFactor);
-    if (renderResources.ormTextureIndex != INVALID_INDEX)
-    {
-        float3 orm = getORM(psInput.textureCoord, renderResources.ormTextureIndex, renderResources.ormTextureSamplerIndex, metalRoughness);
-        ao = (1-orm.x);
-        metalRoughness = float2(orm.z, orm.y);
-    }
-    else
-    {
-        ao = getAO(psInput.textureCoord, renderResources.aoTextureIndex, renderResources.aoTextureSamplerIndex).x;
-        metalRoughness = getMetallicRoughness(psInput.textureCoord, renderResources.metalRoughnessTextureIndex, renderResources.metalRoughnessTextureSamplerIndex, metalRoughness);
-    }
-
-    if (debugBuffer.bOverrideBaseColor)
-    {
-        albedo = debugBuffer.overrideBaseColorValue;
-    }
-    if (debugBuffer.overrideRoughnessValue >= 0)
-    {
-        metalRoughness.y = debugBuffer.overrideRoughnessValue;
-    }
-    if (debugBuffer.overrideMetallicValue >= 0)
-    {
-        metalRoughness.x = debugBuffer.overrideMetallicValue;
-    }
+    float2 defaultMetalRoughness = float2(materialBuffer.metallicFactor, materialBuffer.roughnessFactor);
+    float3 ORM = getOcclusionRoughnessMetallic(
+        psInput.textureCoord, defaultMetalRoughness,
+        renderResources.ormTextureIndex, renderResources.ormTextureSamplerIndex,
+        renderResources.metalRoughnessTextureIndex, renderResources.metalRoughnessTextureSamplerIndex,
+        renderResources.aoTextureIndex, renderResources.aoTextureSamplerIndex
+    );
 
     PsOutput output;
-    packGBuffer(albedo, normal, ao, metalRoughness, emissive, velocity, output.GBufferA, output.GBufferB, output.GBufferC, output.Velocity);
+    packGBuffer(albedo, normal, ORM.x, ORM.zy, emissive, velocity, output.GBufferA, output.GBufferB, output.GBufferC, output.Velocity);
     return output;
 }

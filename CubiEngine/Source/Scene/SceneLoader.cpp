@@ -116,15 +116,6 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             float Intensity = 1.f;
             Scene->AddLight(LightPosition, LightColor);
             Scene->AddModel(Desc);
-
-            Scene->bOverrideBaseColor = true;
-            Scene->OverrideBaseColorValue[0] = 1.f;
-            Scene->OverrideBaseColorValue[1] = 1.f;
-            Scene->OverrideBaseColorValue[2] = 1.f;
-
-            Scene->OverrideRoughnessValue = 0.f;
-            Scene->OverrideMetallicValue = 1.f;
-
             break;
 		}
 		case ESceneType::Bistro:

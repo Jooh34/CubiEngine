@@ -1,5 +1,138 @@
 // clang-format off
+#pragma once
+
 #include "Utils.hlsli"
+#include "Shading/BRDF.hlsli"
+
+float3 ConcentricDiskSamplingHelper(float2 E)
+{
+	float2 p = 2 * E - 0.99999994;
+	float2 a = abs(p);
+	float Lo = min(a.x, a.y);
+	float Hi = max(a.x, a.y);
+	float Epsilon = 5.42101086243e-20; 
+	float Phi = (PI / 4) * (Lo / (Hi + Epsilon) + 2 * float(a.y >= a.x));
+	float Radius = Hi;
+	const uint SignMask = 0x80000000;
+	float2 Disk = asfloat((asuint(float2(cos(Phi), sin(Phi))) & ~SignMask) | (asuint(p) & SignMask));
+	return float3(Disk, Radius);
+}
+
+float4 CosineSampleHemisphereConcentric(float2 E)
+{
+	float3 Result = ConcentricDiskSamplingHelper(E);
+	float SinTheta = Result.z;
+	float CosTheta = sqrt(1 - SinTheta * SinTheta);
+	return float4(Result.xy * SinTheta, CosTheta, CosTheta * (1.0 / PI));
+}
+
+
+// UnrealEngine 4 by Karis
+float3 ImportanceSampleGGX(float2 Xi, float Roughness, float3 N)
+{
+    float a = Roughness * Roughness;
+    float Phi = 2 * PI * Xi.y;
+    float CosTheta = sqrt((1-Xi.x) / (1.0+(a*a-1.0) * Xi.x));
+    float SinTheta = sqrt(1-CosTheta*CosTheta);
+
+    float3 H;
+    H.x = SinTheta*cos(Phi);
+    H.y = SinTheta*sin(Phi);
+    H.z = CosTheta;
+
+    float3 UpVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
+    float3 TangentX = normalize(cross(UpVector, N));
+    float3 TangentY = normalize(cross(N, TangentX));
+    
+    // Tangent to world space transformation.
+    return normalize(TangentX * H.x + TangentY * H.y + N * H.z);
+}
+
+void ImportanceSampleCosDir(float2 u, float3 N, out float3 outL, out float NdotL, out float pdf)
+{
+    const float CosTheta = sqrt(u.x);
+    const float SinTheta = sqrt(max(0.0f, 1.0f - CosTheta * CosTheta)); // Sin Theta
+    float Phi = u.y * PI * 2;
+    
+    float3 L;
+    L.x = SinTheta*cos(Phi);
+    L.y = SinTheta*sin(Phi);
+    L.z = CosTheta;
+    
+    float3 UpVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
+    float3 TangentX = normalize(cross(UpVector, N));
+    float3 TangentY = normalize(cross(N, TangentX));
+    
+    outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
+
+    NdotL = saturate(dot(N,L));
+    pdf = CosTheta * INV_PI;
+}
+
+// https://ameye.dev/notes/sampling-the-hemisphere/
+void ImportanceSampleCosDirPow(float2 u, float3 N, float p, out float3 outL, out float NdotL, out float pdf)
+{
+    float CosTheta = pow(max(0.0f, 1.0f - u.x), 1.f/(p+1));
+    float SinTheta = sqrt(u.x);
+    float Phi = u.y * PI * 2;
+    
+    float3 L;
+    L.x = SinTheta*cos(Phi);
+    L.y = SinTheta*sin(Phi);
+    L.z = CosTheta;
+    
+    float3 UpVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
+    float3 TangentX = normalize(cross(UpVector, N));
+    float3 TangentY = normalize(cross(N, TangentX));
+    
+    outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
+
+    NdotL = saturate(dot(N,L));
+    pdf = (p+1) * pow(CosTheta, p) * INV_PI / 2;
+}
+
+// for normal (0,0,1)
+float3 UniformSampleHemisphere(float2 uv)
+{
+    const float cosTheta = 1-uv.x;
+    const float sinTheta = sqrt(max(0.0f, 1.0f - cosTheta * cosTheta)); // Sin Theta
+    const float phi = 2.0f * PI * uv.y;
+    return float3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
+}
+
+void ConcentricSampleDisk(float2 u, float3 N, out float3 outL, out float pdf)
+{
+    float sx = 2.0 * u.x - 1.0;
+    float sy = 2.0 * u.y - 1.0;
+
+    if (sx == 0 && sy == 0)
+        sx = 0.01f;
+
+    float r, theta;
+
+    if (abs(sx) > abs(sy)) {
+        r = sx;
+        theta = (PI / 4.0) * (sy / sx);
+    } else {
+        r = sy;
+        theta = (PI / 2.0) - (PI / 4.0) * (sx / sy);
+    }
+
+    float cosTheta = cos(theta);
+
+    float x = r * cosTheta;
+    float y = r * sin(theta);
+    float z = sqrt(saturate(1.0 - x * x - y * y));
+    float3 L = float3(x, y, z);
+    
+    float3 UpVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
+    float3 TangentX = normalize(cross(UpVector, N));
+    float3 TangentY = normalize(cross(N, TangentX));
+    
+    outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
+
+    pdf = cosTheta * (1.f/PI);
+}
 
 float3 Fresnel(in float3 specAlbedo, in float3 h, in float3 l)
 {

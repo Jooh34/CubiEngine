@@ -5,6 +5,7 @@
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Utils.hlsli"
 #include "Shading/BRDF.hlsli"
+#include "Shading/Sampling.hlsli"
 
 ConstantBuffer<interlop::GenerateBRDFLutRenderResource> renderResources : register(b0);
 

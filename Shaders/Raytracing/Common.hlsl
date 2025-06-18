@@ -1,3 +1,6 @@
+// clang-format off
+#pragma once
+
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
 

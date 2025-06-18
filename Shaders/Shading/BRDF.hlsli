@@ -1,3 +1,6 @@
+// clang-format off
+#pragma once
+
 #include "Utils.hlsli"
 
 struct BxDFContext

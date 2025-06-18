@@ -151,10 +151,6 @@ void FScene::UpdateBuffers()
     const interlop::DebugBuffer DebugBufferData = {
         .bUseTaa = bUseTaa ? 1u : 0u,
         .ShadowMethod = (uint32_t)ShadowMethod,
-		.overrideRoughnessValue = OverrideRoughnessValue,
-		.overrideMetallicValue = OverrideMetallicValue,
-		.bOverrideBaseColor = bOverrideBaseColor ? 1u : 0u,
-		.overrideBaseColorValue = { OverrideBaseColorValue[0], OverrideBaseColorValue[1], OverrideBaseColorValue[2] },
     };
 
     GetDebugBuffer().Update(&DebugBufferData);

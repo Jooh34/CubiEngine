@@ -3,6 +3,7 @@
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Utils.hlsli"
 #include "Shading/BRDF.hlsli"
+#include "Shading/Sampling.hlsli"
 #include "Shadow/Shadow.hlsl"
 
 #define SHADOW_METHOD_NONE 0

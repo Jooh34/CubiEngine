@@ -32,94 +32,104 @@ static const float2 HALTON_SEQUENCE[MAX_HALTON_SEQUENCE] = {
 	float2( 0.03125, 0.592593 )
 };
 
-
-float4 getAlbedo(const float2 textureCoords, const uint albedoTextureIndex, const uint albedoTextureSamplerIndex, const float3 albedoColor)
+float4 getAlbedo(const float2 textureCoords, const uint albedoTextureIndex, const uint albedoTextureSamplerIndex, const float3 defaultAlbedoColor)
 {
     if (albedoTextureIndex == INVALID_INDEX)
     {
-        return float4(albedoColor, 1.0f);
+        return float4(defaultAlbedoColor, 1.0f);
     }
 
     Texture2D<float4> albedoTexture = ResourceDescriptorHeap[albedoTextureIndex];
-
     SamplerState samplerState = SamplerDescriptorHeap[albedoTextureSamplerIndex];
+
     return albedoTexture.Sample(samplerState, textureCoords);
 }
 
 
-float3 getNormal(float2 textureCoord, uint normalTextureIndex, uint normalTextureSamplerIndex, float3 normal, float3x3 tbnMatrix)
+float3 getNormal(float2 textureCoord, uint normalTextureIndex, uint normalTextureSamplerIndex, float3 defaultNormal, float3x3 tbnMatrix)
 {
-    if (normalTextureIndex != INVALID_INDEX)
+    if (normalTextureIndex == INVALID_INDEX)
     {
-        Texture2D<float4> normalTexture = ResourceDescriptorHeap[normalTextureIndex];
-
-        SamplerState samplerState = SamplerDescriptorHeap[NonUniformResourceIndex(normalTextureSamplerIndex)];
-
-        // Make the normal into a -1 to 1 range.
-        normal = 2.0f * normalTexture.Sample(samplerState, textureCoord).xyz - float3(1.0f, 1.0f, 1.0f);
-        normal = normalize(mul(normal, tbnMatrix));
-        return normal;
+        return normalize(defaultNormal);
     }
 
-    return normalize(normal);
+    Texture2D<float4> normalTexture = ResourceDescriptorHeap[normalTextureIndex];
+    SamplerState samplerState = SamplerDescriptorHeap[NonUniformResourceIndex(normalTextureSamplerIndex)];
+
+    // Make the normal into a -1 to 1 range.
+    float3 normal = 2.0f * normalTexture.Sample(samplerState, textureCoord).xyz - float3(1.0f, 1.0f, 1.0f);
+    normal = normalize(mul(normal, tbnMatrix));
+    return normal;
 }
 
-float3 getEmissive(float2 textureCoord, float3 albedoColor, float emissiveFactor, uint emissiveTextureIndex, uint emissiveTextureSamplerIndex)
+float3 getEmissive(float2 textureCoord, uint emissiveTextureIndex, uint emissiveTextureSamplerIndex)
 {
-    if (emissiveTextureIndex != INVALID_INDEX)
+    if (emissiveTextureIndex == INVALID_INDEX)
     {
-        Texture2D<float4> emissiveTexture = ResourceDescriptorHeap[NonUniformResourceIndex(emissiveTextureIndex)];
-
-        SamplerState samplerState = SamplerDescriptorHeap[NonUniformResourceIndex(emissiveTextureSamplerIndex)];
-
-        return emissiveTexture.Sample(samplerState, textureCoord).xyz * emissiveFactor;
+        return float3(0.0f, 0.0f, 0.0f);
     }
 
-    return albedoColor * emissiveFactor;
+    Texture2D<float4> emissiveTexture = ResourceDescriptorHeap[NonUniformResourceIndex(emissiveTextureIndex)];
+    SamplerState samplerState = SamplerDescriptorHeap[NonUniformResourceIndex(emissiveTextureSamplerIndex)];
+
+    return emissiveTexture.Sample(samplerState, textureCoord).xyz;
 }
 
-float getAO(float2 textureCoord, uint aoTextureIndex, uint aoTextureSamplerIndex)
+float sampleAO(float2 textureCoord, uint aoTextureIndex, uint aoTextureSamplerIndex)
 {
-    if (aoTextureIndex != INVALID_INDEX)
-    {
-        Texture2D<float4> aoTexture = ResourceDescriptorHeap[NonUniformResourceIndex(aoTextureIndex)];
+    Texture2D<float4> aoTexture = ResourceDescriptorHeap[NonUniformResourceIndex(aoTextureIndex)];
+    SamplerState samplerState = SamplerDescriptorHeap[NonUniformResourceIndex(aoTextureSamplerIndex)];
 
-        SamplerState samplerState = SamplerDescriptorHeap[NonUniformResourceIndex(aoTextureSamplerIndex)];
-
-        return aoTexture.Sample(samplerState, textureCoord).x;
-    }
-
-    return 1.0f;
+    return aoTexture.Sample(samplerState, textureCoord).x;
 }
 
-float2 getMetallicRoughness(float2 textureCoord, uint metalRoughnessTextureIndex, uint metalRoughnessTextureSamplerIndex, float2 metalRoughnessValue)
+float2 sampleMetallicRoughness(float2 textureCoord, uint metalRoughnessTextureIndex, uint metalRoughnessTextureSamplerIndex)
 {
-    if (metalRoughnessTextureIndex != INVALID_INDEX)
-    {
-        Texture2D<float4> metalRoughnessTexture =
-            ResourceDescriptorHeap[NonUniformResourceIndex(metalRoughnessTextureIndex)];
+    Texture2D<float4> metalRoughnessTexture = ResourceDescriptorHeap[NonUniformResourceIndex(metalRoughnessTextureIndex)];
+    SamplerState samplerState = SamplerDescriptorHeap[NonUniformResourceIndex(metalRoughnessTextureSamplerIndex)];
 
-        SamplerState samplerState = SamplerDescriptorHeap[NonUniformResourceIndex(metalRoughnessTextureSamplerIndex)];
-
-        return metalRoughnessTexture.Sample(samplerState, textureCoord).bg;
-    }
-
-    return metalRoughnessValue;
+    return metalRoughnessTexture.Sample(samplerState, textureCoord).bg;
 }
 
-float3 getORM(float2 textureCoord, uint ormTextureIndex, uint ormTextureSamplerIndex, float2 metalRoughnessValue)
+float3 sampleORMTexture(float2 textureCoord, uint ormTextureIndex, uint ormTextureSamplerIndex)
 {
+    Texture2D<float4> ormTexture = ResourceDescriptorHeap[NonUniformResourceIndex(ormTextureIndex)];
+    SamplerState samplerState = SamplerDescriptorHeap[NonUniformResourceIndex(ormTextureSamplerIndex)];
+
+    return ormTexture.Sample(samplerState, textureCoord).xyz;
+}
+
+float3 getOcclusionRoughnessMetallic(
+    float2 textureCoord, float2 defaultMetalRoughnessValue,
+    uint ormTextureIndex, uint ormTextureSamplerIndex,
+    uint metalRoughnessTextureIndex, float metalRoughnessSamplerIndex,
+    uint aoTextureIndex, uint aoTextureSamplerIndex
+)
+{
+    float occlusion = 1.f; 
+    float roughness = defaultMetalRoughnessValue.y;
+    float metallic = defaultMetalRoughnessValue.x;
+
     if (ormTextureIndex != INVALID_INDEX)
     {
-        Texture2D<float4> ormTexture = ResourceDescriptorHeap[NonUniformResourceIndex(ormTextureIndex)];
-
-        SamplerState samplerState = SamplerDescriptorHeap[NonUniformResourceIndex(ormTextureSamplerIndex)];
-
-        // return ormTexture[uint2(0,0)].xyz;
-        return ormTexture.Sample(samplerState, textureCoord).xyz;
+        float3 ORM = sampleORMTexture(textureCoord, ormTextureIndex, ormTextureSamplerIndex);
+        occlusion = ORM.x;
+        roughness = ORM.y;
+        metallic = ORM.z;
+    }
+    else if (metalRoughnessTextureIndex != INVALID_INDEX)
+    {
+        float2 metallicRoughness = sampleMetallicRoughness(textureCoord, metalRoughnessTextureIndex, metalRoughnessSamplerIndex);
+        roughness = metallicRoughness.y;
+        metallic = metallicRoughness.x;
     }
 
-    return float3(0.f, metalRoughnessValue);
+    if (ormTextureIndex != INVALID_INDEX)
+    {
+        occlusion = sampleAO(textureCoord, aoTextureIndex, aoTextureSamplerIndex);
+    }
+
+    return float3(occlusion, roughness, metallic);
 }
 
 float2 calculateVelocity(float4 position, float4 prevPosition)
@@ -233,113 +243,6 @@ float2 Hammersley(uint i, float invSample)
     return float2(i*invSample, vanDerCorputRadicalInverse(i));
 }
 
-// UnrealEngine 4 by Karis
-float3 ImportanceSampleGGX(float2 Xi, float Roughness, float3 N)
-{
-    float a = Roughness * Roughness;
-    float Phi = 2 * PI * Xi.y;
-    float CosTheta = sqrt((1-Xi.x) / (1.0+(a*a-1.0) * Xi.x));
-    float SinTheta = sqrt(1-CosTheta*CosTheta);
-
-    float3 H;
-    H.x = SinTheta*cos(Phi);
-    H.y = SinTheta*sin(Phi);
-    H.z = CosTheta;
-
-    float3 UpVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
-    float3 TangentX = normalize(cross(UpVector, N));
-    float3 TangentY = normalize(cross(N, TangentX));
-    
-    // Tangent to world space transformation.
-    return normalize(TangentX * H.x + TangentY * H.y + N * H.z);
-}
-
-void ImportanceSampleCosDir(float2 u, float3 N, out float3 outL, out float NdotL, out float pdf)
-{
-    const float CosTheta = sqrt(u.x);
-    const float SinTheta = sqrt(max(0.0f, 1.0f - CosTheta * CosTheta)); // Sin Theta
-    float Phi = u.y * PI * 2;
-    
-    float3 L;
-    L.x = SinTheta*cos(Phi);
-    L.y = SinTheta*sin(Phi);
-    L.z = CosTheta;
-    
-    float3 UpVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
-    float3 TangentX = normalize(cross(UpVector, N));
-    float3 TangentY = normalize(cross(N, TangentX));
-    
-    outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
-
-    NdotL = saturate(dot(N,L));
-    pdf = CosTheta * INV_PI;
-}
-
-// https://ameye.dev/notes/sampling-the-hemisphere/
-void ImportanceSampleCosDirPow(float2 u, float3 N, float p, out float3 outL, out float NdotL, out float pdf)
-{
-    float CosTheta = pow(max(0.0f, 1.0f - u.x), 1.f/(p+1));
-    float SinTheta = sqrt(u.x);
-    float Phi = u.y * PI * 2;
-    
-    float3 L;
-    L.x = SinTheta*cos(Phi);
-    L.y = SinTheta*sin(Phi);
-    L.z = CosTheta;
-    
-    float3 UpVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
-    float3 TangentX = normalize(cross(UpVector, N));
-    float3 TangentY = normalize(cross(N, TangentX));
-    
-    outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
-
-    NdotL = saturate(dot(N,L));
-    pdf = (p+1) * pow(CosTheta, p) * INV_PI / 2;
-}
-
-// for normal (0,0,1)
-float3 UniformSampleHemisphere(float2 uv)
-{
-    const float cosTheta = 1-uv.x;
-    const float sinTheta = sqrt(max(0.0f, 1.0f - cosTheta * cosTheta)); // Sin Theta
-    const float phi = 2.0f * PI * uv.y;
-    return float3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
-}
-
-void ConcentricSampleDisk(float2 u, float3 N, out float3 outL, out float pdf)
-{
-    float sx = 2.0 * u.x - 1.0;
-    float sy = 2.0 * u.y - 1.0;
-
-    if (sx == 0 && sy == 0)
-        sx = 0.01f;
-
-    float r, theta;
-
-    if (abs(sx) > abs(sy)) {
-        r = sx;
-        theta = (PI / 4.0) * (sy / sx);
-    } else {
-        r = sy;
-        theta = (PI / 2.0) - (PI / 4.0) * (sx / sy);
-    }
-
-    float cosTheta = cos(theta);
-
-    float x = r * cosTheta;
-    float y = r * sin(theta);
-    float z = sqrt(saturate(1.0 - x * x - y * y));
-    float3 L = float3(x, y, z);
-    
-    float3 UpVector = abs(N.z) < 0.999 ? float3(0,0,1) : float3(1,0,0);
-    float3 TangentX = normalize(cross(UpVector, N));
-    float3 TangentY = normalize(cross(N, TangentX));
-    
-    outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
-
-    pdf = cosTheta * (1.f/PI);
-}
-
 // UE5
 float3x3 GetTangentBasis( float3 TangentZ )
 {
@@ -351,26 +254,6 @@ float3x3 GetTangentBasis( float3 TangentZ )
 	return float3x3( TangentX, TangentY, TangentZ );
 }
 
-float3 ConcentricDiskSamplingHelper(float2 E)
-{
-	float2 p = 2 * E - 0.99999994;
-	float2 a = abs(p);
-	float Lo = min(a.x, a.y);
-	float Hi = max(a.x, a.y);
-	float Epsilon = 5.42101086243e-20; 
-	float Phi = (PI / 4) * (Lo / (Hi + Epsilon) + 2 * float(a.y >= a.x));
-	float Radius = Hi;
-	const uint SignMask = 0x80000000;
-	float2 Disk = asfloat((asuint(float2(cos(Phi), sin(Phi))) & ~SignMask) | (asuint(p) & SignMask));
-	return float3(Disk, Radius);
-}
-float4 CosineSampleHemisphereConcentric(float2 E)
-{
-	float3 Result = ConcentricDiskSamplingHelper(E);
-	float SinTheta = Result.z;
-	float CosTheta = sqrt(1 - SinTheta * SinTheta);
-	return float4(Result.xy * SinTheta, CosTheta, CosTheta * (1.0 / PI));
-}
 
 // Bring the vector that was randomly sampled from a hemisphere into the coordinate system where N, S and T form the orthonormal basis.
 float3 tangentToWorldCoords(float3 v, float3 n, float3 s, float3 t)
@@ -437,32 +320,3 @@ float2 UVToClip(float2 UV)
 inline float pow2(float x) {
     return pow(x, 2.0);
 }
-
-// #define TWO_PI 6.2831853071795864769252867665590
-// #define HALF_PI 1.5707963267948966192313216916398
-
-// float3 GetIrradiance(float3 N, in TextureCube<float4> EnvMap)
-// {
-//     const float imgSize = 64.0;
-    
-//     float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
-//     const float3 right = normalize(cross(up, N));
-//     up = cross(N, right);
-
-//     float3 color = float3(0.0f, 0.0f, 0.0f);
-//     uint sampleCount = 0u;
-//     float deltaPhi = TWO_PI / 360.0;
-//     float deltaTheta = HALF_PI / 90.0;
-
-//     for (float phi = 0.0; phi < TWO_PI; phi += deltaPhi) {
-//         for (float theta = 0.0; theta < HALF_PI; theta += deltaTheta) {
-//             // Spherical to World Space in two steps...
-//             float3 tempVec = cos(phi) * right + sin(phi) * up;
-//             float3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
-//             color += EnvMap.SampleLevel(linearClampSampler, sampleVector, 0).rgb * cos(theta) * sin(theta);
-//             sampleCount++;
-//         }
-//     }
-
-//     return PI * color / float(sampleCount); // (c_diff/PI) * (2*PI)
-// }

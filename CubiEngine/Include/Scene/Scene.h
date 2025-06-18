@@ -75,11 +75,6 @@ public:
 
     int RenderingMode = 0;
 	int PathTracingSamplePerPixel = 16;
-
-    bool bOverrideBaseColor = false;
-    float OverrideBaseColorValue[3] = { 1.f, 1.f, 1.f };
-    float OverrideRoughnessValue = -1.f;
-    float OverrideMetallicValue = -1.f;
     
     // Light
     bool bLightDanceDebug = false;
