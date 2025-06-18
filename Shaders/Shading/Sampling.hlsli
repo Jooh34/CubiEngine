@@ -138,8 +138,8 @@ float3 Fresnel(in float3 specAlbedo, in float3 h, in float3 l)
 {
     float3 fresnel = specAlbedo + (1.0f - specAlbedo) * pow((1.0f - saturate(dot(l, h))), 5.0f);
 
-    // Fade out spec entirely when lower than 0.1% albedo
-    fresnel *= saturate(dot(specAlbedo, 333.0f));
+    // // Fade out spec entirely when lower than 0.1% albedo
+    // fresnel *= saturate(dot(specAlbedo, 333.0f));
 
     return fresnel;
 }
@@ -187,4 +187,57 @@ float3 SampleGGXVisibleNormal(float3 wo, float ax, float ay, float u1, float u2)
 
     // Unstretch and normalize the normal
     return normalize(float3(ax * n.x, ay * n.y, max(0.0f, n.z)));
+}
+
+float3 ImportanceSampleGGX_V2(float3 V, float roughness, float u1, float u2, float3 F0, float3 energyCompensation, out float3 throughput)
+{
+    float3 N = float3(0, 0, 1); // Normal in tangent space
+    float3 microfacetNormal = SampleGGXVisibleNormal(V, roughness, roughness, u1, u2);
+    float3 L = reflect(-V, microfacetNormal);
+    if (L.z < 0.0) L = -L; // Ensure the sample direction is above the surface
+    
+    float NoL = saturate(dot(N, L));
+    float NoV = saturate(dot(N, V));
+
+    if (NoL <= 0.0f || NoV <= 0.0f)
+    {
+        // If the sample direction is below the surface, we discard it.
+        throughput = float3(0.0f, 0.0f, 0.0f);
+        return float3(0.0f, 0.0f, 1.0f);
+    }
+
+    float LoH = saturate(dot(L, microfacetNormal));
+    float3 F = F_Schlick(F0, LoH);
+    float G1 = SmithGGXMasking(N, L, V, roughness * roughness);
+    float G2 = SmithGGXMaskingShadowing(N, L, V, roughness * roughness);
+
+    throughput = (F * energyCompensation) * (G2 / max(G1, EPS)); 
+    return L;
+}
+
+float3 ImportanceSampleGGX_V3(float3 V, float roughness, float u1, float u2, float3 F0, float3 energyCompensation, out float3 throughput)
+{
+    float3 N = float3(0, 0, 1); // Normal in tangent space
+    float3 microfacetNormal = SampleGGXVisibleNormal(V, roughness, roughness, u1, u2);
+    float3 L = reflect(-V, microfacetNormal);
+    if (L.z < 0.0) L = -L; // Ensure the sample direction is above the surface
+    
+    float NoL = saturate(dot(N, L));
+    float NoV = saturate(dot(N, V));
+    float LoH = saturate(dot(L, microfacetNormal));
+    float NoH = saturate(dot(N, microfacetNormal));
+
+    if (NoL <= 0.0f || NoV <= 0.0f)
+    {
+        // If the sample direction is below the surface, we discard it.
+        throughput = float3(0.0f, 0.0f, 0.0f);
+        return float3(0.0f, 0.0f, 1.0f);
+    }
+
+    float3 F = F_Schlick(F0, LoH);
+    float G = SmithGGXMaskingShadowing(N, L, V, roughness * roughness);
+    float weight = LoH / (NoL*NoH);
+
+    throughput = (F * G * weight);
+    return L;
 }

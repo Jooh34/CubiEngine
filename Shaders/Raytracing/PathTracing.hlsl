@@ -91,7 +91,7 @@ void RayGen()
     frameAccumulatedTexture[pixelCoord] = newFrameAccumulated;
 }
 
-float3 getNextRay(float3 inRay, float3 N, float roughness, int3 uvz)
+float3 getNextRay(float3 inRay, float3 N, int3 uvz, float3 albedo, float3 F0, float roughness, out float3 throughput)
 {
     float reflectionFactor = 1.0f - roughness;
 
@@ -109,6 +109,7 @@ float3 getNextRay(float3 inRay, float3 N, float roughness, int3 uvz)
         float e3 = rw - 0.5;
         float3 rand_vec = float3(e1 * roughness, e2 * roughness, e3 * roughness);
 
+        throughput = F0;
         return normalize(reflected_ray + rand_vec);
     }
     else
@@ -122,6 +123,7 @@ float3 getNextRay(float3 inRay, float3 N, float roughness, int3 uvz)
         // The PDF of sampling a cosine hemisphere is NdotL / Pi, which cancels out those terms
         ImportanceSampleCosDir(u, N, d, NoL, pdf);
 
+        throughput = albedo;
         return d;
     }
 }
@@ -136,7 +138,7 @@ float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, f
     float rz = pcgHash(randomFloat.z, uvz);
     float rw = pcgHash(randomFloat.w, uvz);
 
-    if (-inRayTS.z < 0.0f)
+    if (dot(normalTS, -inRayTS) < 0.0f)
     {
         // If the incoming ray is below the surface, we discard it.
         throughput = float3(0.0f, 0.0f, 0.0f);
@@ -164,27 +166,9 @@ float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, f
     }
     else
     {
-        float3 microfacetNormalTS = SampleGGXVisibleNormal(-inRayTS, roughness, roughness, ry, rz);
-        float3 sampleDirTS = reflect(inRayTS, microfacetNormalTS);
-        if (sampleDirTS.z < 0.0) sampleDirTS = -sampleDirTS; // Ensure the sample direction is above the surface
-        
-        float NoL = saturate(dot(normalTS, sampleDirTS));
-        float NoV = saturate(dot(normalTS, -inRayTS));
-        float NoH = saturate(dot(normalTS, microfacetNormalTS));
-
-        if (NoL <= 0.0f || NoV <= 0.0f)
-        {
-            // If the sample direction is below the surface, we discard it.
-            throughput = float3(0.0f, 0.0f, 0.0f);
-            return float3(0.0f, 0.0f, 1.0f);
-        }
-
-        float3 F = Fresnel(F0, microfacetNormalTS, sampleDirTS);
-        float G1 = SmithGGXMasking(normalTS, sampleDirTS, -inRayTS, roughness * roughness);
-        float G2 = SmithGGXMaskingShadowing(normalTS, sampleDirTS, -inRayTS, roughness * roughness);
-
-        throughput = (F * energyCompensation) * (G2 / max(G1,EPS)) * 2.f; 
-        return sampleDirTS;
+        float3 outRayDir = ImportanceSampleGGX_V3(-inRayTS, roughness, ry, rz, F0, energyCompensation, throughput);
+        throughput = throughput * 2.f;
+        return outRayDir;
     }
 }
 
@@ -250,8 +234,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     tangentToWorld = float3x3(tangentWS, biTangentWS, normalWS);
     float3x3 worldToTangent = transpose(tangentToWorld);
     
-    float3 normal = getNormalSample(textureCoords, material.normalTextureIndex, MeshSampler, normalWS, tangentToWorld);
-    float3 normalTS = normalize(mul(normal, worldToTangent));
+    float3 normalTS = getNormalSampleTS(textureCoords, material.normalTextureIndex, MeshSampler);
 
     // next ray
     float3 inRay = WorldRayDirection();
@@ -265,8 +248,8 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
 
     float3 throughput = albedo;
     // float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, float metallic, float roughness, float3 F0, float energyCompensation, out float3 throughput)
-    float3 nextRay = sampleNextRay(inRayTS, normalTS, uvz, albedo, metallic, roughness, F0, energyCompensation, throughput);
-    // float3 nextRay = getNextRay(inRayTS, normalTS, roughness, uvz);
+    // float3 nextRay = sampleNextRay(inRayTS, normalTS, uvz, albedo, metallic, roughness, F0, energyCompensation, throughput);
+    float3 nextRay = getNextRay(inRayTS, normalTS, uvz, albedo, F0, roughness, throughput);
 
     float3 nextRayWS = normalize(mul(nextRay, tangentToWorld));
     
