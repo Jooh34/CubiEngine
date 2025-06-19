@@ -3,7 +3,7 @@
 
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
-
+#include "Utils.hlsli"
 static const float FP32Max = 3.402823466e+38f;
 
 // Hit information, aka ray payload
@@ -118,8 +118,7 @@ interlop::FRaytracingMaterial GetGeometryMaterial(BufferIndexContext context, in
 
 float4 getAlbedoSample(const float2 textureCoords, const uint albedoTextureIndex, SamplerState MeshSampler, const float3 albedoColor)
 {
-    uint InvalidIndex = 4294967295;
-    if (albedoTextureIndex == InvalidIndex)
+    if (albedoTextureIndex == INVALID_INDEX)
     {
         return float4(albedoColor, 1.0f);
     }
@@ -130,14 +129,57 @@ float4 getAlbedoSample(const float2 textureCoords, const uint albedoTextureIndex
 
 float2 getMetallicRoughnessSample(const float2 textureCoords, const uint metallicRoughnessTextureIndex, SamplerState MeshSampler, const float2 metallicRoughness)
 {
-    uint InvalidIndex = 4294967295;
-    if (metallicRoughnessTextureIndex == InvalidIndex)
+    if (metallicRoughnessTextureIndex == INVALID_INDEX)
     {
         return metallicRoughness;
     }
 
     Texture2D<float4> metallicRoughnessTexture = ResourceDescriptorHeap[metallicRoughnessTextureIndex];
     return metallicRoughnessTexture.SampleLevel(MeshSampler, textureCoords, 0.f).bg;
+}
+
+
+float2 sampleLevelMetallicRoughness(float2 textureCoord, uint metalRoughnessTextureIndex, SamplerState MeshSampler)
+{
+    Texture2D<float4> metalRoughnessTexture = ResourceDescriptorHeap[NonUniformResourceIndex(metalRoughnessTextureIndex)];
+
+    return metalRoughnessTexture.SampleLevel(MeshSampler, textureCoord, 0).bg;
+}
+
+
+float3 getOcclusionRoughnessMetallicSample(
+    float2 textureCoord, float2 defaultMetalRoughnessValue,
+    uint ormTextureIndex, uint metalRoughnessTextureIndex, uint aoTextureIndex, SamplerState MeshSampler
+)
+{
+    float occlusion = 1.f; 
+    float roughness = defaultMetalRoughnessValue.y;
+    float metallic = defaultMetalRoughnessValue.x;
+
+    if (ormTextureIndex != INVALID_INDEX)
+    {
+        Texture2D<float4> ormTexture = ResourceDescriptorHeap[NonUniformResourceIndex(ormTextureIndex)];
+        float3 ORM = ormTexture.SampleLevel(MeshSampler, textureCoord, 0).xyz;
+
+        occlusion = ORM.x;
+        roughness = ORM.y;
+        metallic = ORM.z;
+    }
+    else if (metalRoughnessTextureIndex != INVALID_INDEX)
+    {
+        Texture2D<float4> metalRoughnessTexture = ResourceDescriptorHeap[NonUniformResourceIndex(metalRoughnessTextureIndex)];
+        float2 metallicRoughness = metalRoughnessTexture.SampleLevel(MeshSampler, textureCoord, 0).bg;
+        roughness = metallicRoughness.y;
+        metallic = metallicRoughness.x;
+    }
+
+    if (ormTextureIndex != INVALID_INDEX)
+    {
+        Texture2D<float4> aoTexture = ResourceDescriptorHeap[NonUniformResourceIndex(aoTextureIndex)];
+        occlusion = aoTexture.SampleLevel(MeshSampler, textureCoord, 0).x;
+    }
+
+    return float3(occlusion, roughness, metallic);
 }
 
 float3 getNormalSample(float2 textureCoord, uint normalTextureIndex, SamplerState MeshSampler, float3 normal, float3x3 tbnMatrix)

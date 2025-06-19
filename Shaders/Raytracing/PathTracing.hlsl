@@ -236,10 +236,13 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
         return;
     }
 
-    float2 metallicRoughness = getMetallicRoughnessSample(textureCoords, material.metalRoughnessTextureIndex, MeshSampler, float2(material.metallic, material.roughness));
-    float metallic = metallicRoughness.x;
-    float roughness = metallicRoughness.y;
+    float3 orm = getOcclusionRoughnessMetallicSample(textureCoords, float2(material.metallic, material.roughness),
+        material.ormTextureIndex, material.metalRoughnessTextureIndex, -1, MeshSampler);
+        
+    float metallic = orm.z;
+    float roughness = orm.y;
     float3 emissive = material.emissiveColor.xyz;
+
     if (emissive.x > 0.f)
     {
         float dist = RayTCurrent();

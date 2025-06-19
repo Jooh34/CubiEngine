@@ -219,6 +219,8 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
                 aiVector3D texCoord = mesh->mTextureCoords[0][v];
                 const XMFLOAT2 texCoord2D = { texCoord.x, texCoord.y };
                 TextureCoords.push_back(texCoord2D);
+
+                ResultMesh.MeshVertices[v].texcoord = texCoord2D;
             }
         }
 
