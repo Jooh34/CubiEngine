@@ -151,6 +151,7 @@ void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const Gr
                     .albedoColor = Material->MaterialBufferData.albedoColor,
 					.metallic = Material->MaterialBufferData.metallicFactor,
 					.roughness = Material->MaterialBufferData.roughnessFactor,
+                    .emissiveColor = Material->MaterialBufferData.emissiveColor,
                 }
             );
 

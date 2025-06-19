@@ -211,6 +211,16 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     float2 metallicRoughness = getMetallicRoughnessSample(textureCoords, material.metalRoughnessTextureIndex, MeshSampler, float2(material.metallic, material.roughness));
     float metallic = metallicRoughness.x;
     float roughness = metallicRoughness.y;
+    float3 emissive = material.emissiveColor.xyz;
+    if (emissive.x > 0.f)
+    {
+        float dist = RayTCurrent();
+        float scalefactor = 1.0e+3;
+        float attenuation = scalefactor / (dist * dist);
+        payload.radiance = emissive * attenuation;
+        payload.distance = 0;
+        return;
+    }
     
     const float3 DIELECTRIC_SPECULAR = float3(0.04f, 0.04f, 0.04f);
     const float3 F0 = lerp(DIELECTRIC_SPECULAR, albedo.xyz, metallic);

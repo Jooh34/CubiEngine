@@ -22,9 +22,10 @@ void FTransform::Update()
 FGLTFModelLoader::FGLTFModelLoader(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
 	:ModelName(ModelCreationDesc.ModelName)
 {
-	OverrideBaseColorFactor = ModelCreationDesc.OverrideBaseColorFactor;
+    OverrideBaseColorValue = ModelCreationDesc.OverrideBaseColorValue;
     OverrideRoughnessValue = ModelCreationDesc.OverrideRoughnessValue;
 	OverrideMetallicValue = ModelCreationDesc.OverrideMetallicValue;
+	OverrideEmissiveValue = ModelCreationDesc.OverrideEmissiveValue;
 
     Transform.Scale = ModelCreationDesc.Scale;
     Transform.Rotation = ModelCreationDesc.Rotation;
@@ -189,9 +190,10 @@ void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice
     uint32_t MipLevels = 6u;
     for (const tinygltf::Material& material : GLTFModel.materials)
     {
-        bool bOverrideBaseColor = OverrideBaseColorFactor.x >= 0.f;
+        bool bOverrideBaseColor = OverrideBaseColorValue.x >= 0.f;
 		bool bOverrideRoughness = OverrideRoughnessValue >= 0.f;
 		bool bOverrideMetallic = OverrideMetallicValue >= 0.f;
+        bool bOverrideEmissive = OverrideEmissiveValue.x >= 0.f;
 
         std::shared_ptr<FPBRMaterial> PbrMaterial = std::make_shared<FPBRMaterial>();
         {
@@ -266,7 +268,7 @@ void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice
         }
         {
             // Emissive
-            if (material.emissiveTexture.index >= 0)
+            if (material.emissiveTexture.index >= 0 && !bOverrideEmissive)
             {
                 const tinygltf::Texture& emissiveTexture = GLTFModel.textures[material.emissiveTexture.index];
                 const tinygltf::Image& emissiveImage = GLTFModel.images[emissiveTexture.source];
@@ -301,7 +303,7 @@ void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice
         });
 
         PbrMaterial->MaterialBufferData = {
-                .albedoColor = bOverrideBaseColor ? OverrideBaseColorFactor :
+                .albedoColor = bOverrideBaseColor ? OverrideBaseColorValue :
                 XMFLOAT3 {
                     (float)material.pbrMetallicRoughness.baseColorFactor[0],
                     (float)material.pbrMetallicRoughness.baseColorFactor[1],
@@ -309,6 +311,7 @@ void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice
                 },
                 .roughnessFactor = bOverrideRoughness ? OverrideRoughnessValue : (float)material.pbrMetallicRoughness.roughnessFactor,
                 .metallicFactor = bOverrideMetallic ? OverrideMetallicValue : (float)material.pbrMetallicRoughness.metallicFactor,
+                .emissiveColor = bOverrideEmissive ? OverrideEmissiveValue : XMFLOAT3{0.f, 0.f, 0.f}
         };
 
         PbrMaterial->MaterialBuffer.Update(&PbrMaterial->MaterialBufferData);

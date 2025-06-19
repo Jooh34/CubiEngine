@@ -41,7 +41,8 @@ private:
     void LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc,
          const uint32_t NodeIndex, const tinygltf::Model& GLTFModel);
 
-	XMFLOAT3 OverrideBaseColorFactor{ -1.0f, -1.0f, -1.0f };
+	XMFLOAT3 OverrideBaseColorValue{ -1.0f, -1.0f, -1.0f };
 	float OverrideRoughnessValue = -1.0f;
 	float OverrideMetallicValue = -1.0f;
+	XMFLOAT3 OverrideEmissiveValue{ -1.0f, -1.0f, -1.0f };
 };

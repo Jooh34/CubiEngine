@@ -54,7 +54,7 @@ namespace interlop
         float roughnessFactor;
 
         float metallicFactor;
-        float3 padding;
+        float3 emissiveColor;
     };
 
     ConstantBufferStruct TransformBuffer
@@ -116,7 +116,7 @@ namespace interlop
         float metallic;
 
         float roughness;
-        float3 padding;
+        float3 emissiveColor;
     };
 
     struct MeshVertex

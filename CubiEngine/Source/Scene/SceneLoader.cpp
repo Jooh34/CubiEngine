@@ -46,11 +46,23 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
                  .Rotation = { 0.f, 1.f, 0.f },
                  .Scale = {300.f, 300.f, 100.f},
                  .Translate = { -500.f, 500.f, -500.f },
-                 .OverrideBaseColorFactor = { 0.5f, 0.5f, 0.5f },
+                 .OverrideBaseColorValue = { 0.5f, 0.5f, 0.5f },
                  .OverrideRoughnessValue = 0.1f,
                  .OverrideMetallicValue = 1.f,
             };
 			Scene->AddModel(MirrorDesc);
+
+            FModelCreationDesc SphereDesc = {
+                 .ModelPath = "Models/Sphere/sphere.gltf",
+                 .ModelName = L"Sphere",
+                 .Scale = {20.f, 20.f, 20.f},
+                 .Translate = { -500.f, 700.f, 400.f },
+                 .OverrideBaseColorValue = { 1.f, 1.f, 1.f },
+                 .OverrideRoughnessValue = 0.1f,
+                 .OverrideMetallicValue = 1.f,
+                 .OverrideEmissiveValue = { 1e3, 1e3, 1e3 },
+            };
+			Scene->AddModel(SphereDesc);
 
             Scene->GetCamera().SetCamPosition(750, 600, 100);
             Scene->GetCamera().SetCamRotation(0.03, -1.7, 0.f);
