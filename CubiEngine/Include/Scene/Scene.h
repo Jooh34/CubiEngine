@@ -113,7 +113,7 @@ public:
     int MaxHistoryFrame = 10;
 
     // PostProcess
-    int ToneMappingMethod = 3;
+    int ToneMappingMethod = 1; // Reinhard.
     bool bUseTaa = true;
     bool bGammaCorrection = true;
 

@@ -40,17 +40,17 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             };
             Scene->AddModel(Suzanne);
 
-            FModelCreationDesc MirrorDesc = {
-                 .ModelPath = "Models/Box/Box.gltf",
-                 .ModelName = L"Box",
-                 .Rotation = { 0.f, 1.f, 0.f },
-                 .Scale = {300.f, 300.f, 100.f},
-                 .Translate = { -500.f, 500.f, -500.f },
-                 .OverrideBaseColorValue = { 0.5f, 0.5f, 0.5f },
-                 .OverrideRoughnessValue = 0.1f,
+            FModelCreationDesc MirrorBall = {
+                 .ModelPath = "Models/Sphere/sphere.gltf",
+                 .ModelName = L"MirrorBall",
+                 .Rotation = { 0.f, 0.f, 0.f },
+                 .Scale = {50.f, 50.f, 50.f},
+                 .Translate = { -500.f, 300.f, 0.f },
+                 .OverrideBaseColorValue = { 1, 1, 1 },
+                 .OverrideRoughnessValue = 0.f,
                  .OverrideMetallicValue = 1.f,
             };
-			Scene->AddModel(MirrorDesc);
+			Scene->AddModel(MirrorBall);
 
             FModelCreationDesc SphereDesc = {
                  .ModelPath = "Models/Sphere/sphere.gltf",
@@ -60,7 +60,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
                  .OverrideBaseColorValue = { 1.f, 1.f, 1.f },
                  .OverrideRoughnessValue = 0.1f,
                  .OverrideMetallicValue = 1.f,
-                 .OverrideEmissiveValue = { 1e3, 1e3, 1e3 },
+                 .OverrideEmissiveValue = { 3e3, 3e3, 3e3 },
             };
 			Scene->AddModel(SphereDesc);
 
