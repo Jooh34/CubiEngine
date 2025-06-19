@@ -11,6 +11,7 @@ cmake -S . -B Build
 + Then open Build/CubiEngine.sln and build solution.
 
 # Features
+- Path Tracing
 - Multi-Scattering BRDF
 - Image Based Lighting
 - Deferred Rendering
@@ -24,6 +25,11 @@ cmake -S . -B Build
 - SSGI
 
 # Images
+### Path Tracing
+![image](Assets/Images/PathTracing1.png)
+![image](Assets/Images/PathTracing2.png)
+![image](Assets/Images/PathTracing3.png)
+
 ### Multi-Scattering BRDF
 ![image](Assets/Images/Multi-Scatter-BRDF.png)
 ### Image Based Lighting
