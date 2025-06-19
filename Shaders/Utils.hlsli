@@ -4,6 +4,7 @@
 static const float MIN_FLOAT_VALUE = 1.0e-5;
 static const float EPSILON = 1.0e-4;
 static const float EPS = 1.0e-4;
+static const float VERY_SMALL_NUMBER = 1.0e-4;
 
 static const float PI = 3.14159265359;
 static const float TWO_PI = 2.0f * PI;

@@ -73,8 +73,11 @@ public:
     
     int MaxFPS = 60;
 
-    int RenderingMode = 0;
+    int RenderingMode = 2;
 	int PathTracingSamplePerPixel = 16;
+
+    bool bEnableDiffuse = true;
+    bool bEnableSpecular = true;
     
     // Light
     bool bLightDanceDebug = false;

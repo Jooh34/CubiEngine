@@ -26,7 +26,8 @@ namespace interlop
     {
         uint bUseTaa;
         uint ShadowMethod;
-        float2 padding;
+        uint bEnableDiffuse;
+        uint bEnableSpecular;
     };
 
     ConstantBufferStruct SceneBuffer

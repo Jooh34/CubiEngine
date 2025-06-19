@@ -151,6 +151,8 @@ void FScene::UpdateBuffers()
     const interlop::DebugBuffer DebugBufferData = {
         .bUseTaa = bUseTaa ? 1u : 0u,
         .ShadowMethod = (uint32_t)ShadowMethod,
+        .bEnableDiffuse = (uint32_t)bEnableDiffuse,
+        .bEnableSpecular = (uint32_t)bEnableSpecular
     };
 
     GetDebugBuffer().Update(&DebugBufferData);

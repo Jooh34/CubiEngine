@@ -91,7 +91,7 @@ void RayGen()
     frameAccumulatedTexture[pixelCoord] = newFrameAccumulated;
 }
 
-float3 getNextRay(float3 inRay, float3 N, int3 uvz, float3 albedo, float3 F0, float roughness, out float3 throughput)
+float3 sampleNextRay_oldver(float3 inRay, float3 N, int3 uvz, float3 albedo, float3 F0, float roughness, out float3 throughput)
 {
     float reflectionFactor = 1.0f - roughness;
 
@@ -128,9 +128,35 @@ float3 getNextRay(float3 inRay, float3 N, int3 uvz, float3 albedo, float3 F0, fl
     }
 }
 
+void getDebugDiffuseSpecularFactor(inout float DiffuseFactor, inout float SpecularFactor)
+{
+    ConstantBuffer<interlop::DebugBuffer> debugBuffer = ResourceDescriptorHeap[renderResources.debugBufferIndex];
+    
+    if (debugBuffer.bEnableDiffuse) 
+    {
+        if (debugBuffer.bEnableSpecular)
+        {
+            DiffuseFactor = 0.5f; SpecularFactor = 0.5f;
+        }
+        else
+        {
+            DiffuseFactor = 1.0f;
+        }
+    }
+    else
+    {
+        if (debugBuffer.bEnableSpecular)
+        {
+            SpecularFactor = 0.5f; 
+        }
+    }
+}
+
 float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, float metallic, float roughness, float3 F0, float3 energyCompensation, out float3 throughput)
 {
-    float reflectionFactor = 1.0f - roughness;
+    float DiffuseFactor = 0.0f;
+    float SpecularFactor = 0.0f;
+    getDebugDiffuseSpecularFactor(DiffuseFactor, SpecularFactor);
 
     float4 randomFloat = renderResources.randomFloats[RANDOM_INDEX_GET_NEXT_RAY];
     float rx = pcgHash(randomFloat.x, uvz);
@@ -145,7 +171,7 @@ float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, f
         return float3(0.0f, 0.0f, 1.0f);
     }
 
-    if (rx < 0.5f)
+    if (rx < DiffuseFactor)
     {
         // diffuse ray
         float2 u = float2(ry, rz);
@@ -161,15 +187,18 @@ float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, f
         float3 H = normalize(V + d);
         float VoH = saturate(dot(V, H));
         float3 diffuse = lambertianDiffuseBRDF(albedo, VoH, metallic);
-        throughput = 2.f * diffuse * NoL / pdf;
+        throughput = diffuse * NoL / (pdf * DiffuseFactor);
         return d;
     }
-    else
+    else if (rx < DiffuseFactor + SpecularFactor)
     {
-        float3 outRayDir = ImportanceSampleGGX_V3(-inRayTS, roughness, ry, rz, F0, energyCompensation, throughput);
-        throughput = throughput * 2.f;
+        float3 outRayDir = ImportanceSampleGGX_V3(-inRayTS, normalTS, roughness, ry, rz, F0, energyCompensation, throughput);
+        throughput = throughput / SpecularFactor;
         return outRayDir;
     }
+
+    throughput = float3(0.0f, 0.0f, 0.0f);
+    return float3(0.0f, 0.0f, 1.0f); // invalid ray direction
 }
 
 [shader("closesthit")] 
@@ -196,7 +225,6 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     float2 textureCoords = hitSurface.texcoord;
     float4 albedoEmissive = getAlbedoSample(textureCoords, material.albedoTextureIndex, MeshSampler, material.albedoColor);
     float3 albedo = albedoEmissive.xyz;
-    ConstantBuffer<interlop::DebugBuffer> debugBuffer = ResourceDescriptorHeap[renderResources.debugBufferIndex];
 
     // Russian Roulette
     float RandomFloatForRoulette = pcgHash(renderResources.randomFloats[RANDOM_INDEX_PIXEL_JITTER].z, uvz);
@@ -259,7 +287,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     float3 throughput = albedo;
     // float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, float metallic, float roughness, float3 F0, float energyCompensation, out float3 throughput)
     // float3 nextRay = sampleNextRay(inRayTS, normalTS, uvz, albedo, metallic, roughness, F0, energyCompensation, throughput);
-    float3 nextRay = getNextRay(inRayTS, normalTS, uvz, albedo, F0, roughness, throughput);
+    float3 nextRay = sampleNextRay_oldver(inRayTS, normalTS, uvz, albedo, F0, roughness, throughput);
 
     float3 nextRayWS = normalize(mul(nextRay, tangentToWorld));
     
@@ -282,6 +310,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     const uint hitGroupOffset = RayTypeRadiance;
     const uint hitGroupGeoMultiplier = NumRayTypes;
     const uint missShaderIdx = RayTypeRadiance;
+
     TraceRay(SceneBVH, traceRayFlags, 0xFFFFFFFF, hitGroupOffset, hitGroupGeoMultiplier, missShaderIdx, ray, nextPayload);
 
     payload.radiance = throughput * nextPayload.radiance;

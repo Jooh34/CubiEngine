@@ -66,7 +66,7 @@ void ImportanceSampleCosDir(float2 u, float3 N, out float3 outL, out float NdotL
     outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
 
     NdotL = saturate(dot(N,L));
-    pdf = CosTheta * INV_PI;
+    pdf = max(CosTheta * INV_PI, VERY_SMALL_NUMBER);
 }
 
 // https://ameye.dev/notes/sampling-the-hemisphere/
@@ -88,7 +88,7 @@ void ImportanceSampleCosDirPow(float2 u, float3 N, float p, out float3 outL, out
     outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
 
     NdotL = saturate(dot(N,L));
-    pdf = (p+1) * pow(CosTheta, p) * INV_PI / 2;
+    pdf = max((p+1) * pow(CosTheta, p) * INV_PI / 2, VERY_SMALL_NUMBER);
 }
 
 // for normal (0,0,1)
@@ -131,7 +131,7 @@ void ConcentricSampleDisk(float2 u, float3 N, out float3 outL, out float pdf)
     
     outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
 
-    pdf = cosTheta * (1.f/PI);
+    pdf = max(cosTheta * (1.f/PI), VERY_SMALL_NUMBER);
 }
 
 float3 Fresnel(in float3 specAlbedo, in float3 h, in float3 l)
@@ -189,17 +189,16 @@ float3 SampleGGXVisibleNormal(float3 wo, float ax, float ay, float u1, float u2)
     return normalize(float3(ax * n.x, ay * n.y, max(0.0f, n.z)));
 }
 
-float3 ImportanceSampleGGX_V2(float3 V, float roughness, float u1, float u2, float3 F0, float3 energyCompensation, out float3 throughput)
+float3 ImportanceSampleGGX_V2(float3 V, float3 N, float roughness, float u1, float u2, float3 F0, float3 energyCompensation, out float3 throughput)
 {
-    float3 N = float3(0, 0, 1); // Normal in tangent space
     float3 microfacetNormal = SampleGGXVisibleNormal(V, roughness, roughness, u1, u2);
     float3 L = reflect(-V, microfacetNormal);
-    if (L.z < 0.0) L = -L; // Ensure the sample direction is above the surface
     
     float NoL = saturate(dot(N, L));
     float NoV = saturate(dot(N, V));
+    float VoH = saturate(dot(V, microfacetNormal));
 
-    if (NoL <= 0.0f || NoV <= 0.0f)
+    if (NoL <= EPS || NoV <= EPS || L.z < 0.0)
     {
         // If the sample direction is below the surface, we discard it.
         throughput = float3(0.0f, 0.0f, 0.0f);
@@ -207,27 +206,25 @@ float3 ImportanceSampleGGX_V2(float3 V, float roughness, float u1, float u2, flo
     }
 
     float LoH = saturate(dot(L, microfacetNormal));
-    float3 F = F_Schlick(F0, LoH);
+    float3 F = F_Schlick(F0, VoH);
     float G1 = SmithGGXMasking(N, L, V, roughness * roughness);
     float G2 = SmithGGXMaskingShadowing(N, L, V, roughness * roughness);
 
-    throughput = (F * energyCompensation) * (G2 / max(G1, EPS)); 
+    throughput = (F * energyCompensation) * (G2 / max(1, EPS)); 
     return L;
 }
 
-float3 ImportanceSampleGGX_V3(float3 V, float roughness, float u1, float u2, float3 F0, float3 energyCompensation, out float3 throughput)
+float3 ImportanceSampleGGX_V3(float3 V, float3 N, float roughness, float u1, float u2, float3 F0, float3 energyCompensation, out float3 throughput)
 {
-    float3 N = float3(0, 0, 1); // Normal in tangent space
     float3 microfacetNormal = SampleGGXVisibleNormal(V, roughness, roughness, u1, u2);
     float3 L = reflect(-V, microfacetNormal);
-    if (L.z < 0.0) L = -L; // Ensure the sample direction is above the surface
     
     float NoL = saturate(dot(N, L));
     float NoV = saturate(dot(N, V));
     float LoH = saturate(dot(L, microfacetNormal));
     float NoH = saturate(dot(N, microfacetNormal));
 
-    if (NoL <= 0.0f || NoV <= 0.0f)
+    if (NoL <= 0.0f || NoV <= 0.0f || L.z < 0.0)
     {
         // If the sample direction is below the surface, we discard it.
         throughput = float3(0.0f, 0.0f, 0.0f);
