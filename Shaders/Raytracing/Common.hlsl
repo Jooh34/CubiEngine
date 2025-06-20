@@ -127,26 +127,6 @@ float4 getAlbedoSample(const float2 textureCoords, const uint albedoTextureIndex
     return albedoTexture.SampleLevel(MeshSampler, textureCoords, 0.f);
 }
 
-float2 getMetallicRoughnessSample(const float2 textureCoords, const uint metallicRoughnessTextureIndex, SamplerState MeshSampler, const float2 metallicRoughness)
-{
-    if (metallicRoughnessTextureIndex == INVALID_INDEX)
-    {
-        return metallicRoughness;
-    }
-
-    Texture2D<float4> metallicRoughnessTexture = ResourceDescriptorHeap[metallicRoughnessTextureIndex];
-    return metallicRoughnessTexture.SampleLevel(MeshSampler, textureCoords, 0.f).bg;
-}
-
-
-float2 sampleLevelMetallicRoughness(float2 textureCoord, uint metalRoughnessTextureIndex, SamplerState MeshSampler)
-{
-    Texture2D<float4> metalRoughnessTexture = ResourceDescriptorHeap[NonUniformResourceIndex(metalRoughnessTextureIndex)];
-
-    return metalRoughnessTexture.SampleLevel(MeshSampler, textureCoord, 0).bg;
-}
-
-
 float3 getOcclusionRoughnessMetallicSample(
     float2 textureCoord, float2 defaultMetalRoughnessValue,
     uint ormTextureIndex, uint metalRoughnessTextureIndex, uint aoTextureIndex, SamplerState MeshSampler
@@ -168,7 +148,7 @@ float3 getOcclusionRoughnessMetallicSample(
     else if (metalRoughnessTextureIndex != INVALID_INDEX)
     {
         Texture2D<float4> metalRoughnessTexture = ResourceDescriptorHeap[NonUniformResourceIndex(metalRoughnessTextureIndex)];
-        float2 metallicRoughness = metalRoughnessTexture.SampleLevel(MeshSampler, textureCoord, 0).bg;
+        float2 metallicRoughness = metalRoughnessTexture.SampleLevel(MeshSampler, textureCoord, 0).xy;
         roughness = metallicRoughness.y;
         metallic = metallicRoughness.x;
     }

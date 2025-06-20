@@ -89,7 +89,7 @@ float2 sampleMetallicRoughness(float2 textureCoord, uint metalRoughnessTextureIn
     Texture2D<float4> metalRoughnessTexture = ResourceDescriptorHeap[NonUniformResourceIndex(metalRoughnessTextureIndex)];
     SamplerState samplerState = SamplerDescriptorHeap[NonUniformResourceIndex(metalRoughnessTextureSamplerIndex)];
 
-    return metalRoughnessTexture.Sample(samplerState, textureCoord).bg;
+    return metalRoughnessTexture.Sample(samplerState, textureCoord).xy;
 }
 
 float3 sampleORMTexture(float2 textureCoord, uint ormTextureIndex, uint ormTextureSamplerIndex)

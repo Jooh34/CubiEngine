@@ -103,11 +103,11 @@ void ClosestHit(inout FPayload payload, in Attributes attr)
     float3x3 viewMatrix = (float3x3)transpose(sceneBuffer.inverseViewMatrix);
     N = mul(N, viewMatrix);
 
-    Texture2D<float4> metalRoughnessTexture = ResourceDescriptorHeap[material.metalRoughnessTextureIndex];
-    float2 metalRoughness = metalRoughnessTexture.SampleLevel(MeshSampler, textureCoords, 0.f).bg;
+    float3 orm = getOcclusionRoughnessMetallicSample(textureCoords, float2(material.metallic, material.roughness),
+        material.ormTextureIndex, material.metalRoughnessTextureIndex, -1, MeshSampler);
     
-    float metalic = metalRoughness.x;
-    float roughness = metalRoughness.y;
+    float roughness = orm.y;
+    float metalic = orm.z;
 
     const float3 positionWS = hitSurface.position;
 
