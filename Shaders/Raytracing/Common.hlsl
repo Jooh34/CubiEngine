@@ -132,25 +132,26 @@ float3 getOcclusionRoughnessMetallicSample(
     uint ormTextureIndex, uint metalRoughnessTextureIndex, uint aoTextureIndex, SamplerState MeshSampler
 )
 {
-    float occlusion = 1.f; 
+    float occlusion = 0.f; 
     float roughness = defaultMetalRoughnessValue.y;
     float metallic = defaultMetalRoughnessValue.x;
 
     if (ormTextureIndex != INVALID_INDEX)
     {
         Texture2D<float4> ormTexture = ResourceDescriptorHeap[NonUniformResourceIndex(ormTextureIndex)];
-        float3 ORM = ormTexture.SampleLevel(MeshSampler, textureCoord, 0).xyz;
+        float3 orm = ormTexture.SampleLevel(MeshSampler, textureCoord, 0).xyz;
 
-        occlusion = ORM.x;
-        roughness = ORM.y;
-        metallic = ORM.z;
+        occlusion = orm.x;
+        roughness = orm.y;
+        metallic = orm.z;
     }
     else if (metalRoughnessTextureIndex != INVALID_INDEX)
     {
         Texture2D<float4> metalRoughnessTexture = ResourceDescriptorHeap[NonUniformResourceIndex(metalRoughnessTextureIndex)];
-        float2 metallicRoughness = metalRoughnessTexture.SampleLevel(MeshSampler, textureCoord, 0).xy;
-        roughness = metallicRoughness.y;
-        metallic = metallicRoughness.x;
+        float3 orm = metalRoughnessTexture.SampleLevel(MeshSampler, textureCoord, 0).xyz;
+        
+        roughness = orm.y;
+        metallic = orm.z;
     }
 
     if (ormTextureIndex != INVALID_INDEX)

@@ -210,7 +210,7 @@ float3 ImportanceSampleGGX_V2(float3 V, float3 N, float roughness, float u1, flo
     float G1 = SmithGGXMasking(N, L, V, roughness * roughness);
     float G2 = SmithGGXMaskingShadowing(N, L, V, roughness * roughness);
 
-    throughput = (F * energyCompensation) * (G2 / max(1, EPS)); 
+    throughput = (F * energyCompensation) * (G2 / max(G1, EPS)); 
     return L;
 }
 

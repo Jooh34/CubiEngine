@@ -137,7 +137,7 @@ float3 sampleNextRay_oldver(float3 inRay, float3 N, int3 uvz, float3 albedo, flo
         float e3 = rw - 0.5;
         float3 rand_vec = float3(e1 * roughness, e2 * roughness, e3 * roughness);
 
-        throughput = DiffuseFactor * F0;
+        throughput = SpecularFactor * F0;
         return normalize(reflected_ray + rand_vec);
     }
     else
@@ -151,7 +151,7 @@ float3 sampleNextRay_oldver(float3 inRay, float3 N, int3 uvz, float3 albedo, flo
         // The PDF of sampling a cosine hemisphere is NdotL / Pi, which cancels out those terms
         ImportanceSampleCosDir(u, N, d, NoL, pdf);
 
-        throughput = SpecularFactor * albedo;
+        throughput = DiffuseFactor * albedo;
         return d;
     }
 }

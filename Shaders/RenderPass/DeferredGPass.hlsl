@@ -77,7 +77,7 @@ PsOutput PsMain(VSOutput psInput)
     float2 velocity = calculateVelocity(psInput.curPosition, psInput.prevPosition);
     
     float2 defaultMetalRoughness = float2(materialBuffer.metallicFactor, materialBuffer.roughnessFactor);
-    float3 ORM = getOcclusionRoughnessMetallic(
+    float3 orm = getOcclusionRoughnessMetallic(
         psInput.textureCoord, defaultMetalRoughness,
         renderResources.ormTextureIndex, renderResources.ormTextureSamplerIndex,
         renderResources.metalRoughnessTextureIndex, renderResources.metalRoughnessTextureSamplerIndex,
@@ -85,6 +85,6 @@ PsOutput PsMain(VSOutput psInput)
     );
 
     PsOutput output;
-    packGBuffer(albedo, normal, ORM.x, ORM.zy, emissive, velocity, output.GBufferA, output.GBufferB, output.GBufferC, output.Velocity);
+    packGBuffer(albedo, normal, orm.x, orm.yz, emissive, velocity, output.GBufferA, output.GBufferB, output.GBufferC, output.Velocity);
     return output;
 }

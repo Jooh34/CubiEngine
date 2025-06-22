@@ -84,12 +84,12 @@ float sampleAO(float2 textureCoord, uint aoTextureIndex, uint aoTextureSamplerIn
     return aoTexture.Sample(samplerState, textureCoord).x;
 }
 
-float2 sampleMetallicRoughness(float2 textureCoord, uint metalRoughnessTextureIndex, uint metalRoughnessTextureSamplerIndex)
+float3 sampleMetallicRoughness(float2 textureCoord, uint metalRoughnessTextureIndex, uint metalRoughnessTextureSamplerIndex)
 {
     Texture2D<float4> metalRoughnessTexture = ResourceDescriptorHeap[NonUniformResourceIndex(metalRoughnessTextureIndex)];
     SamplerState samplerState = SamplerDescriptorHeap[NonUniformResourceIndex(metalRoughnessTextureSamplerIndex)];
 
-    return metalRoughnessTexture.Sample(samplerState, textureCoord).xy;
+    return metalRoughnessTexture.Sample(samplerState, textureCoord).xyz;
 }
 
 float3 sampleORMTexture(float2 textureCoord, uint ormTextureIndex, uint ormTextureSamplerIndex)
@@ -113,16 +113,16 @@ float3 getOcclusionRoughnessMetallic(
 
     if (ormTextureIndex != INVALID_INDEX)
     {
-        float3 ORM = sampleORMTexture(textureCoord, ormTextureIndex, ormTextureSamplerIndex);
-        occlusion = ORM.x;
-        roughness = ORM.y;
-        metallic = ORM.z;
+        float3 orm = sampleORMTexture(textureCoord, ormTextureIndex, ormTextureSamplerIndex);
+        occlusion = orm.x;
+        roughness = orm.y;
+        metallic = orm.z;
     }
     else if (metalRoughnessTextureIndex != INVALID_INDEX)
     {
-        float2 metallicRoughness = sampleMetallicRoughness(textureCoord, metalRoughnessTextureIndex, metalRoughnessSamplerIndex);
-        roughness = metallicRoughness.y;
-        metallic = metallicRoughness.x;
+        float3 orm = sampleMetallicRoughness(textureCoord, metalRoughnessTextureIndex, metalRoughnessSamplerIndex);
+        roughness = orm.y;
+        metallic = orm.x;
     }
 
     if (ormTextureIndex != INVALID_INDEX)
@@ -218,7 +218,7 @@ void packGBuffer(const float3 albedo, const float3 normal, const float ao, float
 {
     GBufferA = float4(albedo, emissive.r);
     GBufferB = float4(normal, emissive.g);
-    GBufferC = float4(ao, metalRoughness, emissive.b);
+    GBufferC = float4(ao, metalRoughness.yx, emissive.b);
     Velocity = velocity; 
 }
 

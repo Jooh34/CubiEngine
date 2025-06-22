@@ -168,7 +168,7 @@ void ClosestHit(inout FPayload payload, in Attributes attr)
     //     }
     // }
 
-    payload.radiance = albedo;
+    payload.radiance = orm;
     payload.distance = (InstanceID()/103.f);
 }
 

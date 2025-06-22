@@ -147,11 +147,11 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     }
     
     const float4 normal = GBufferB.Sample(pointClampSampler, uv);
-    const float4 aoMetalRoughness = GBufferC.Sample(pointClampSampler, uv);
+    const float4 orm = GBufferC.Sample(pointClampSampler, uv);
     const float emissiveIntensity = normal.w;
 
-    float roughness = aoMetalRoughness.z;
-    float metalic = aoMetalRoughness.y;
+    float roughness = orm.y;
+    float metalic = orm.z;
     
     // https://google.github.io/filament/Filament.md.html#figure_roughness_remap
     roughness = max(roughness, 0.089f);
@@ -243,7 +243,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
                 diffuseTerm = Fd_Burley(context.NoV, context.NoL, saturate(dot(L,H)), roughness, albedo.xyz, context.VoH, metalic);
             }
             float3 specularTerm = CookTorrenceSpecular(roughness, metalic, F0, context) * energyCompensation;
-            color += visibility * lightColor.xyz * lightIntensity * context.NoL * (diffuseTerm + max(specularTerm, float3(0,0,0))) * ssao * aoMetalRoughness.x;
+            color += visibility * lightColor.xyz * lightIntensity * context.NoL * (diffuseTerm + max(specularTerm, float3(0,0,0))) * ssao * orm.x;
 
             if (renderResources.bCSMDebug)
             {
@@ -273,7 +273,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             {
                 float attenuation = 1.f / (1.f + distance*0.001f + distance*distance*0.0001f);
                 float3 diffuseTerm = lambertianDiffuseBRDF(albedo.xyz, context.VoH, metalic);
-                color += attenuation * lightColor.xyz * lightIntensity * context.NoL * diffuseTerm * ssao * aoMetalRoughness.x;
+                color += attenuation * lightColor.xyz * lightIntensity * context.NoL * diffuseTerm * ssao * orm.x;
             }
         }
     }

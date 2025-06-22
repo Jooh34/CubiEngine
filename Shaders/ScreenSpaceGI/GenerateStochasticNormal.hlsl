@@ -19,8 +19,8 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     const float2 pixel = (dispatchThreadID.xy + 0.5f);
 
     const float4 normal = srcTexture.Sample(pointClampSampler, uv);
-    const float4 aoMetalRoughness = GBufferC.Sample(pointClampSampler, uv);
-    float roughness = aoMetalRoughness.z;
+    const float4 ORM = GBufferC.Sample(pointClampSampler, uv);
+    float roughness = ORM.y;
 
     // float noise = InterleavedGradientNoise(pixel, renderResources.frameCount);
     // float noise2 = InterleavedGradientNoise(pixel, renderResources.frameCount + 4);
