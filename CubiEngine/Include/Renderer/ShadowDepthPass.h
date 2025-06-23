@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Renderer/RenderPass.h"
 #include "Graphics/Resource.h"
 #include "Graphics/PipelineState.h"
 #include "ShaderInterlop/ConstantBuffers.hlsli"
@@ -8,11 +9,13 @@ class FGraphicsDevice;
 class FGraphicsContext;
 class FScene;
 
-class FShadowDepthPass
+class FShadowDepthPass : public FRenderPass
 {
 public:
-    FShadowDepthPass(FGraphicsDevice* const Device);
+    FShadowDepthPass(FGraphicsDevice* const Device, uint32_t Width, uint32_t Height);
     
+	void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height) override;
+
     void Render(FGraphicsContext* GraphicsContext, FScene* Scene);
     void AddVSMPassCS(FGraphicsContext* GraphicsContext, FScene* Scene);
 

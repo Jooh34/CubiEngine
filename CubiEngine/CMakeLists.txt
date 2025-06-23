@@ -83,6 +83,8 @@ set(SRC_FILES
 
     "Source/Renderer/Renderer.cpp"
     "Include/Renderer/Renderer.h"
+    "Source/Renderer/RenderPass.cpp"
+    "Include/Renderer/RenderPass.h"
     "Source/Renderer/UnlitPass.cpp"
     "Include/Renderer/UnlitPass.h"
     "Source/Renderer/DeferredGPass.cpp"

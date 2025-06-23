@@ -4,29 +4,20 @@
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FRaytracingDebugScenePass::FRaytracingDebugScenePass(const FGraphicsDevice* const Device, FScene* Scene, uint32_t InWidth, uint32_t InHeight)
-    : GraphicsDevice(Device),
-      RaytracingDebugScenePassPipelineState(Device->GetDevice(), FRaytracingPipelineStateCreationDesc{
-        .rtShaderPath = L"Shaders/Raytracing/DebugScene.hlsl",
-        .EntryPointRGS = L"RayGen",
-        .EntryPointCHS = L"ClosestHit",
-        .EntryPointRMS = L"Miss",
+FRaytracingDebugScenePass::FRaytracingDebugScenePass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height)
+    : FRenderPass(Device, Width, Height),
+        RaytracingDebugScenePassPipelineState(Device->GetDevice(), FRaytracingPipelineStateCreationDesc{
+       .rtShaderPath = L"Shaders/Raytracing/DebugScene.hlsl",
+       .EntryPointRGS = L"RayGen",
+       .EntryPointCHS = L"ClosestHit",
+       .EntryPointRMS = L"Miss",
         }),
-      RaytracingDebugScenePassSBT(Device, RaytracingDebugScenePassPipelineState.GetRTStateObjectProps())
+        RaytracingDebugScenePassSBT(Device, RaytracingDebugScenePassPipelineState.GetRTStateObjectProps())
 {
-    InitSizeDependantResource(Device, InWidth, InHeight);
-}
-
-void FRaytracingDebugScenePass::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
-{
-    InitSizeDependantResource(Device, InWidth, InHeight);
 }
 
 void FRaytracingDebugScenePass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
 {
-    Width = InWidth;
-    Height = InHeight;
-
     FTextureCreationDesc RaytracingDebugSceneTextureDesc = {
         .Usage = ETextureUsage::UAVTexture,
         .Width = InWidth,

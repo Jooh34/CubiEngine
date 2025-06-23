@@ -5,7 +5,9 @@
 #include "CubiMath.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FScreenSpaceGI::FScreenSpaceGI(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
+FScreenSpaceGIPass::FScreenSpaceGIPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
+	: FRenderPass(GraphicsDevice, Width, Height),
+	HistoryFrameCount(0)
 {
     FComputePipelineStateCreationDesc GenerateStochasticNormalPipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -89,17 +91,9 @@ FScreenSpaceGI::FScreenSpaceGI(FGraphicsDevice* const GraphicsDevice, uint32_t W
         .PipelineName = L"SSGI GaussianBlur Pipeline"
     };
     SSGIGaussianBlurWPipelineState = GraphicsDevice->CreatePipelineState(SSGIGaussianBlurWPipelineDesc);
-
-
-    InitSizeDependantResource(GraphicsDevice, Width, Height);
 }
 
-void FScreenSpaceGI::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
-{
-    InitSizeDependantResource(Device, InWidth, InHeight);
-}
-
-void FScreenSpaceGI::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FScreenSpaceGIPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
 {
     FTextureCreationDesc StochasticNormalDesc {
        .Usage = ETextureUsage::RenderTarget,
@@ -144,13 +138,7 @@ void FScreenSpaceGI::InitSizeDependantResource(const FGraphicsDevice* const Devi
     };
 
     HistroyNumFrameAccumulated = Device->CreateTexture(HistroyNumFrameAccumulatedDesc);
-    //{
-    //    FGraphicsContext* GraphicsContext = Device->GetCurrentGraphicsContext();
-    //    GraphicsContext->Reset();
-    //    GraphicsContext->ClearDepthStencilView(HistroyNumFrameAccumulated);
-    //    Device->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
-    //}
-
+   
     FTextureCreationDesc ScreenSpaceGIDesc {
        .Usage = ETextureUsage::UAVTexture,
        .Width = InWidth,
@@ -213,7 +201,7 @@ void FScreenSpaceGI::InitSizeDependantResource(const FGraphicsDevice* const Devi
     
 }
 
-void FScreenSpaceGI::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
+void FScreenSpaceGIPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, ScreenSpaceGI);
 
@@ -224,7 +212,7 @@ void FScreenSpaceGI::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, F
     CompositionSSGI(GraphicsContext, Scene, SceneTexture);
 }
 
-void FScreenSpaceGI::RaycastDiffuse(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
+void FScreenSpaceGIPass::RaycastDiffuse(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, RaycastDiffuse);
 
@@ -261,7 +249,7 @@ void FScreenSpaceGI::RaycastDiffuse(FGraphicsContext* const GraphicsContext, FSc
     1);
 }
 
-void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
+void FScreenSpaceGIPass::Denoise(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, Denoise);
     {
@@ -330,7 +318,7 @@ void FScreenSpaceGI::Denoise(FGraphicsContext* const GraphicsContext, FScene* Sc
 
 }
 
-void FScreenSpaceGI::DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
+void FScreenSpaceGIPass::DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, DenoiseGaussianBlur);
 
@@ -404,7 +392,7 @@ void FScreenSpaceGI::DenoiseGaussianBlur(FGraphicsContext* const GraphicsContext
     }
 }
 
-void FScreenSpaceGI::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
+void FScreenSpaceGIPass::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, ResolveSSGI);
 
@@ -439,7 +427,7 @@ void FScreenSpaceGI::Resolve(FGraphicsContext* const GraphicsContext, FScene* Sc
     1);
 }
 
-void FScreenSpaceGI::UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene)
+void FScreenSpaceGIPass::UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, SSGI_UpdateHistory);
 
@@ -465,7 +453,7 @@ void FScreenSpaceGI::UpdateHistory(FGraphicsContext* const GraphicsContext, FSce
     HistoryFrameCount++;
 }
 
-void FScreenSpaceGI::CompositionSSGI(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
+void FScreenSpaceGIPass::CompositionSSGI(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, CompositionSSGI);
 

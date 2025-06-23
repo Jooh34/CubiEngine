@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Renderer/RenderPass.h"
 #include "Graphics/Resource.h"
 #include "Graphics/PipelineState.h"
 
@@ -7,12 +8,11 @@ class FGraphicsDevice;
 class FGraphicsContext;
 class FScene;
 
-class FScreenSpaceGI
+class FScreenSpaceGIPass : public FRenderPass
 {
 public:
-    FScreenSpaceGI(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height);
-    void OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
-    void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
+    FScreenSpaceGIPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height);
+    void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight) override;
     
     void AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture);
 

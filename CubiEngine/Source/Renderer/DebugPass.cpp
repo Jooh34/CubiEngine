@@ -3,6 +3,7 @@
 #include "ShaderInterlop/RenderResources.hlsli"
 
 FDebugPass::FDebugPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
+	:FRenderPass(GraphicsDevice, Width, Height)
 {
     FComputePipelineStateCreationDesc PipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -14,8 +15,6 @@ FDebugPass::FDebugPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, ui
     };
 
     CopyPipelineState = GraphicsDevice->CreatePipelineState(PipelineDesc);
-    
-    InitSizeDependantResource(GraphicsDevice, Width, Height);
 }
 
 void FDebugPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
@@ -30,11 +29,6 @@ void FDebugPass::InitSizeDependantResource(const FGraphicsDevice* const Device, 
     };
 
     TextureForCopy = Device->CreateTexture(TextureDesc);
-}
-
-void FDebugPass::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
-{
-    InitSizeDependantResource(Device, InWidth, InHeight);
 }
 
 void FDebugPass::Copy(FGraphicsContext* const GraphicsContext, FTexture& SrcTexture, FTexture& DstTexture, uint32_t Width, uint32_t Height)

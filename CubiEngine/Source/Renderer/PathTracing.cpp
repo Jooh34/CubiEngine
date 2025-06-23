@@ -4,8 +4,8 @@
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FPathTracingPass::FPathTracingPass(const FGraphicsDevice* const Device, FScene* Scene, uint32_t InWidth, uint32_t InHeight)
-    : GraphicsDevice(Device),
+FPathTracingPass::FPathTracingPass(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+    : FRenderPass(Device, InWidth, InHeight),
     PathTracingPassPipelineState(Device->GetDevice(), FRaytracingPipelineStateCreationDesc{
       .rtShaderPath = L"Shaders/Raytracing/PathTracing.hlsl",
       .EntryPointRGS = L"RayGen",
@@ -15,19 +15,10 @@ FPathTracingPass::FPathTracingPass(const FGraphicsDevice* const Device, FScene* 
 	}),
     PathTracingPassSBT(Device, PathTracingPassPipelineState.GetRTStateObjectProps())
 {
-    InitSizeDependantResource(Device, InWidth, InHeight);
-}
-
-void FPathTracingPass::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
-{
-    InitSizeDependantResource(Device, InWidth, InHeight);
 }
 
 void FPathTracingPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
 {
-    Width = InWidth;
-    Height = InHeight;
-
     FTextureCreationDesc PathTracingSceneTextureDesc = {
         .Usage = ETextureUsage::UAVTexture,
         .Width = InWidth,

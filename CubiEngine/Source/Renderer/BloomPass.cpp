@@ -6,6 +6,7 @@
 #include "ShaderInterlop/RenderResources.hlsli"
 
 FBloomPass::FBloomPass(FGraphicsDevice* Device, const uint32_t Width, const uint32_t Height)
+	: FRenderPass(Device, Width, Height)
 {
     FComputePipelineStateCreationDesc GaussianBlurPipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -26,13 +27,6 @@ FBloomPass::FBloomPass(FGraphicsDevice* Device, const uint32_t Width, const uint
         .PipelineName = L"DownSample Pipeline"
     };
     DownSamplePipelineState = Device->CreatePipelineState(DownSamplePipelineDesc);
-
-    InitSizeDependantResource(Device, Width, Height);
-}
-
-void FBloomPass::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
-{
-    InitSizeDependantResource(Device, InWidth, InHeight);
 }
 
 void FBloomPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
@@ -91,7 +85,6 @@ void FBloomPass::InitSizeDependantResource(const FGraphicsDevice* const Device, 
             .Name = NameBuffer,
         };
         DownSampledSceneTextures.push_back(Device->CreateTexture(DownSampledSceneTextureDesc));
-
     }
 }
 

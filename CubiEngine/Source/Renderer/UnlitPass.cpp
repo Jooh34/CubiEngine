@@ -4,6 +4,7 @@
 #include "ShaderInterlop/RenderResources.hlsli"
 
 FUnlitPass::FUnlitPass(FGraphicsDevice* Device, const uint32_t Width, const uint32_t Height)
+	: FRenderPass(Device, Width, Height)
 {
     FGraphicsPipelineStateCreationDesc PipelineDesc = FGraphicsPipelineStateCreationDesc
     {
@@ -30,6 +31,10 @@ FUnlitPass::FUnlitPass(FGraphicsDevice* Device, const uint32_t Width, const uint
     };
     UnlitPipelineState = Device->CreatePipelineState(PipelineDesc);
     UnlitTexture = Device->CreateTexture(TextureDesc);
+}
+
+void FUnlitPass::InitSizeDependantResource(const FGraphicsDevice* Device, uint32_t InWidth, uint32_t InHeight)
+{
 }
 
 void FUnlitPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsContext,

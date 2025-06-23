@@ -4,6 +4,7 @@
 #include "ShaderInterlop/RenderResources.hlsli"
 
 FEyeAdaptationPass::FEyeAdaptationPass(FGraphicsDevice* Device, const uint32_t Width, const uint32_t Height)
+	: FRenderPass(Device, Width, Height)
 {
     std::vector<UINT> Data(256, 0);
 
@@ -51,6 +52,10 @@ FEyeAdaptationPass::FEyeAdaptationPass(FGraphicsDevice* Device, const uint32_t W
         },
         .PipelineName = L"EyeAdaptation Tonemapping Pipeline",
     });
+}
+
+void FEyeAdaptationPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+{
 }
 
 void FEyeAdaptationPass::GenerateHistogram(FGraphicsContext* GraphicsContext, FScene* Scene, FTexture* HDR)

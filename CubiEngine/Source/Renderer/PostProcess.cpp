@@ -5,6 +5,7 @@
 #include "ShaderInterlop/RenderResources.hlsli"
 
 FPostProcess::FPostProcess(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
+    : FRenderPass(GraphicsDevice, Width, Height)
 {
     FComputePipelineStateCreationDesc TonemappingPipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -35,17 +36,10 @@ FPostProcess::FPostProcess(FGraphicsDevice* const GraphicsDevice, uint32_t Width
         .PipelineName = L"DebugVisualizeDepth Pipeline"
     };
     DebugVisualizeDepthPipeline = GraphicsDevice->CreatePipelineState(DebugVisualizeDepthPipelineDesc);
-
-    InitSizeDependantResource(GraphicsDevice, Width, Height);
 }
 
 void FPostProcess::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
 {
-}
-
-void FPostProcess::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
-{
-    InitSizeDependantResource(Device, InWidth, InHeight);
 }
 
 void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext, FScene* Scene,

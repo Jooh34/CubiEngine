@@ -54,19 +54,21 @@ private:
     std::unique_ptr<FScene> Scene;
     std::unique_ptr<FDeferredGPass> DeferredGPass;
     std::unique_ptr<FDebugPass> DebugPass;
-    std::unique_ptr<FTemporalAA> TemporalAA;
+    std::unique_ptr<FTemporalAAPass> TemporalAA;
     std::unique_ptr<FPostProcess> PostProcess;
 
     std::unique_ptr<FShadowDepthPass> ShadowDepthPass;
     std::unique_ptr<FRaytracingShadowPass> RaytracingShadowPass;
 
-    std::unique_ptr<FScreenSpaceGI> ScreenSpaceGI;
+    std::unique_ptr<FScreenSpaceGIPass> ScreenSpaceGI;
     std::unique_ptr<FEyeAdaptationPass> EyeAdaptationPass;
     std::unique_ptr<FBloomPass> BloomPass;
-    std::unique_ptr<FSSAO> SSAOPass;
+    std::unique_ptr<FSSAOPass> SSAOPass;
 
     std::unique_ptr<FRaytracingDebugScenePass> RaytracingDebugScenePass;
     std::unique_ptr<FPathTracingPass> PathTracingPass;
 
     std::unique_ptr<FEditor> Editor;
+
+	std::vector<FRenderPass*> RenderPasses;
 };

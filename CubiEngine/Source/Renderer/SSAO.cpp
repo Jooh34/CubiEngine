@@ -5,7 +5,8 @@
 #include "CubiMath.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FSSAO::FSSAO(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
+FSSAOPass::FSSAOPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
+	: FRenderPass(GraphicsDevice, Width, Height)
 {
     SSAOKernelBuffer = GraphicsDevice->CreateBuffer<interlop::SSAOKernelBuffer>(FBufferCreationDesc{
         .Usage = EBufferUsage::ConstantBuffer,
@@ -22,16 +23,9 @@ FSSAO::FSSAO(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Hei
         .PipelineName = L"SSAO Pipeline"
     };
     SSAOPipelineState = GraphicsDevice->CreatePipelineState(SSAOPipelineDesc);
-
-    InitSizeDependantResource(GraphicsDevice, Width, Height);
 }
 
-void FSSAO::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
-{
-    InitSizeDependantResource(Device, InWidth, InHeight);
-}
-
-void FSSAO::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FSSAOPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
 {
     SSAOTexture = Device->CreateTexture(FTextureCreationDesc{
         .Usage = ETextureUsage::UAVTexture,
@@ -43,7 +37,7 @@ void FSSAO::InitSizeDependantResource(const FGraphicsDevice* const Device, uint3
     });
 }
 
-void FSSAO::GenerateSSAOKernel()
+void FSSAOPass::GenerateSSAOKernel()
 {
     int KernelSize = 64;
     float RndFloats[MAX_SSAO_KERNEL_SIZE * 3];
@@ -74,7 +68,7 @@ void FSSAO::GenerateSSAOKernel()
     SSAOKernelBuffer.Update(&SSAOKernelBufferData);
 }
 
-void FSSAO::AddSSAOPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
+void FSSAOPass::AddSSAOPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, SSAO);
 

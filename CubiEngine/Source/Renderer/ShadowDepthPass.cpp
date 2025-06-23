@@ -3,7 +3,8 @@
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FShadowDepthPass::FShadowDepthPass(FGraphicsDevice* const Device)
+FShadowDepthPass::FShadowDepthPass(FGraphicsDevice* const Device, uint32_t Width, uint32_t Height)
+	: FRenderPass(Device, Width, Height)
 {
     FTextureCreationDesc ShadowDepthTextureDesc{
         .Usage = ETextureUsage::DepthStencil,
@@ -63,6 +64,10 @@ FShadowDepthPass::FShadowDepthPass(FGraphicsDevice* const Device)
     };
 
     MomentPassPipelineState = Device->CreatePipelineState(MomentPassPipelineStateDesc);
+}
+
+void FShadowDepthPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height)
+{
 }
 
 void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)

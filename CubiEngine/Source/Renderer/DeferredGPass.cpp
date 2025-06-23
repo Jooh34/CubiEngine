@@ -7,6 +7,7 @@
 #include "ShaderInterlop/RenderResources.hlsli"
 
 FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height)
+	: FRenderPass(Device, Width, Height)
 {
     FGraphicsPipelineStateCreationDesc Desc{
         .ShaderModule =
@@ -55,17 +56,10 @@ FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Wid
     };
 
     LightPassPipelineState = Device->CreatePipelineState(LightPassPipelineDesc);
-
-    InitSizeDependantResource(Device, Width, Height);
 }
 
 void FDeferredGPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
 {
-}
-
-void FDeferredGPass::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
-{
-    InitSizeDependantResource(Device, InWidth, InHeight);
 }
 
 void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsContext, FSceneTexture& SceneTexture)

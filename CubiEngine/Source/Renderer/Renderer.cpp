@@ -7,29 +7,34 @@
 
 #define GI_METHOD_SSGI 1
 
+#define SCOPED_GPU_EVENT(Device, NAME)\
+    GPUProfileScopedObject GPUProfileEvent_##NAME = GPUProfileScopedObject(Device, #NAME);
+#define INITIALIZE_RENDER_PASS(TYPE, VAR_NAME)\
+    VAR_NAME = std::make_unique<TYPE>(GraphicsDevice, Width, Height); \
+    VAR_NAME->Initialize(); \
+    RenderPasses.push_back(VAR_NAME.get());
+    
+
 FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32_t Width, uint32_t Height)
     :Width(Width), Height(Height), GraphicsDevice(GraphicsDevice)
 {
+    InitSizeDependantResource(GraphicsDevice, Width, Height);
     Scene = std::make_unique<FScene>(GraphicsDevice, Width, Height);
-
-    DeferredGPass = std::make_unique<FDeferredGPass>(GraphicsDevice, Width, Height);
-    DebugPass = std::make_unique<FDebugPass>(GraphicsDevice, Width, Height);
-    PostProcess = std::make_unique<FPostProcess>(GraphicsDevice, Width, Height);
-    TemporalAA = std::make_unique<FTemporalAA>(GraphicsDevice, Width, Height);
-    ShadowDepthPass = std::make_unique<FShadowDepthPass>(GraphicsDevice);
-    ScreenSpaceGI = std::make_unique<FScreenSpaceGI>(GraphicsDevice, Width, Height);
-    EyeAdaptationPass = std::make_unique<FEyeAdaptationPass>(GraphicsDevice, Width, Height);
-    BloomPass = std::make_unique<FBloomPass>(GraphicsDevice, Width, Height);
-    SSAOPass = std::make_unique<FSSAO>(GraphicsDevice, Width, Height);
-
-    RaytracingDebugScenePass = std::make_unique<FRaytracingDebugScenePass>(GraphicsDevice, Scene.get(), Width, Height);
-    RaytracingShadowPass = std::make_unique<FRaytracingShadowPass>(GraphicsDevice, Scene.get(), Width, Height);
-
-	PathTracingPass = std::make_unique<FPathTracingPass>(GraphicsDevice, Scene.get(), Width, Height);
-
     Editor = std::make_unique<FEditor>(GraphicsDevice, Window, Width, Height);
 
-    InitSizeDependantResource(GraphicsDevice, Width, Height);
+    INITIALIZE_RENDER_PASS(FDeferredGPass, DeferredGPass);
+    INITIALIZE_RENDER_PASS(FDebugPass, DebugPass);
+    INITIALIZE_RENDER_PASS(FPostProcess, PostProcess);
+    INITIALIZE_RENDER_PASS(FTemporalAAPass, TemporalAA);
+    INITIALIZE_RENDER_PASS(FShadowDepthPass, ShadowDepthPass);
+    INITIALIZE_RENDER_PASS(FScreenSpaceGIPass, ScreenSpaceGI);
+    INITIALIZE_RENDER_PASS(FEyeAdaptationPass, EyeAdaptationPass);
+    INITIALIZE_RENDER_PASS(FBloomPass, BloomPass);
+    INITIALIZE_RENDER_PASS(FSSAOPass, SSAOPass);
+
+    INITIALIZE_RENDER_PASS(FRaytracingDebugScenePass, RaytracingDebugScenePass);
+    INITIALIZE_RENDER_PASS(FRaytracingShadowPass, RaytracingShadowPass);
+    INITIALIZE_RENDER_PASS(FPathTracingPass, PathTracingPass);
 }
 
 FRenderer::~FRenderer()
@@ -348,22 +353,15 @@ void FRenderer::RenderShadow(FGraphicsContext* GraphicsContext, FSceneTexture& S
 
 void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
 {
-    GraphicsDevice->OnWindowResized(InWidth, InHeight);
-
     Width = InWidth;
     Height = InHeight;
-
-    DeferredGPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
-    DebugPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
-    PostProcess->OnWindowResized(GraphicsDevice, InWidth, InHeight);
-    TemporalAA->OnWindowResized(GraphicsDevice, InWidth, InHeight);
-    ScreenSpaceGI->OnWindowResized(GraphicsDevice, InWidth, InHeight);
-    BloomPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
-    SSAOPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
-    Editor->OnWindowResized(Width, Height);
-    RaytracingDebugScenePass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
-
     InitSizeDependantResource(GraphicsDevice, InWidth, InHeight);
+    GraphicsDevice->OnWindowResized(InWidth, InHeight);
+
+	for (auto& RenderPass : RenderPasses)
+	{
+		RenderPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+	}
 }
 
 void FRenderer::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)

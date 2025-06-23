@@ -4,7 +4,9 @@
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FTemporalAA::FTemporalAA(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
+FTemporalAAPass::FTemporalAAPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
+    : FRenderPass(GraphicsDevice, Width, Height),
+        HistoryFrameCount(0)
 {
     FComputePipelineStateCreationDesc TemporalAAResolvePipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -25,16 +27,9 @@ FTemporalAA::FTemporalAA(FGraphicsDevice* const GraphicsDevice, uint32_t Width, 
         .PipelineName = L"TemporalAA UpdateHistory Pipeline"
     };
     TemporalAAUpdateHistoryPipelineState = GraphicsDevice->CreatePipelineState(TemporalAAUpdateHistoryPipelineDesc);
-
-    InitSizeDependantResource(GraphicsDevice, Width, Height);
 }
 
-void FTemporalAA::OnWindowResized(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
-{
-    InitSizeDependantResource(Device, InWidth, InHeight);
-}
-
-void FTemporalAA::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FTemporalAAPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
 {
     FTextureCreationDesc HistoryTextureDesc{
         .Usage = ETextureUsage::UAVTexture,
@@ -59,7 +54,7 @@ void FTemporalAA::InitSizeDependantResource(const FGraphicsDevice* const Device,
     ResolveTexture = Device->CreateTexture(ResolveTextureDesc);
 }
 
-void FTemporalAA::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
+void FTemporalAAPass::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, TemporalAAResolve);
 
@@ -87,7 +82,7 @@ void FTemporalAA::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene
     1);
 }
 
-void FTemporalAA::UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene)
+void FTemporalAAPass::UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, TemporalAAUpdateHistory);
 
