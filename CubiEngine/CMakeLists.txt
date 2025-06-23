@@ -7,115 +7,37 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/Bin/Release)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/Bin/Release)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/Bin/Release)
 
-set(SRC_FILES
-    "Include/Pch.h"
-    "Include/Utils.h"
-
-    "Include/CubiMath.h"
-    "Source/CubiMath.cpp"
-
-    "Source/Core/Application.cpp"
-    "Include/Core/Application.h"
-    "Source/Core/FileSystem.cpp"
-    "Include/Core/FileSystem.h"
-    "Source/Core/Input.cpp"
-    "Include/Core/Input.h"
-    "Source/Core/Editor.cpp"
-    "Include/Core/Editor.h"
-
-    "Source/Scene/Scene.cpp"
-    "Include/Scene/Scene.h"
-    "Source/Scene/Camera.cpp"
-    "Include/Scene/Camera.h"
-    "Source/Scene/Light.cpp"
-    "Include/Scene/Light.h"
-    "Source/Scene/Mesh.cpp"
-    "Include/Scene/Mesh.h"
-    "Source/Scene/GLTFModelLoader.cpp"
-    "Include/Scene/GLTFModelLoader.h"
-    "Source/Scene/FBXLoader.cpp"
-    "Include/Scene/FBXLoader.h"
-    "Source/Scene/SceneLoader.cpp"
-    "Include/Scene/SceneLoader.h"
-
-    "Include/Graphics/d3dx12.h"
-    "Include/Graphics/Material.h"
-    "Include/Graphics/Dx12Helper.h"
-    "Source/Graphics/Dx12Helper.cpp"
-
-    "Include/Graphics/Resource.cpp"
-    "Include/Graphics/Resource.h"
-    "Source/Graphics/GraphicsDevice.cpp"
-    "Include/Graphics/GraphicsDevice.h"
-    "Source/Graphics/DescriptorHeap.cpp"
-    "Include/Graphics/DescriptorHeap.h"
-    "Source/Graphics/CommandQueue.cpp"
-    "Include/Graphics/CommandQueue.h"
-    "Source/Graphics/PipelineState.cpp"
-    "Include/Graphics/PipelineState.h"
-    "Source/Graphics/RaytracingPipelineState.cpp"
-    "Include/Graphics/RaytracingPipelineState.h"
-    "Source/Graphics/Context.cpp"
-    "Include/Graphics/Context.h"
-    "Source/Graphics/GraphicsContext.cpp"
-    "Include/Graphics/GraphicsContext.h"
-    "Source/Graphics/ComputeContext.cpp"
-    "Include/Graphics/ComputeContext.h"
-    "Source/Graphics/CopyContext.cpp"
-    "Include/Graphics/CopyContext.h"
-    "Source/Graphics/ShaderCompiler.cpp"
-    "Include/Graphics/ShaderCompiler.h"
-    "Source/Graphics/MemoryAllocator.cpp"
-    "Include/Graphics/MemoryAllocator.h"
-    "Source/Graphics/MipmapGenerator.cpp"
-    "Include/Graphics/MipmapGenerator.h"
-    "Source/Graphics/Profiler.cpp"
-    "Include/Graphics/Profiler.h"
-    "Source/Graphics/Query.cpp"
-    "Include/Graphics/Query.h"
-    "Source/Graphics/Raytracing.cpp"
-    "Include/Graphics/Raytracing.h"
-    "Source/Graphics/ShaderBindingTable.cpp"
-    "Include/Graphics/ShaderBindingTable.h"
-    "Source/Graphics/ShaderBindingTableGenerator.cpp"
-    "Include/Graphics/ShaderBindingTableGenerator.h"
-
-
-    "Source/Renderer/Renderer.cpp"
-    "Include/Renderer/Renderer.h"
-    "Source/Renderer/RenderPass.cpp"
-    "Include/Renderer/RenderPass.h"
-    "Source/Renderer/UnlitPass.cpp"
-    "Include/Renderer/UnlitPass.h"
-    "Source/Renderer/DeferredGPass.cpp"
-    "Include/Renderer/DeferredGPass.h"
-    "Source/Renderer/DebugPass.cpp"
-    "Include/Renderer/DebugPass.h"
-    "Source/Renderer/PostProcess.cpp"
-    "Include/Renderer/PostProcess.h"
-    "Source/Renderer/CubeMap.cpp"
-    "Include/Renderer/CubeMap.h"
-    "Source/Renderer/ShadowDepthPass.cpp"
-    "Include/Renderer/ShadowDepthPass.h"
-    "Source/Renderer/TemporalAA.cpp"
-    "Include/Renderer/TemporalAA.h"
-    "Source/Renderer/ScreenSpaceGI.cpp"
-    "Include/Renderer/ScreenSpaceGI.h"
-    "Source/Renderer/EyeAdaptationPass.cpp"
-    "Include/Renderer/EyeAdaptationPass.h"
-    "Source/Renderer/BloomPass.cpp"
-    "Include/Renderer/BloomPass.h"
-    "Source/Renderer/SSAO.cpp"
-    "Include/Renderer/SSAO.h"
-    "Source/Renderer/RaytracingDebugScenePass.cpp"
-    "Include/Renderer/RaytracingDebugScenePass.h"
-    "Source/Renderer/RaytracingShadowPass.cpp"
-    "Include/Renderer/RaytracingShadowPass.h"
-    "Source/Renderer/PathTracing.cpp"
-    "Include/Renderer/PathTracing.h"
+# 자동으로 헤더 및 소스 파일 수집
+file(GLOB_RECURSE CUBIENGINE_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/Include/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Include/*.hpp"
 )
 
-add_executable(CubiEngine ${SRC_FILES} "Main.cpp")
+file(GLOB_RECURSE CUBIENGINE_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.c"
+)
+
+# Main.cpp는 직접 추가 (프로젝트 루트에 있으므로)
+set(MAIN_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp")
+
+# 전체 파일 목록 통합
+set(SRC_FILES ${CUBIENGINE_HEADERS} ${CUBIENGINE_SOURCES} ${MAIN_SOURCE})
+
+# 가상 헤더/소스 그룹 구조를 Visual Studio에서 보기 좋게 분류
+foreach(header ${CUBIENGINE_HEADERS})
+    file(RELATIVE_PATH rel_path "${CMAKE_CURRENT_SOURCE_DIR}/Include" "${header}")
+    get_filename_component(group_dir "${rel_path}" PATH)
+    source_group("Header Files\\${group_dir}" FILES "${header}")
+endforeach()
+
+foreach(source ${CUBIENGINE_SOURCES})
+    file(RELATIVE_PATH rel_path "${CMAKE_CURRENT_SOURCE_DIR}/Source" "${source}")
+    get_filename_component(group_dir "${rel_path}" PATH)
+    source_group("Source Files\\${group_dir}" FILES "${source}")
+endforeach()
+
+add_executable(CubiEngine ${SRC_FILES})
 
 target_include_directories(CubiEngine PUBLIC "Include" "../Shaders"
     ${CMAKE_SOURCE_DIR}/ThirdParty/PIX/include

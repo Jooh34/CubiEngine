@@ -1,4 +1,4 @@
-#include "Resource.h"
+#include "Graphics/Resource.h"
 
 void FAllocation::Update(const void* Data, const size_t Size)
 {
