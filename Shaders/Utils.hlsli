@@ -353,3 +353,12 @@ float3x3 Inverse3x3(float3x3 m)
         (a00 * a11 - a01 * a10) * invDet
     );
 }
+
+float3 SphericalToCartesian(float theta, float phi)
+{
+    float sinTheta = sin(theta);
+    float x = sinTheta * cos(phi);
+    float y = sinTheta * sin(phi);
+    float z = cos(theta);
+    return float3(x, y, z);
+}    

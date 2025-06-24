@@ -216,7 +216,11 @@ float3 ImportanceSampleGGX_V2(float3 V, float3 N, float roughness, float u1, flo
 
 float3 ImportanceSampleGGX_V3(float3 V, float3 N, float roughness, float u1, float u2, float3 F0, float3 energyCompensation, out float3 throughput)
 {
-    float3 microfacetNormal = SampleGGXVisibleNormal(V, roughness, roughness, u1, u2);
+    float a2 = roughness * roughness;
+    float theta = acos(sqrt((1.0f - u1) / ((a2 - 1.0f) * u1 + 1.0f)));
+    float phi   = 2 * PI * u2;
+    
+    float3 microfacetNormal = SphericalToCartesian(theta, phi);
     float3 L = reflect(-V, microfacetNormal);
     
     float NoL = saturate(dot(N, L));
@@ -232,7 +236,7 @@ float3 ImportanceSampleGGX_V3(float3 V, float3 N, float roughness, float u1, flo
     }
 
     float3 F = F_Schlick(F0, LoH);
-    float G = SmithGGXMaskingShadowing(N, L, V, roughness * roughness);
+    float G = SmithGGXMaskingShadowing(N, L, V, a2);
     float weight = LoH / (NoL*NoH);
 
     throughput = (F * G * weight);

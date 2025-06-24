@@ -33,9 +33,11 @@ void RayGen()
     const uint2 pixelCoord = DispatchRaysIndex().xy;
     
     uint frameAccumulated = frameAccumulatedTexture[pixelCoord];
+    float3 prevRadiance = dstTexture[pixelCoord].xyz;
     if (renderResources.bRefreshPathTracingTexture)
     {
         dstTexture[pixelCoord] = float4(0.0f, 0.0f, 0.0f, 1.0f);
+        prevRadiance = float3(0.0f, 0.0f, 0.0f);
         frameAccumulatedTexture[pixelCoord] = 0;
         frameAccumulated = 0;
     }
@@ -46,7 +48,7 @@ void RayGen()
     }
     
     uint numSamples = renderResources.numSamples;
-    float3 radianceSum = float3(0.0f, 0.0f, 0.0f);
+    float3 newRadiance = prevRadiance;
 
     for (uint s=0; s<numSamples; s++)
     {
@@ -67,7 +69,6 @@ void RayGen()
 
         RayDesc rayDesc = generateViewRay(renderResources.invViewProjectionMatrix, ncdXY);
 
-
         TraceRay(
             SceneBVH,
             PathTracingRayFlag,
@@ -79,15 +80,15 @@ void RayGen()
             payload
         );
 
-        radianceSum += payload.radiance;
+        float3 currRadiance = payload.radiance;
+        const float lerpFactor = frameAccumulated / float(frameAccumulated + 1.f);
+        newRadiance = lerp(currRadiance, newRadiance, lerpFactor);
+
+        frameAccumulated += 1;
     }
 
-    int newFrameAccumulated = frameAccumulated + numSamples;
-
-    float3 result = (dstTexture[pixelCoord].xyz * frameAccumulated + radianceSum) / newFrameAccumulated;
-
-    dstTexture[pixelCoord] = float4(result, 1.0f);
-    frameAccumulatedTexture[pixelCoord] = newFrameAccumulated;
+    dstTexture[pixelCoord] = float4(newRadiance, 1.0f);
+    frameAccumulatedTexture[pixelCoord] = frameAccumulated;
 }
 
 void getDebugDiffuseSpecularFactor(inout float DiffuseFactor, inout float SpecularFactor)
@@ -201,12 +202,6 @@ float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, f
 [shader("closesthit")] 
 void ClosestHit(inout FPathTracePayload payload, in Attributes attr) 
 {
-    if (payload.depth >= renderResources.maxPathDepth)
-    {
-        payload.radiance = float3(0.0f, 0.0f, 0.0f);
-        return;
-    }
-
     int3 uvz = createUniqueUVZ(payload, renderResources.maxPathDepth);
 
     BufferIndexContext context = {
@@ -304,6 +299,12 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     nextPayload.depth = payload.depth+1;
     nextPayload.uv = payload.uv;
     nextPayload.sampleIndex = payload.sampleIndex;
+    
+    if (payload.depth+1 >= renderResources.maxPathDepth)
+    {
+        payload.radiance = float3(0.0f, 0.0f, 0.0f);
+        return;
+    }
 
     TraceRay(
         SceneBVH,
