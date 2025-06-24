@@ -28,9 +28,7 @@ public:
     FBuffer TextureCoordsBuffer{};
     FBuffer NormalBuffer{};
     FBuffer TangentBuffer{};
-
     FBuffer IndexBuffer{};
-
     uint32_t IndicesCount{};
     
     std::shared_ptr<FPBRMaterial> Material{};

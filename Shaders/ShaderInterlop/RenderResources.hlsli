@@ -365,10 +365,8 @@ namespace interlop
         uint dstTextureIndex;
         uint geometryInfoBufferIdx;
         uint materialBufferIdx;
-        uint vtxBufferIdx;
-
-        uint idxBufferIdx;
         uint sceneBufferIndex;
+        
         uint lightBufferIndex;
         uint envmapTextureIndex;
     };
@@ -391,20 +389,18 @@ namespace interlop
         uint geometryInfoBufferIdx;
         uint materialBufferIdx;
 
-        uint vtxBufferIdx;
-        uint idxBufferIdx;
         uint sceneBufferIndex;
         uint lightBufferIndex;
-
         uint envmapTextureIndex;
         float envmapIntensity;
+
         uint envBRDFTextureIndex;
         uint debugBufferIndex;
-
         uint maxPathDepth;
         uint numSamples;
+
         uint bRefreshPathTracingTexture;
-        float padding;
+        float3 padding;
 
         float4 randomFloats[16];
     };

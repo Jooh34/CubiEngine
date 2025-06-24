@@ -49,8 +49,6 @@ void FRaytracingDebugScenePass::AddPass(FGraphicsContext* GraphicsContext, FScen
         .dstTextureIndex = RaytracingDebugSceneTexture.UavIndex,
         .geometryInfoBufferIdx = Scene->GetRaytracingScene().GetGeometryInfoBufferSrv(),
         .materialBufferIdx = Scene->GetRaytracingScene().GetMaterialBufferSrv(),
-        .vtxBufferIdx = Scene->GetRaytracingScene().GetMeshVertexBufferSrv(),
-        .idxBufferIdx = Scene->GetRaytracingScene().GetIndiceBufferSrv(),
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
         .envmapTextureIndex = Scene->GetEnvironmentMap()->CubeMapTexture.SrvIndex,

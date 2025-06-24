@@ -69,8 +69,6 @@ void ClosestHit(inout FPayload payload, in Attributes attr)
 
     BufferIndexContext context = {
         renderResources.geometryInfoBufferIdx,
-        renderResources.vtxBufferIdx,
-        renderResources.idxBufferIdx,
         renderResources.materialBufferIdx
     };
     
@@ -168,7 +166,7 @@ void ClosestHit(inout FPayload payload, in Attributes attr)
     //     }
     // }
 
-    payload.radiance = orm;
+    payload.radiance = albedo;
     payload.distance = (InstanceID()/103.f);
 }
 
