@@ -92,10 +92,8 @@ void FRenderer::Render()
     FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
     FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
 
-    // Resource Transition + BackBuffer Clear
     BeginFrame(GraphicsContext, BackBuffer);
 
-    // Generate Raytracing Scene
     {
         SCOPED_NAMED_EVENT(GraphicsContext, GenerateRaytracingScene);
         SCOPED_GPU_EVENT(GraphicsDevice, GenerateRaytracingScene);
@@ -112,7 +110,6 @@ void FRenderer::Render()
     }
     else
     {
-		// Path Tracing Mode
         RenderPathTracingScene(GraphicsContext);
     }
 
@@ -273,7 +270,6 @@ void FRenderer::RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext)
         RaytracingDebugScenePass->AddPass(GraphicsContext, Scene.get());
     }
 
-    // ----- Post Process -----
     {
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
         SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
@@ -306,7 +302,6 @@ void FRenderer::RenderPathTracingScene(FGraphicsContext* GraphicsContext)
         PathTracingPass->AddPass(GraphicsContext, Scene.get());
     }
 
-    // ----- Post Process -----
     {
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
         SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);

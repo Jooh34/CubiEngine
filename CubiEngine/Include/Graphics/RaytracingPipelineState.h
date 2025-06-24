@@ -21,7 +21,7 @@ enum RTRootParams : uint32_t
 class FRaytracingPipelineState
 {
 public:
-    FRaytracingPipelineState();
+    FRaytracingPipelineState() = delete;
     FRaytracingPipelineState(ID3D12Device5* const device, const FRaytracingPipelineStateCreationDesc& pipelineStateCreationDesc);
     
     // The shader path passed in needs to be relative (with respect to root directory), it will internally find the

@@ -17,23 +17,34 @@ SamplerState LinearSampler : register(s1);
 
 #define RANDOM_INDEX_PIXEL_JITTER 0
 #define RANDOM_INDEX_GET_NEXT_RAY 1
+#define MAX_FRAME_ACCUMULATED 3e4
 
 #define PathTracingRayFlag RAY_FLAG_CULL_BACK_FACING_TRIANGLES
+
+#define HITGROUP_OFFSET 0
+#define HITGROUP_GEO_MULTIPLIER 2
+#define MISSSHADER_IDX 0
 
 [shader("raygeneration")] 
 void RayGen()
 {
     RWTexture2D<float4> dstTexture = ResourceDescriptorHeap[renderResources.dstTextureIndex];
     RWTexture2D<uint> frameAccumulatedTexture = ResourceDescriptorHeap[renderResources.frameAccumulatedTextureIndex];
-
     const uint2 pixelCoord = DispatchRaysIndex().xy;
     
-    uint traceRayFlags = PathTracingRayFlag;
+    uint frameAccumulated = frameAccumulatedTexture[pixelCoord];
+    if (renderResources.bRefreshPathTracingTexture)
+    {
+        dstTexture[pixelCoord] = float4(0.0f, 0.0f, 0.0f, 1.0f);
+        frameAccumulatedTexture[pixelCoord] = 0;
+        frameAccumulated = 0;
+    }
 
-    const uint hitGroupOffset = 0;
-    const uint hitGroupGeoMultiplier = 2;
-    const uint missShaderIdx = 0;
-
+    if (frameAccumulated > MAX_FRAME_ACCUMULATED)
+    {
+        return;
+    }
+    
     uint numSamples = renderResources.numSamples;
     float3 radianceSum = float3(0.0f, 0.0f, 0.0f);
 
@@ -59,28 +70,16 @@ void RayGen()
 
         TraceRay(
             SceneBVH,
-            traceRayFlags,
+            PathTracingRayFlag,
             0xFF,
-            hitGroupOffset,
-            hitGroupGeoMultiplier,
-            missShaderIdx,
+            HITGROUP_OFFSET,
+            HITGROUP_GEO_MULTIPLIER,
+            MISSSHADER_IDX,
             rayDesc,
             payload
         );
 
         radianceSum += payload.radiance;
-    }
-
-    uint frameAccumulated = 0;
-    if (renderResources.bRefreshPathTracingTexture)
-    {
-        // reset
-        dstTexture[pixelCoord] = float4(0.0f, 0.0f, 0.0f, 1.0f);
-        frameAccumulatedTexture[pixelCoord] = 0;
-    }
-    else
-    {
-        frameAccumulated = frameAccumulatedTexture[pixelCoord];
     }
 
     int newFrameAccumulated = frameAccumulated + numSamples;
@@ -137,7 +136,7 @@ float3 sampleNextRay_oldver(float3 inRay, float3 N, int3 uvz, float3 albedo, flo
         float e3 = rw - 0.5;
         float3 rand_vec = float3(e1 * roughness, e2 * roughness, e3 * roughness);
 
-        throughput = SpecularFactor * F0;
+        throughput = F0 / SpecularFactor;
         return normalize(reflected_ray + rand_vec);
     }
     else
@@ -151,13 +150,14 @@ float3 sampleNextRay_oldver(float3 inRay, float3 N, int3 uvz, float3 albedo, flo
         // The PDF of sampling a cosine hemisphere is NdotL / Pi, which cancels out those terms
         ImportanceSampleCosDir(u, N, d, NoL, pdf);
 
-        throughput = DiffuseFactor * albedo;
+        throughput = albedo / DiffuseFactor;
         return d;
     }
 }
 
 float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, float metallic, float roughness, float3 F0, float3 energyCompensation, out float3 throughput)
 {
+    normalTS = float3(0,0,1);
     float DiffuseFactor = 0.0f;
     float SpecularFactor = 0.0f;
     getDebugDiffuseSpecularFactor(DiffuseFactor, SpecularFactor);
@@ -190,7 +190,7 @@ float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, f
     else if (rx < DiffuseFactor + SpecularFactor)
     {
         float3 outRayDir = ImportanceSampleGGX_V2(-inRayTS, normalTS, roughness, ry, rz, F0, energyCompensation, throughput);
-        throughput = throughput / SpecularFactor;
+        throughput = max(throughput / SpecularFactor, float3(0.0f, 0.0f, 0.0f));
         return outRayDir;
     }
 
@@ -305,13 +305,15 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     nextPayload.uv = payload.uv;
     nextPayload.sampleIndex = payload.sampleIndex;
 
-    uint traceRayFlags = PathTracingRayFlag;
-    
-    const uint hitGroupOffset = RayTypeRadiance;
-    const uint hitGroupGeoMultiplier = NumRayTypes;
-    const uint missShaderIdx = RayTypeRadiance;
-
-    TraceRay(SceneBVH, traceRayFlags, 0xFFFFFFFF, hitGroupOffset, hitGroupGeoMultiplier, missShaderIdx, ray, nextPayload);
+    TraceRay(
+        SceneBVH,
+        PathTracingRayFlag,
+        0xFFFFFFFF, 
+        HITGROUP_OFFSET,
+        HITGROUP_GEO_MULTIPLIER,
+        MISSSHADER_IDX,
+        ray,
+        nextPayload);
 
     payload.radiance = throughput * nextPayload.radiance;
     payload.distance = 0;

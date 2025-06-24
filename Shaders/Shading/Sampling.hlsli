@@ -206,7 +206,7 @@ float3 ImportanceSampleGGX_V2(float3 V, float3 N, float roughness, float u1, flo
     }
 
     float LoH = saturate(dot(L, microfacetNormal));
-    float3 F = F_Schlick(F0, VoH);
+    float3 F = F_Schlick(F0, LoH);
     float G1 = SmithGGXMasking(N, L, V, roughness * roughness);
     float G2 = SmithGGXMaskingShadowing(N, L, V, roughness * roughness);
 
