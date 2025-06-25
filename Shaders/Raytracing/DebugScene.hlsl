@@ -37,7 +37,7 @@ void RayGen()
     RayDesc ray;
     ray.Origin = rayStart.xyz;
     ray.Direction = rayDir;
-    ray.TMin = 0.0f;
+    ray.TMin = EPS;
     ray.TMax = rayLength;
 
     FPayload payload;
@@ -148,7 +148,7 @@ void ClosestHit(inout FPayload payload, in Attributes attr)
     //         RayDesc ray;
     //         ray.Origin = positionWS;
     //         ray.Direction = worldspaceL;
-    //         ray.TMin = 0.001f;
+    //         ray.TMin = EPS;
     //         ray.TMax = FP32Max;
 
     //         FShadowPayload shadowPayload;

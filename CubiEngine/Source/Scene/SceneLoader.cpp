@@ -256,8 +256,8 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             FMesh* CeilingLight = new FCubeMesh(Device, FMeshCreationDesc{
                 .Name = L"CornellBox CeilingLight",
                 .Rotation = { 0.f, 0.f, 0.f },
-                .Scale = { Size/3.f, 1.f, Size/3.f },
-                .Translate = { 0.f, Size-0.5f, 0.f },
+                .Scale = { Size/3.f, EPS, Size/3.f },
+                .Translate = { 0.f, Size, 0.f },
                 .BaseColorValue = { 1,1,1 },
                 .RoughnessValue = 1.f,
                 .MetallicValue = 0.f,

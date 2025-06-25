@@ -285,7 +285,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     RayDesc ray;
     ray.Origin = positionWS;
     ray.Direction = nextRayWS;
-    ray.TMin = 0.1f;
+    ray.TMin = EPS;
     ray.TMax = FP32Max;
 
     FPathTracePayload nextPayload;

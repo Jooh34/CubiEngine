@@ -16,7 +16,7 @@ RayDesc generateViewRay(in float4x4 invViewProjectionMatrix, in float2 ncdXY)
     RayDesc rayDesc;
     rayDesc.Origin = rayStart.xyz;
     rayDesc.Direction = rayDir;
-    rayDesc.TMin = 0.01f;
+    rayDesc.TMin = EPS;
     rayDesc.TMax = rayLength;
 
     return rayDesc;
