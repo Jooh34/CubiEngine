@@ -5,20 +5,11 @@
 #include "Graphics/Raytracing.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Scene/Mesh.h"
+#include "Math/Transform.h"
 
 class FGraphicsDevice;
 class FGraphicsContext;
 class FScene;
-
-struct FTransform
-{
-    Dx::XMFLOAT3 Rotation{ 0.0f, 0.0f, 0.0f };
-    Dx::XMFLOAT3 Scale{ 1.0f, 1.0f, 1.0f };
-    Dx::XMFLOAT3 Translate{ 0.0f, 0.0f, 0.0f };
-
-    XMMATRIX TransformMatrix{ Dx::XMMatrixIdentity() };
-    void Update();
-};
 
 class FGLTFModelLoader
 {
@@ -31,7 +22,7 @@ public:
     std::vector<FSampler> Samplers;
     std::vector<std::shared_ptr<FPBRMaterial>> Materials;
     
-    std::vector<FMesh> Meshes{};
+    std::vector<std::unique_ptr<FMesh>> Meshes{};
 
 private:
     FTransform Transform;

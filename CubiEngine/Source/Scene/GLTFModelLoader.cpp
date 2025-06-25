@@ -4,20 +4,7 @@
 #include "Graphics/Resource.h"
 #include "Graphics/GraphicsDevice.h"
 #include "ShaderInterlop/ConstantBuffers.hlsli"
-#include "CubiMath.h"
-
-void FTransform::Update()
-{
-    const XMVECTOR scalingVector = XMLoadFloat3(&Scale);
-    const XMVECTOR rotationVector = XMLoadFloat3(&Rotation);
-    const XMVECTOR translationVector = XMLoadFloat3(&Translate);
-
-    const XMMATRIX modelMatrix = Dx::XMMatrixScalingFromVector(scalingVector) *
-        Dx::XMMatrixRotationRollPitchYawFromVector(rotationVector) *
-        Dx::XMMatrixTranslationFromVector(translationVector);
-
-    TransformMatrix = modelMatrix;
-}
+#include "Math/CubiMath.h"
 
 FGLTFModelLoader::FGLTFModelLoader(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
 	:ModelName(ModelCreationDesc.ModelName)
@@ -27,11 +14,7 @@ FGLTFModelLoader::FGLTFModelLoader(const FGraphicsDevice* const GraphicsDevice, 
 	OverrideMetallicValue = ModelCreationDesc.OverrideMetallicValue;
 	OverrideEmissiveValue = ModelCreationDesc.OverrideEmissiveValue;
 
-    Transform.Scale = ModelCreationDesc.Scale;
-    Transform.Rotation = ModelCreationDesc.Rotation;
-    Transform.Translate = ModelCreationDesc.Translate;
-
-    Transform.Update();
+    Transform.Set(ModelCreationDesc.Rotation, ModelCreationDesc.Scale, ModelCreationDesc.Translate);
 
     std::string FullPath = FFileSystem::GetAssetPath() + ModelCreationDesc.ModelPath.data();
 
@@ -79,9 +62,9 @@ FGLTFModelLoader::FGLTFModelLoader(const FGraphicsDevice* const GraphicsDevice, 
     FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
     GraphicsContext->Reset();
 
-    for (auto& Mesh : Meshes)
+    for (const auto& Mesh : Meshes)
     {
-        Mesh.GenerateRaytracingGeometry(GraphicsDevice);
+        Mesh->GenerateRaytracingGeometry(GraphicsDevice);
     }
 
     // sync gpu immediatly
@@ -338,7 +321,7 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
     {
         tinygltf::Primitive primitive = nodeMesh.primitives[i];
 
-        FMesh Mesh{};
+		std::unique_ptr<FMesh> Mesh = std::make_unique<FMesh>();
         const std::wstring MeshName = ModelName + L"Mesh " + std::to_wstring(NodeIndex);
 
         std::vector<XMFLOAT3> Positions{};
@@ -441,68 +424,19 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
         }
         
         // Calculate tangents for each vertex
-        Tangents.resize(Positions.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
-        auto* M = Materials[primitive.material].get();
-        if (M->NormalTexture)
+		bool bCalculateTangents = false;
+        if (Materials[primitive.material].get() && Materials[primitive.material].get()->NormalTexture)
         {
-            for (size_t i = 0; i < Indice.size(); i += 3)
-            {
-                UINT index0 = Indice[i];
-                UINT index1 = Indice[i + 1];
-                UINT index2 = Indice[i + 2];
-
-                const XMFLOAT3& pos0 = Positions[index0];
-                const XMFLOAT3& pos1 = Positions[index1];
-                const XMFLOAT3& pos2 = Positions[index2];
-
-                const XMFLOAT2& uv0 = TextureCoords[index0];
-                const XMFLOAT2& uv1 = TextureCoords[index1];
-                const XMFLOAT2& uv2 = TextureCoords[index2];
-
-                // Calculate edges
-                XMFLOAT3 edge1 = XMFLOAT3(pos1.x - pos0.x, pos1.y - pos0.y, pos1.z - pos0.z);
-                XMFLOAT3 edge2 = XMFLOAT3(pos2.x - pos0.x, pos2.y - pos0.y, pos2.z - pos0.z);
-
-                float deltaU1 = uv1.x - uv0.x;
-                float deltaV1 = uv1.y - uv0.y;
-                float deltaU2 = uv2.x - uv0.x;
-                float deltaV2 = uv2.y - uv0.y;
-
-                float f = 1.0f / (deltaU1 * deltaV2 - deltaU2 * deltaV1);
-
-                XMFLOAT3 tangent = {
-                    f * (deltaV2 * edge1.x - deltaV1 * edge2.x),
-                    f * (deltaV2 * edge1.y - deltaV1 * edge2.y),
-                    f * (deltaV2 * edge1.z - deltaV1 * edge2.z)
-                };
-
-                // Accumulate the tangent
-                Tangents[index0].x += tangent.x;
-                Tangents[index0].y += tangent.y;
-                Tangents[index0].z += tangent.z;
-
-                Tangents[index1].x += tangent.x;
-                Tangents[index1].y += tangent.y;
-                Tangents[index1].z += tangent.z;
-
-                Tangents[index2].x += tangent.x;
-                Tangents[index2].y += tangent.y;
-                Tangents[index2].z += tangent.z;
-            }
+            bCalculateTangents = true;
         }
+
+        if (bCalculateTangents)
+        {
+			GenerateTangentVectorList(Tangents, Positions, TextureCoords, Indice);
+		}
         else
         {
-			// If no normal texture, set tangents to fake
-			for (size_t i = 0; i < Indice.size(); i=i+3)
-			{
-                UINT index0 = Indice[i];
-                UINT index1 = Indice[i + 1];
-                UINT index2 = Indice[i + 2];
-
-				GenerateSimpleTangentVector(Normals[index0], &Tangents[index0]);
-				GenerateSimpleTangentVector(Normals[index1], &Tangents[index1]);
-				GenerateSimpleTangentVector(Normals[index2], &Tangents[index2]);
-			}
+            GenerateSimpleTangentVectorList(Tangents, Positions, Normals, Indice);
         }
 
         // Normalize tangents
@@ -514,45 +448,44 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
             XMStoreFloat3(&tangent, normalizedTangentVec);
         }
 
-        Mesh.PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+        Mesh->PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" position buffer",
             },
             Positions);
 
-        Mesh.TextureCoordsBuffer = GraphicsDevice->CreateBuffer<XMFLOAT2>(
+        Mesh->TextureCoordsBuffer = GraphicsDevice->CreateBuffer<XMFLOAT2>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" texture coord buffer",
             },
             TextureCoords);
 
-        Mesh.NormalBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+        Mesh->NormalBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" normal buffer",
             },
             Normals);
         
-        Mesh.TangentBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>( // Add tangent buffer creation
+        Mesh->TangentBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>( // Add tangent buffer creation
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" tangent buffer",
             },
             Tangents);
 
-        Mesh.IndexBuffer = GraphicsDevice->CreateBuffer<UINT>(
+        Mesh->IndexBuffer = GraphicsDevice->CreateBuffer<UINT>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" index buffer",
             },
             Indice);
 
-        Mesh.IndicesCount = static_cast<uint32_t>(Indice.size());
-        Mesh.Material = Materials[primitive.material];
-        Mesh.ModelMatrix = Transform.TransformMatrix;
-		Mesh.InverseModelMatrix = XMMatrixInverse(nullptr, Transform.TransformMatrix);
+        Mesh->IndicesCount = static_cast<uint32_t>(Indice.size());
+        Mesh->Material = Materials[primitive.material];
+		Mesh->Transform.Set(ModelCreationDesc.Rotation, ModelCreationDesc.Scale, ModelCreationDesc.Translate);
 
         Meshes.push_back(std::move(Mesh));
     }

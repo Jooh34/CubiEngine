@@ -257,6 +257,20 @@ struct FModelCreationDesc
 	Dx::XMFLOAT3 OverrideEmissiveValue{ -1.0f, -1.0f, -1.0f };
 };
 
+struct FMeshCreationDesc
+{
+    std::wstring_view Name{};
+
+    Dx::XMFLOAT3 Rotation{ 0.0f, 0.0f, 0.0f };
+    Dx::XMFLOAT3 Scale{ 1.0f, 1.0f, 1.0f };
+    Dx::XMFLOAT3 Translate{ 0.0f, 0.0f, 0.0f };
+
+    Dx::XMFLOAT3 BaseColorValue{ -1.0f, -1.0f, -1.0f };
+    float RoughnessValue{ -1.0f };
+    float MetallicValue{ -1.0f };
+    Dx::XMFLOAT3 EmissiveValue{ -1.0f, -1.0f, -1.0f };
+};
+
 enum class EShadowMethod
 {
     None = 0,

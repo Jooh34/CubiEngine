@@ -31,14 +31,14 @@ FFBXLoader::FFBXLoader(const FGraphicsDevice* const GraphicsDevice, const FModel
     }
     
 	LoadMaterials(GraphicsDevice, scene);
-	LoadMeshes(GraphicsDevice, scene);
+	LoadMeshes(GraphicsDevice, scene, ModelCreationDesc);
 
     FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
     GraphicsContext->Reset();
 
-    for (auto& Mesh : Meshes)
+    for (const auto& Mesh : Meshes)
     {
-        Mesh.GenerateRaytracingGeometry(GraphicsDevice);
+        Mesh->GenerateRaytracingGeometry(GraphicsDevice);
     }
 
     // sync gpu immediatly
@@ -151,7 +151,7 @@ void FFBXLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, cons
 	}
 }
 
-void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const aiScene* Scene)
+void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const aiScene* Scene, const FModelCreationDesc& ModelCreationDesc)
 {
 	for (uint32_t meshIndex = 0; meshIndex < Scene->mNumMeshes; meshIndex++)
 	{
@@ -162,7 +162,7 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
         std::wcout << MeshName << std::endl;
         std::cout << " : " << mesh->mNumVertices << std::endl;
 
-		FMesh ResultMesh{};
+		std::unique_ptr<FMesh> ResultMesh = std::make_unique<FMesh>();
 
         std::vector<XMFLOAT3> Positions{};
         std::vector<XMFLOAT2> TextureCoords{};
@@ -229,46 +229,45 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
             }
         }
 
-        ResultMesh.IndicesCount = static_cast<uint32_t>(Indice.size());
+        ResultMesh->IndicesCount = static_cast<uint32_t>(Indice.size());
 
-        ResultMesh.PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+        ResultMesh->PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" position buffer",
             },
             Positions);
 
-        ResultMesh.TextureCoordsBuffer = GraphicsDevice->CreateBuffer<XMFLOAT2>(
+        ResultMesh->TextureCoordsBuffer = GraphicsDevice->CreateBuffer<XMFLOAT2>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" texture coord buffer",
             },
             TextureCoords);
 
-        ResultMesh.NormalBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+        ResultMesh->NormalBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" normal buffer",
             },
             Normals);
 
-        ResultMesh.TangentBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>( // Add tangent buffer creation
+        ResultMesh->TangentBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>( // Add tangent buffer creation
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" tangent buffer",
             },
             Tangents);
 
-        ResultMesh.IndexBuffer = GraphicsDevice->CreateBuffer<UINT>(
+        ResultMesh->IndexBuffer = GraphicsDevice->CreateBuffer<UINT>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" index buffer",
             },
             Indice);
 
-        ResultMesh.Material = Materials[mesh->mMaterialIndex];
-        ResultMesh.ModelMatrix = Dx::XMMatrixIdentity();
-        ResultMesh.InverseModelMatrix = Dx::XMMatrixIdentity();
+        ResultMesh->Material = Materials[mesh->mMaterialIndex];
+		ResultMesh->Transform.Set(ModelCreationDesc.Rotation, ModelCreationDesc.Scale, ModelCreationDesc.Translate);
 
         Meshes.push_back(std::move(ResultMesh));
     }

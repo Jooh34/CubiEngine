@@ -121,7 +121,6 @@ namespace interlop
         uint shadowBufferIndex;
         uint debugBufferIndex;
 
-        uint bUseEnvmap;
         float EnvmapIntensity;
 
         uint bUseEnergyCompensation;

@@ -286,7 +286,7 @@ void CsMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     uint PrefilterMipLevel = min(roughness * EnvMipCount, EnvMipCount-1);
     float3 radiance = PrefilterEnvmap.SampleLevel(pointClampSampler, WorldSpaceL, PrefilterMipLevel).rgb;
 
-    if (renderResources.bUseEnvmap)
+    if (renderResources.EnvmapIntensity > 0.f)
     {
         if (!renderResources.bUseEnergyCompensation)
         {

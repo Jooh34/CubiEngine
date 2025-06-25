@@ -218,8 +218,6 @@ void FEditor::RenderLightProperties(FScene* Scene)
     ImGui::Begin("Light Properties");
     interlop::LightBuffer& LightBuffer = Scene->Light.LightBufferData;
 
-    bool& bUseEnvmap = Scene->bUseEnvmap;
-    ImGui::Checkbox("Use EnvMap", &bUseEnvmap);
     ImGui::SliderFloat("Envmap Intensity", &Scene->EnvmapIntensity, 0.f, 100.f);
 
     ImGui::Checkbox("Light Dance Debug", &Scene->bLightDanceDebug);

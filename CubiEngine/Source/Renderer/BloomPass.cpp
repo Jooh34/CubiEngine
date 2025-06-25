@@ -1,7 +1,7 @@
 #include "Renderer/BloomPass.h"
 #include "Graphics/GraphicsDevice.h"
 #include "Graphics/Profiler.h"
-#include "CubiMath.h"
+#include "Math/CubiMath.h"
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 

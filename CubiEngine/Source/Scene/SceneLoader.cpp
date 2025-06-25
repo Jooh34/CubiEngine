@@ -1,6 +1,8 @@
 #include "Scene/SceneLoader.h"
 #include "Scene/Scene.h"
 #include "Renderer/Cubemap.h"
+#include "Scene/CubeMesh.h"
+#include "Math/CubiMath.h"
 
 void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevice* Device)
 {
@@ -60,7 +62,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
                  .OverrideBaseColorValue = { 1.f, 1.f, 1.f },
                  .OverrideRoughnessValue = 0.1f,
                  .OverrideMetallicValue = 1.f,
-                 .OverrideEmissiveValue = { 3e3, 3e3, 3e3 },
+                 .OverrideEmissiveValue = { 1e2, 1e2, 1e2 },
             };
 			Scene->AddModel(SphereDesc);
 
@@ -77,7 +79,6 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
 
             // use envmap
             Scene->GIMethod = 0;
-            Scene->bUseEnvmap = true;
             Scene->EnvmapIntensity = 1.f;
 
             // Directional Light
@@ -98,7 +99,6 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
 
             // use envmap
             Scene->GIMethod = 0;
-            Scene->bUseEnvmap = true;
             Scene->EnvmapIntensity = 1.f;
 
             // Directional Light
@@ -119,7 +119,6 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
 
             // use envmap
             Scene->GIMethod = 0;
-            Scene->bUseEnvmap = true;
             Scene->EnvmapIntensity = 1.f;
 
             // Directional Light
@@ -146,7 +145,6 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
 
             // use envmap
             Scene->GIMethod = 0;
-            Scene->bUseEnvmap = true;
             Scene->EnvmapIntensity = 0.05f;
 
             // exterior
@@ -161,6 +159,124 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
 
             // Camera
             Scene->GetCamera().FarZ = 10000.f;
+            break;
+        }
+        case ESceneType::CornellBox:
+        {
+            Scene->EnvmapIntensity = 0.f;
+
+            static constexpr float Size = 100.f;
+            static constexpr float EPS = 1e-4;
+			Scene->GetCamera().SetCamPosition(0, Size/2.f, -1.5*Size);
+
+            FMesh* Floor = new FCubeMesh(Device, FMeshCreationDesc{
+                .Name = L"CornellBox Floor",
+				.Rotation = { 0.f, 0.f, 0.f },
+                .Scale = { Size, EPS, Size },
+                .Translate = { 0.f, 0.f, 0.f },
+				.BaseColorValue = { 0.725f, 0.71f, 0.68f },
+				.RoughnessValue = 1.f,
+				.MetallicValue = 0.f,
+                .EmissiveValue = { 0, 0, 0 },
+			});
+			Scene->AddMesh(Floor);
+
+            FMesh* Ceiling = new FCubeMesh(Device, FMeshCreationDesc{
+                .Name = L"CornellBox Ceiling",
+                .Rotation = { 0.f, 0.f, 0.f },
+                .Scale = { Size, EPS, Size },
+                .Translate = { 0.f, Size, 0.f },
+                .BaseColorValue = { 0.725f, 0.71f, 0.68f },
+                .RoughnessValue = 1.f,
+                .MetallicValue = 0.f,
+                .EmissiveValue = { 0, 0, 0 },
+                });
+            Scene->AddMesh(Ceiling);
+
+            FMesh* BackWall = new FCubeMesh(Device, FMeshCreationDesc{
+                .Name = L"CornellBox BackWall",
+                .Rotation = { 0.f, 0.f, 0.f },
+                .Scale = { Size, Size, EPS },
+                .Translate = { 0.f, Size/2.f, Size/2.f},
+                .BaseColorValue = { 0.725f, 0.71f, 0.68f },
+                .RoughnessValue = 1.f,
+                .MetallicValue = 0.f,
+                .EmissiveValue = { 0, 0, 0 },
+			});
+            Scene->AddMesh(BackWall);
+
+            FMesh* LeftWall = new FCubeMesh(Device, FMeshCreationDesc{
+                .Name = L"CornellBox LeftWall",
+                .Rotation = { 0.f, 0.f, 0.f },
+                .Scale = { EPS, Size, Size },
+                .Translate = { -Size/2.f, Size/2.f, 0.f },
+                .BaseColorValue = { 0.63, 0.065, 0.05 },
+                .RoughnessValue = 1.f,
+                .MetallicValue = 0.f,
+                .EmissiveValue = { 0, 0, 0 },
+			});
+            Scene->AddMesh(LeftWall);
+
+            FMesh* RightWall = new FCubeMesh(Device, FMeshCreationDesc{
+                .Name = L"CornellBox RightWall",
+                .Rotation = { 0.f, 0.f, 0.f },
+                .Scale = { EPS, Size, Size },
+                .Translate = { Size / 2.f, Size / 2.f, 0.f },
+                .BaseColorValue = { 0.14, 0.45, 0.091 },
+                .RoughnessValue = 1.f,
+                .MetallicValue = 0.f,
+                .EmissiveValue = { 0, 0, 0 },
+            });
+            Scene->AddMesh(RightWall);
+
+            FMesh* ShortBox = new FCubeMesh(Device, FMeshCreationDesc{
+                .Name = L"CornellBox ShortBox",
+                .Rotation = { 0.f, DegreeToRadian(20.f), 0.f},
+                .Scale = { Size / 4.f, Size / 4.f, Size / 4.f },
+                .Translate = { Size / 8.f, Size / 8.f , -Size / 6.f },
+                .BaseColorValue = { 0.725f, 0.71f, 0.68f },
+                .RoughnessValue = 1.f,
+                .MetallicValue = 0.f,
+                .EmissiveValue = { 0, 0, 0 },
+			});
+            Scene->AddMesh(ShortBox);
+
+            FMesh* TailBox = new FCubeMesh(Device, FMeshCreationDesc{
+                .Name = L"CornellBox TailBox",
+                .Rotation = { 0.f, -DegreeToRadian(20.f), 0.f},
+                .Scale = { Size / 4.f, Size / 2.f, Size / 4.f },
+                .Translate = { -Size / 8.f, Size / 4.f , Size / 6.f },
+                .BaseColorValue = { 0.725f, 0.71f, 0.68f },
+                .RoughnessValue = 1.f,
+                .MetallicValue = 0.f,
+                .EmissiveValue = { 0, 0, 0 },
+			});
+            Scene->AddMesh(TailBox);
+
+            FMesh* CeilingLight = new FCubeMesh(Device, FMeshCreationDesc{
+                .Name = L"CornellBox CeilingLight",
+                .Rotation = { 0.f, 0.f, 0.f },
+                .Scale = { Size/3.f, EPS, Size/3.f },
+                .Translate = { 0.f, Size, 0.f },
+                .BaseColorValue = { 1,1,1 },
+                .RoughnessValue = 1.f,
+                .MetallicValue = 0.f,
+                .EmissiveValue = { 1e1,1e1,1e1 },
+			});
+            Scene->AddMesh(CeilingLight);
+
+            /*FModelCreationDesc Suzanne = {
+                 .ModelPath = "Models/Suzanne/glTF/Suzanne.gltf",
+                 .ModelName = L"Suzanne",
+                 .Rotation = { 0.f, DegreeToRadian(180.f), 0.f },
+                 .Scale = {Size / 10.f, Size / 10.f, Size / 10.f},
+                 .Translate = { Size / 8.f, Size / 3.f , -Size / 6.f },
+				 .OverrideBaseColorValue = { 0.725f, 0.71f, 0.68f },
+                 .OverrideRoughnessValue = 0.f,
+                 .OverrideMetallicValue = 1.f,
+            };
+            Scene->AddModel(Suzanne);*/
+            break;
         }
 	}
 }

@@ -9,7 +9,8 @@ enum ESceneType
 	MetalRoughness,
 	FlightHelmet,
 	Suzanne,
-	Bistro
+	Bistro,
+	CornellBox
 };
 
 class FSceneLoader

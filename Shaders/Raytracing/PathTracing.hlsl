@@ -235,10 +235,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
 
     if (emissive.x > 0.f)
     {
-        float dist = RayTCurrent();
-        float scalefactor = 1.0e+3;
-        float attenuation = scalefactor / (dist * dist);
-        payload.radiance = emissive * attenuation;
+        payload.radiance = emissive;
         payload.distance = 0;
         return;
     }
@@ -288,7 +285,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     RayDesc ray;
     ray.Origin = positionWS;
     ray.Direction = nextRayWS;
-    ray.TMin = 0.1f;
+    ray.TMin = EPS;
     ray.TMax = FP32Max;
 
     FPathTracePayload nextPayload;

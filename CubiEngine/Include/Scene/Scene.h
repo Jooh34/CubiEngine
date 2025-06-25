@@ -29,6 +29,7 @@ public:
 
     void UpdateBuffers();
     void AddModel(const FModelCreationDesc& Desc);
+	void AddMesh(FMesh* Mesh);
     void AddLight(float Position[4], float Color[4], float Intensity = 1.f) { Light.AddLight(Position, Color, Intensity); }
 
     void RenderModels(FGraphicsContext* const GraphicsContext,
@@ -83,7 +84,6 @@ public:
     bool bLightDanceDebug = false;
     float bLightDanceSpeed = 0.3f;
 
-    bool bUseEnvmap = false;
 	float EnvmapIntensity = 1.f;
 
     // Shadow
@@ -137,7 +137,7 @@ private:
 
     static constexpr uint32_t FRAMES_IN_FLIGHT = 3u;
     
-	std::vector<FMesh> Meshes{};
+	std::vector<std::unique_ptr<FMesh>> Meshes{};
     FGraphicsDevice* Device;
 
     FCamera Camera;

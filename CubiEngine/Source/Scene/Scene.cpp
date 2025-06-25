@@ -34,7 +34,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         });
     }
 
-    ESceneType Scene = ESceneType::Sponza;
+    ESceneType Scene = ESceneType::CornellBox;
     FSceneLoader::LoadScene(Scene, this, Device);
 
     WhiteFurnaceMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
@@ -183,16 +183,20 @@ void FScene::AddModel(const FModelCreationDesc& Desc)
     {
 		throw std::runtime_error("Model format not supported");
 	}
+}
 
+void FScene::AddMesh(FMesh* Mesh)
+{
+    Meshes.emplace_back(Mesh);
 }
 
 void FScene::RenderModels(FGraphicsContext* const GraphicsContext,
     interlop::UnlitPassRenderResources& UnlitRenderResources)
 {
     UnlitRenderResources.sceneBufferIndex = GetSceneBuffer().CbvIndex;
-    for (const FMesh& Mesh : Meshes)
+    for (const auto& Mesh : Meshes)
     {
-        Mesh.Render(GraphicsContext, UnlitRenderResources);
+        Mesh->Render(GraphicsContext, UnlitRenderResources);
     }
 }
 
@@ -200,17 +204,17 @@ void FScene::RenderModels(FGraphicsContext* const GraphicsContext,
     interlop::DeferredGPassRenderResources& DeferredGRenderResources)
 {
     DeferredGRenderResources.sceneBufferIndex = GetSceneBuffer().CbvIndex;
-    for (const FMesh& Mesh : Meshes)
+    for (const auto& Mesh : Meshes)
     {
-        Mesh.Render(GraphicsContext, this, DeferredGRenderResources);
+        Mesh->Render(GraphicsContext, this, DeferredGRenderResources);
     }
 }
 
 void FScene::RenderModels(FGraphicsContext* const GraphicsContext, interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource)
 {
-	for (const FMesh& Mesh : Meshes)
+	for (const auto& Mesh : Meshes)
     {
-        Mesh.Render(GraphicsContext, ShadowDepthPassRenderResource);
+        Mesh->Render(GraphicsContext, ShadowDepthPassRenderResource);
     }
 }
 
@@ -256,9 +260,9 @@ void FScene::GenerateRaytracingScene(FGraphicsContext* const GraphicsContext)
 {
     std::vector<FRaytracingGeometryContext> RaytracingGeometryContextList;
 
-    for (FMesh& Mesh : Meshes)
+    for (const auto& Mesh : Meshes)
     {
-        Mesh.GatherRaytracingGeometry(RaytracingGeometryContextList);
+        Mesh->GatherRaytracingGeometry(RaytracingGeometryContextList);
     }
 
     if (RaytracingGeometryContextList.size() == 0)

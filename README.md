@@ -26,6 +26,7 @@ cmake -S . -B Build
 
 # Images
 ### Path Tracing
+![image](Assets/Images/CornellBox.png)
 ![image](Assets/Images/PathTracing1.png)
 ![image](Assets/Images/PathTracing2.png)
 ![image](Assets/Images/PathTracing3.png)
