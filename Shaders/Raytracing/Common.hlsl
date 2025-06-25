@@ -48,8 +48,6 @@ struct Attributes
 struct BufferIndexContext
 {
     uint geometryInfoBufferIdx;
-    uint vtxBufferIdx;
-    uint idxBufferIdx;
     uint materialBufferIdx;
 };
 
@@ -92,17 +90,34 @@ interlop::MeshVertex GetHitSurface(in Attributes attr, BufferIndexContext contex
     StructuredBuffer<interlop::FRaytracingGeometryInfo> geoInfoBuffer = ResourceDescriptorHeap[context.geometryInfoBufferIdx];
     const interlop::FRaytracingGeometryInfo geoInfo = geoInfoBuffer[geometryIdx];
 
-    StructuredBuffer<interlop::MeshVertex> vtxBuffer = ResourceDescriptorHeap[context.vtxBufferIdx];
-    StructuredBuffer<uint> idxBuffer = ResourceDescriptorHeap[context.idxBufferIdx];
+    StructuredBuffer<float3> positionBuffer = ResourceDescriptorHeap[geoInfo.positionBufferIndex];
+    StructuredBuffer<float2> textureCoordBuffer = ResourceDescriptorHeap[geoInfo.textureCoordBufferIndex];
+    StructuredBuffer<float3> normalBuffer = ResourceDescriptorHeap[geoInfo.normalBufferIndex];
+    StructuredBuffer<float3> tangentBuffer = ResourceDescriptorHeap[geoInfo.tangentBufferIndex];
+    StructuredBuffer<uint> idxBuffer = ResourceDescriptorHeap[geoInfo.indexBufferIndex];
 
     const uint primIdx = PrimitiveIndex();
-    const uint idx0 = idxBuffer[primIdx * 3 + geoInfo.idxOffset + 0];
-    const uint idx1 = idxBuffer[primIdx * 3 + geoInfo.idxOffset + 1];
-    const uint idx2 = idxBuffer[primIdx * 3 + geoInfo.idxOffset + 2];
+    const uint idx0 = idxBuffer[primIdx * 3];
+    const uint idx1 = idxBuffer[primIdx * 3+1];
+    const uint idx2 = idxBuffer[primIdx * 3+2];
 
-    const interlop::MeshVertex vtx0 = vtxBuffer[idx0 + geoInfo.vtxOffset];
-    const interlop::MeshVertex vtx1 = vtxBuffer[idx1 + geoInfo.vtxOffset];
-    const interlop::MeshVertex vtx2 = vtxBuffer[idx2 + geoInfo.vtxOffset];
+    interlop::MeshVertex vtx0;
+    vtx0.position = positionBuffer[idx0];
+    vtx0.normal = normalBuffer[idx0];
+    vtx0.texcoord = textureCoordBuffer[idx0];
+    vtx0.tangent = tangentBuffer[idx0];
+    
+    interlop::MeshVertex vtx1;
+    vtx1.position = positionBuffer[idx1];
+    vtx1.normal = normalBuffer[idx1];
+    vtx1.texcoord = textureCoordBuffer[idx1];
+    vtx1.tangent = tangentBuffer[idx1];
+
+    interlop::MeshVertex vtx2;
+    vtx2.position = positionBuffer[idx2];
+    vtx2.normal = normalBuffer[idx2];
+    vtx2.texcoord = textureCoordBuffer[idx2];
+    vtx2.tangent = tangentBuffer[idx2];
 
     return BarycentricLerp(vtx0, vtx1, vtx2, barycentrics);
 }

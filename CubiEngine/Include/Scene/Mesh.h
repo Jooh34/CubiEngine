@@ -28,19 +28,13 @@ public:
     FBuffer TextureCoordsBuffer{};
     FBuffer NormalBuffer{};
     FBuffer TangentBuffer{};
-
     FBuffer IndexBuffer{};
-
     uint32_t IndicesCount{};
     
     std::shared_ptr<FPBRMaterial> Material{};
 
     XMMATRIX ModelMatrix{};
     XMMATRIX InverseModelMatrix{};
-
-    // Raytracing Buffers
-    std::vector<interlop::MeshVertex> MeshVertices{};
-    std::vector<UINT> Indice{};
 
 private:
     std::shared_ptr<FRaytracingGeometry> RaytracingGeometry;

@@ -206,8 +206,6 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
 
     BufferIndexContext context = {
         renderResources.geometryInfoBufferIdx,
-        renderResources.vtxBufferIdx,
-        renderResources.idxBufferIdx,
         renderResources.materialBufferIdx
     };
 
@@ -356,8 +354,6 @@ void AnyHit(inout FPathTracePayload payload, in Attributes attr)
 
     BufferIndexContext context = {
         renderResources.geometryInfoBufferIdx,
-        renderResources.vtxBufferIdx,
-        renderResources.idxBufferIdx,
         renderResources.materialBufferIdx
     };
 

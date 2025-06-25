@@ -163,12 +163,12 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
         std::cout << " : " << mesh->mNumVertices << std::endl;
 
 		FMesh ResultMesh{};
-        ResultMesh.MeshVertices = std::vector<interlop::MeshVertex>(mesh->mNumVertices);
 
         std::vector<XMFLOAT3> Positions{};
         std::vector<XMFLOAT2> TextureCoords{};
         std::vector<XMFLOAT3> Normals{};
         std::vector<XMFLOAT3> Tangents{};
+		std::vector<UINT> Indice{};
 
         Positions.reserve(mesh->mNumVertices);
         TextureCoords.reserve(mesh->mNumVertices);
@@ -184,7 +184,6 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
 				const XMFLOAT3 XMPosition = { pos.x, pos.z, -pos.y };
 
 				Positions.push_back(XMPosition);
-                ResultMesh.MeshVertices[v].position = XMPosition;
 			}
         }
 
@@ -196,7 +195,6 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
 				const XMFLOAT3 XMNormal = { normal.x, normal.y, normal.z };
 
 				Normals.push_back(XMNormal);
-                ResultMesh.MeshVertices[v].normal = XMNormal;
 			}
         }
 
@@ -207,8 +205,6 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
 				aiVector3D tangent = mesh->mTangents[v];
 				const XMFLOAT3 XMTangent = { tangent.x, tangent.y, tangent.z };
 				Tangents.push_back(XMTangent);
-
-                ResultMesh.MeshVertices[v].tangent = XMTangent;
 			}
         }
 
@@ -219,8 +215,6 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
                 aiVector3D texCoord = mesh->mTextureCoords[0][v];
                 const XMFLOAT2 texCoord2D = { texCoord.x, texCoord.y };
                 TextureCoords.push_back(texCoord2D);
-
-                ResultMesh.MeshVertices[v].texcoord = texCoord2D;
             }
         }
 
@@ -231,11 +225,11 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
             for (unsigned int i = 0; i < face.mNumIndices; ++i)
             {
                 unsigned int face_index = face.mIndices[i];
-                ResultMesh.Indice.push_back(static_cast<UINT>(face_index));
+                Indice.push_back(static_cast<UINT>(face_index));
             }
         }
 
-        ResultMesh.IndicesCount = static_cast<uint32_t>(ResultMesh.Indice.size());
+        ResultMesh.IndicesCount = static_cast<uint32_t>(Indice.size());
 
         ResultMesh.PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
             FBufferCreationDesc{
@@ -270,7 +264,7 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" index buffer",
             },
-            ResultMesh.Indice);
+            Indice);
 
         ResultMesh.Material = Materials[mesh->mMaterialIndex];
         ResultMesh.ModelMatrix = Dx::XMMatrixIdentity();

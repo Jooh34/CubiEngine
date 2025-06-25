@@ -128,13 +128,17 @@ void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const Gr
         uint32_t MaterialSrvIndex = Context.Material->AlbedoTexture.SrvIndex;
 
         if (Mesh)
-        {            
+        {
             // Geometry
-            GeometryInfoList.emplace_back(
-                vtxOffset,
-                idxOffset,
-                (uint32_t)i,
-                0
+            GeometryInfoList.push_back(
+                interlop::FRaytracingGeometryInfo{
+					Context.Mesh->PositionBuffer.SrvIndex,
+					Context.Mesh->TextureCoordsBuffer.SrvIndex,
+					Context.Mesh->NormalBuffer.SrvIndex,
+					Context.Mesh->TangentBuffer.SrvIndex,
+					Context.Mesh->IndexBuffer.SrvIndex,
+					(uint32_t)i,
+                }
             );
 
             // Material
@@ -154,24 +158,6 @@ void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const Gr
                     .emissiveColor = Material->MaterialBufferData.emissiveColor,
                 }
             );
-
-            // MeshVertex
-            MeshVertexList.reserve(MeshVertexList.size() + Mesh->MeshVertices.size());
-            MeshVertexList.insert(MeshVertexList.end(),
-                std::make_move_iterator(Mesh->MeshVertices.begin()),
-                std::make_move_iterator(Mesh->MeshVertices.end())
-            );
-
-            vtxOffset += Mesh->MeshVertices.size();
-
-            // Indice
-            IndexList.reserve(IndexList.size() + Mesh->Indice.size());
-            IndexList.insert(IndexList.end(),
-                std::make_move_iterator(Mesh->Indice.begin()),
-                std::make_move_iterator(Mesh->Indice.end())
-            );
-
-            idxOffset += Mesh->Indice.size();
         }
     }
 
@@ -186,18 +172,6 @@ void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const Gr
             .Usage = EBufferUsage::StructuredBuffer,
             .Name = L" Raytracing Material Buffer",
             }, MaterialList);
-
-    MeshVertexBuffer =
-        GraphicsDevice->CreateBuffer<interlop::MeshVertex>(FBufferCreationDesc{
-            .Usage = EBufferUsage::StructuredBuffer,
-            .Name = L" Raytracing MeshVertex Buffer",
-            }, MeshVertexList);
-
-    IndiceBuffer =
-        GraphicsDevice->CreateBuffer<uint32_t>(FBufferCreationDesc{
-            .Usage = EBufferUsage::StructuredBuffer,
-            .Name = L" Raytracing Indice Buffer",
-            }, IndexList);
 }
 
 void FRaytracingScene::CreateTopLevelASResourceView(const FGraphicsDevice* const GraphicsDevice)

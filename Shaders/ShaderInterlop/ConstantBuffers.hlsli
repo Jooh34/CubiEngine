@@ -95,10 +95,13 @@ namespace interlop
     
     struct FRaytracingGeometryInfo
     {
-        uint vtxOffset;
-        uint idxOffset;
+        uint positionBufferIndex;
+        uint textureCoordBufferIndex;
+        uint normalBufferIndex;
+        uint tangentBufferIndex;
+        uint indexBufferIndex;
         uint materialIdx;
-        uint padding;
+        float2 padding;
     };
 
     struct FRaytracingMaterial

@@ -345,6 +345,8 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
         std::vector<XMFLOAT2> TextureCoords{};
         std::vector<XMFLOAT3> Normals{};
         std::vector<XMFLOAT3> Tangents{};
+		std::vector<UINT> Indice{};
+
 
         const tinygltf::Model& model = GLTFModel;
 
@@ -400,8 +402,6 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
             indicePtr = reinterpret_cast<const uint8_t*>(&buffer.data[indexAccessor.byteOffset + bufferView.byteOffset]);
         }
 
-        Mesh.MeshVertices = std::vector<interlop::MeshVertex>(accessorNum);
-
         {
             {
                 // Fill in the vertices array.
@@ -427,20 +427,16 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
                     Positions.emplace_back(position);
                     TextureCoords.emplace_back(textureCoord);
                     Normals.emplace_back(normal);
-
-                    Mesh.MeshVertices[i].position = position;
-                    Mesh.MeshVertices[i].normal = normal;
-                    Mesh.MeshVertices[i].texcoord = textureCoord;
                 }
             }
         }
         
         {
             size_t indexCount = indexAccessor.count;
-            Mesh.Indice.resize(indexCount);
+            Indice.resize(indexCount);
             // Fill indices array.
             for (const size_t i : std::views::iota(0u, indexCount)) {
-                Mesh.Indice[i] = (reinterpret_cast<uint16_t const*>(indicePtr + (i * indexStride))[0]);
+                Indice[i] = (reinterpret_cast<uint16_t const*>(indicePtr + (i * indexStride))[0]);
             }
         }
         
@@ -449,11 +445,11 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
         auto* M = Materials[primitive.material].get();
         if (M->NormalTexture)
         {
-            for (size_t i = 0; i < Mesh.Indice.size(); i += 3)
+            for (size_t i = 0; i < Indice.size(); i += 3)
             {
-                UINT index0 = Mesh.Indice[i];
-                UINT index1 = Mesh.Indice[i + 1];
-                UINT index2 = Mesh.Indice[i + 2];
+                UINT index0 = Indice[i];
+                UINT index1 = Indice[i + 1];
+                UINT index2 = Indice[i + 2];
 
                 const XMFLOAT3& pos0 = Positions[index0];
                 const XMFLOAT3& pos1 = Positions[index1];
@@ -497,11 +493,11 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
         else
         {
 			// If no normal texture, set tangents to fake
-			for (size_t i = 0; i < Mesh.Indice.size(); i=i+3)
+			for (size_t i = 0; i < Indice.size(); i=i+3)
 			{
-                UINT index0 = Mesh.Indice[i];
-                UINT index1 = Mesh.Indice[i + 1];
-                UINT index2 = Mesh.Indice[i + 2];
+                UINT index0 = Indice[i];
+                UINT index1 = Indice[i + 1];
+                UINT index2 = Indice[i + 2];
 
 				GenerateSimpleTangentVector(Normals[index0], &Tangents[index0]);
 				GenerateSimpleTangentVector(Normals[index1], &Tangents[index1]);
@@ -516,8 +512,6 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
             XMVECTOR tangentVec = XMLoadFloat3(&tangent);
             XMVECTOR normalizedTangentVec = XMVector3Normalize(tangentVec);
             XMStoreFloat3(&tangent, normalizedTangentVec);
-
-            Mesh.MeshVertices[i].tangent = tangent;
         }
 
         Mesh.PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
@@ -553,9 +547,9 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" index buffer",
             },
-            Mesh.Indice);
+            Indice);
 
-        Mesh.IndicesCount = static_cast<uint32_t>(Mesh.Indice.size());
+        Mesh.IndicesCount = static_cast<uint32_t>(Indice.size());
         Mesh.Material = Materials[primitive.material];
         Mesh.ModelMatrix = Transform.TransformMatrix;
 		Mesh.InverseModelMatrix = XMMatrixInverse(nullptr, Transform.TransformMatrix);

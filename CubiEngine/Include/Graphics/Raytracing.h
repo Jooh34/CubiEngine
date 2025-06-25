@@ -72,14 +72,10 @@ public:
     
     uint32_t GetGeometryInfoBufferSrv() { return GeometryInfoBuffer.SrvIndex; }
     uint32_t GetMaterialBufferSrv() { return MaterialBuffer.SrvIndex; }
-    uint32_t GetMeshVertexBufferSrv() { return MeshVertexBuffer.SrvIndex; }
-    uint32_t GetIndiceBufferSrv() { return IndiceBuffer.SrvIndex; }
 
 private:
     FBuffer GeometryInfoBuffer{};
     FBuffer MaterialBuffer{};
-    FBuffer MeshVertexBuffer{};
-    FBuffer IndiceBuffer{};
 };
 
 /*-----------------------------------------------------------------------
