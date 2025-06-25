@@ -265,6 +265,17 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
 			});
             Scene->AddMesh(CeilingLight);
 
+            /*FModelCreationDesc Suzanne = {
+                 .ModelPath = "Models/Suzanne/glTF/Suzanne.gltf",
+                 .ModelName = L"Suzanne",
+                 .Rotation = { 0.f, DegreeToRadian(180.f), 0.f },
+                 .Scale = {Size / 10.f, Size / 10.f, Size / 10.f},
+                 .Translate = { Size / 8.f, Size / 3.f , -Size / 6.f },
+				 .OverrideBaseColorValue = { 0.725f, 0.71f, 0.68f },
+                 .OverrideRoughnessValue = 0.f,
+                 .OverrideMetallicValue = 1.f,
+            };
+            Scene->AddModel(Suzanne);*/
             break;
         }
 	}
