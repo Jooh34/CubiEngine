@@ -36,10 +36,6 @@ public:
     XMMATRIX ModelMatrix{};
     XMMATRIX InverseModelMatrix{};
 
-    // Raytracing Buffers
-    std::vector<interlop::MeshVertex> MeshVertices{};
-    std::vector<UINT> Indice{};
-
 private:
     std::shared_ptr<FRaytracingGeometry> RaytracingGeometry;
 };
