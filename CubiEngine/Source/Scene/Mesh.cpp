@@ -12,7 +12,7 @@ void FMesh::Render(const FGraphicsContext* const GraphicsContext,
 {
     GraphicsContext->SetIndexBuffer(IndexBuffer);
 
-	UnlitRenderResources.modelMatrix = ModelMatrix;
+	UnlitRenderResources.modelMatrix = GetModelMatrix();
 
     UnlitRenderResources.albedoTextureIndex = Material->AlbedoTexture.SrvIndex;
     UnlitRenderResources.albedoTextureSamplerIndex = Material->AlbedoSampler.SamplerIndex;
@@ -31,8 +31,8 @@ void FMesh::Render(const FGraphicsContext* const GraphicsContext, FScene* Scene,
 {
 	GraphicsContext->SetIndexBuffer(IndexBuffer);
 
-	DeferredGPassRenderResources.modelMatrix = ModelMatrix;
-	DeferredGPassRenderResources.inverseModelMatrix = InverseModelMatrix;
+	DeferredGPassRenderResources.modelMatrix = GetModelMatrix();
+	DeferredGPassRenderResources.inverseModelMatrix = GetInverseModelMatrix();
 
 	DeferredGPassRenderResources.albedoTextureIndex = Material->AlbedoTexture.SrvIndex;
 	DeferredGPassRenderResources.albedoTextureSamplerIndex = Material->AlbedoSampler.SamplerIndex;
@@ -69,7 +69,7 @@ void FMesh::Render(const FGraphicsContext* const GraphicsContext,
 {
 	GraphicsContext->SetIndexBuffer(IndexBuffer);
 
-	ShadowDepthPassRenderResource.modelMatrix = ModelMatrix;
+	ShadowDepthPassRenderResource.modelMatrix = GetModelMatrix();
 
 	ShadowDepthPassRenderResource.positionBufferIndex = PositionBuffer.SrvIndex;
 
@@ -93,7 +93,7 @@ void FMesh::GatherRaytracingGeometry(std::vector<FRaytracingGeometryContext>& Ra
             this,
             Material.get(),
             RaytracingGeometry->GetBLAS(),
-            ModelMatrix
+			GetModelMatrix()
         );
     }
 }

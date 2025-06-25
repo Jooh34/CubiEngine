@@ -4,6 +4,7 @@
 #include "Graphics/Resource.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "ShaderInterlop/ConstantBuffers.hlsli"
+#include "Math/Transform.h"
 
 class FPBRMaterial;
 class FGraphicsContext;
@@ -24,6 +25,9 @@ public:
 
     void GatherRaytracingGeometry(std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList);
 
+	XMMATRIX GetModelMatrix() const { return Transform.GetModelMatrix(); }
+	XMMATRIX GetInverseModelMatrix() const { return Transform.GetInverseModelMatrix(); }
+
     FBuffer PositionBuffer{};
     FBuffer TextureCoordsBuffer{};
     FBuffer NormalBuffer{};
@@ -33,8 +37,7 @@ public:
     
     std::shared_ptr<FPBRMaterial> Material{};
 
-    XMMATRIX ModelMatrix{};
-    XMMATRIX InverseModelMatrix{};
+    FTransform Transform{};
 
 private:
     std::shared_ptr<FRaytracingGeometry> RaytracingGeometry;

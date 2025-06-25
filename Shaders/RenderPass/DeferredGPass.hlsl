@@ -85,6 +85,6 @@ PsOutput PsMain(VSOutput psInput)
     );
 
     PsOutput output;
-    packGBuffer(albedo, normal, orm.x, orm.yz, emissive, velocity, output.GBufferA, output.GBufferB, output.GBufferC, output.Velocity);
+    packGBuffer(albedo, normal, orm.xyz, emissive, velocity, output.GBufferA, output.GBufferB, output.GBufferC, output.Velocity);
     return output;
 }

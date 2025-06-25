@@ -103,6 +103,6 @@ PsOutput PsMain(VSOutput psInput)
     float3 emissive = lightColor * intensity;
     float2 velocity = calculateVelocity(psInput.curPosition, psInput.prevPosition);
     PsOutput output;
-    packGBuffer(albedo, normal, ao, metalRoughness, emissive, velocity, output.GBufferA, output.GBufferB, output.GBufferC, output.Velocity);
+    packGBuffer(albedo, normal, float3(ao, metalRoughness), emissive, velocity, output.GBufferA, output.GBufferB, output.GBufferC, output.Velocity);
     return output;
 }

@@ -18,12 +18,12 @@ public:
 
     D3D12_TEXTURE_ADDRESS_MODE ConvertTextureAddressMode(aiTextureMapMode mode) const;
     void LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const aiScene* Scene);
-    void LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const aiScene* Scene);
+    void LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const aiScene* Scene, const FModelCreationDesc& ModelCreationDesc);
 
     std::vector<FSampler> Samplers;
     std::vector<std::shared_ptr<FPBRMaterial>> Materials;
 
-    std::vector<FMesh> Meshes{};
+    std::vector<std::unique_ptr<FMesh>> Meshes{};
 private:
     std::string ModelDir;
 };

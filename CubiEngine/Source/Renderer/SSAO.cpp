@@ -2,7 +2,7 @@
 #include "Graphics/Profiler.h"
 #include "Graphics/GraphicsDevice.h"
 #include "Scene/Scene.h"
-#include "CubiMath.h"
+#include "Math/CubiMath.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
 FSSAOPass::FSSAOPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)

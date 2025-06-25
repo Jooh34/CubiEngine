@@ -213,12 +213,12 @@ float3 viewSpaceCoordsFromDepthBuffer(const float depthValue, const float2 uvCoo
     return unprojectedPosition.xyz / unprojectedPosition.w;
 }
 
-void packGBuffer(const float3 albedo, const float3 normal, const float ao, float2 metalRoughness, const float3 emissive, const float2 velocity,
+void packGBuffer(const float3 albedo, const float3 normal, const float3 orm, const float3 emissive, const float2 velocity,
     out float4 GBufferA, out float4 GBufferB, out float4 GBufferC, out float2 Velocity)
 {
     GBufferA = float4(albedo, emissive.r);
     GBufferB = float4(normal, emissive.g);
-    GBufferC = float4(ao, metalRoughness.yx, emissive.b);
+    GBufferC = float4(orm, emissive.b);
     Velocity = velocity; 
 }
 
