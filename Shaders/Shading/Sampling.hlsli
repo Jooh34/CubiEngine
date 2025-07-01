@@ -164,34 +164,21 @@ float SmithGGXMaskingShadowing(float3 n, float3 l, float3 v, float a2)
     return 2.0f * dotNL * dotNV / max(EPS,denomA + denomB);
 }
 
-float3 SampleGGXVisibleNormal(float3 wo, float ax, float ay, float u1, float u2)
+float3 ImportanceSampleGgxD(float3 wo, float roughness, float e0, float e1)
 {
-    // Stretch the view vector so we are sampling as though
-    // roughness==1
-    float3 v = normalize(float3(wo.x * ax, wo.y * ay, wo.z));
+    float a = roughness;
+    float a2 = roughness * roughness;
 
-    // Build an orthonormal basis with v, t1, and t2
-    float3 t1 = (v.z < 0.999f) ? normalize(cross(v, float3(0, 0, 1))) : float3(1, 0, 0);
-    float3 t2 = cross(t1, v);
+    float theta = acos(sqrt((1.0f - e0) / ((a2 - 1.0f) * e0 + 1.0f)));
+    float phi   = 2 * PI * e1;
 
-    // Choose a point on a disk with each half of the disk weighted
-    // proportionally to its projection onto direction v
-    float a = 1.0f / (1.0f + v.z);
-    float r = sqrt(u1);
-    float phi = (u2 < a) ? (u2 / a) * PI : PI + (u2 - a) / (1.0f - a) * PI;
-    float p1 = r * cos(phi);
-    float p2 = r * sin(phi) * ((u2 < a) ? 1.0f : v.z);
-
-    // Calculate the normal in this stretched tangent space
-    float3 n = p1 * t1 + p2 * t2 + sqrt(max(0.0f, 1.0f - p1 * p1 - p2 * p2)) * v;
-
-    // Unstretch and normalize the normal
-    return normalize(float3(ax * n.x, ay * n.y, max(0.0f, n.z)));
+    float3 wm = SphericalToCartesian(theta, phi);
+    return wm;
 }
 
 float3 ImportanceSampleGGX_V2(float3 V, float3 N, float roughness, float u1, float u2, float3 F0, float3 energyCompensation, out float3 throughput)
 {
-    float3 microfacetNormal = SampleGGXVisibleNormal(V, roughness, roughness, u1, u2);
+    float3 microfacetNormal = ImportanceSampleGgxD(V, roughness, u1, u2);
     float3 L = reflect(-V, microfacetNormal);
     
     float NoL = saturate(dot(N, L));
@@ -216,11 +203,7 @@ float3 ImportanceSampleGGX_V2(float3 V, float3 N, float roughness, float u1, flo
 
 float3 ImportanceSampleGGX_V3(float3 V, float3 N, float roughness, float u1, float u2, float3 F0, float3 energyCompensation, out float3 throughput)
 {
-    float a2 = roughness * roughness;
-    float theta = acos(sqrt((1.0f - u1) / ((a2 - 1.0f) * u1 + 1.0f)));
-    float phi   = 2 * PI * u2;
-    
-    float3 microfacetNormal = SphericalToCartesian(theta, phi);
+    float3 microfacetNormal = ImportanceSampleGgxD(V, roughness, u1, u2);
     float3 L = reflect(-V, microfacetNormal);
     
     float NoL = saturate(dot(N, L));
@@ -236,9 +219,9 @@ float3 ImportanceSampleGGX_V3(float3 V, float3 N, float roughness, float u1, flo
     }
 
     float3 F = F_Schlick(F0, LoH);
-    float G = SmithGGXMaskingShadowing(N, L, V, a2);
+    float G = SmithGGXMaskingShadowing(N, L, V, roughness*roughness);
     float weight = LoH / (NoL*NoH);
 
-    throughput = (F * G * weight);
+    throughput = F * (G * weight) * energyCompensation;
     return L;
 }
