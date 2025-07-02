@@ -27,9 +27,9 @@ cmake -S . -B Build
 # Images
 ### Path Tracing
 ![image](Assets/Images/CornellBox.png)
+![image](Assets/Images/CustomCornellBox.png)
+![image](Assets/Images/ABeautifulGame.png)
 ![image](Assets/Images/PathTracing1.png)
-![image](Assets/Images/PathTracing2.png)
-![image](Assets/Images/PathTracing3.png)
 
 ### Multi-Scattering BRDF
 ![image](Assets/Images/Multi-Scatter-BRDF.png)

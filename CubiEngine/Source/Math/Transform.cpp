@@ -2,13 +2,9 @@
 
 void FTransform::Set(const XMFLOAT3& InRotation, const XMFLOAT3& InScale, const XMFLOAT3& InTranslate)
 {
-    Rotation = InRotation;
-    Scale = InScale;
-    Translate = InTranslate;
-
-    const XMVECTOR scalingVector = XMLoadFloat3(&Scale);
-    const XMVECTOR rotationVector = XMLoadFloat3(&Rotation);
-    const XMVECTOR translationVector = XMLoadFloat3(&Translate);
+    const XMVECTOR scalingVector = XMLoadFloat3(&InScale);
+    const XMVECTOR rotationVector = XMLoadFloat3(&InRotation);
+    const XMVECTOR translationVector = XMLoadFloat3(&InTranslate);
 
     const XMMATRIX modelMatrix = Dx::XMMatrixScalingFromVector(scalingVector) *
         Dx::XMMatrixRotationRollPitchYawFromVector(rotationVector) *
@@ -16,4 +12,12 @@ void FTransform::Set(const XMFLOAT3& InRotation, const XMFLOAT3& InScale, const 
 
     TransformMatrix = modelMatrix;
 	InverseTransformMatrix = Dx::XMMatrixInverse(nullptr, modelMatrix);
+}
+
+FTransform FTransform::Multiply(const FTransform& Other) const
+{
+    FTransform Transform{};
+    Transform.TransformMatrix = Dx::XMMatrixMultiply(TransformMatrix, Other.TransformMatrix);
+    Transform.InverseTransformMatrix = Dx::XMMatrixInverse(nullptr, TransformMatrix);
+    return Transform;
 }
