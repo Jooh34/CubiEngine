@@ -26,12 +26,11 @@ public:
 
 private:
 	FModelCreationDesc ModelCreationDesc;
-    FTransform Transform;
 
     void LoadSamplers(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel);
     void LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel);
     void LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc,
-         const uint32_t NodeIndex, const tinygltf::Model& GLTFModel);
+         const uint32_t NodeIndex, const tinygltf::Model& GLTFModel, const FTransform& LocalTransform);
 
 	XMFLOAT3 OverrideBaseColorValue{ -1.0f, -1.0f, -1.0f };
 	float OverrideRoughnessValue = -1.0f;

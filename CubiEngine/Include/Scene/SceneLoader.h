@@ -10,6 +10,7 @@ enum ESceneType
 	FlightHelmet,
 	Suzanne,
 	Bistro,
+	ABeautifulGame,
 	CornellBox,
 	CustomCornellBox,
 };

@@ -162,6 +162,36 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             Scene->GetCamera().FarZ = 10000.f;
             break;
         }
+        case ESceneType::ABeautifulGame:
+        {
+            FModelCreationDesc Desc = {
+                .ModelPath = "Models/ABeautifulGame/glTF/ABeautifulGame.gltf",
+                .ModelName = L"ABeautifulGame",
+            };
+
+            // Directional Light
+            //float LightPosition[4] = { 0.5, -0.5, 0.5, 0 };
+            //float LightColor[4] = { 1,1,1,1 };
+            //float Intensity = 5.f;
+            //Scene->AddLight(LightPosition, LightColor);
+            Scene->AddModel(Desc);
+
+            // use envmap
+            Scene->GIMethod = 0;
+            Scene->EnvmapIntensity = 1.f;
+
+            // set environment map
+            Scene->EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
+                .EquirectangularTexturePath = L"Assets/Models/Bistro/Bistro_v5_2/san_giuseppe_bridge_4k.hdr",
+                .Name = L"Bistro Environment Map"
+			});
+
+            // Camera
+            Scene->GetCamera().NearZ = 0.01f;
+            Scene->GetCamera().FarZ = 100.f;
+            Scene->GetCamera().SetCamMovementSpeed(0.01f);
+            break;
+        }
         case ESceneType::CornellBox:
         {
             Scene->EnvmapIntensity = 0.f;

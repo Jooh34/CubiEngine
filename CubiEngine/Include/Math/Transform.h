@@ -1,16 +1,15 @@
 #pragma once
 
-struct FTransform
+class FTransform
 {
-    XMFLOAT3 Rotation{ 0.0f, 0.0f, 0.0f };
-    XMFLOAT3 Scale{ 1.0f, 1.0f, 1.0f };
-    XMFLOAT3 Translate{ 0.0f, 0.0f, 0.0f };
-
-    XMMATRIX TransformMatrix{ Dx::XMMatrixIdentity() };
-	XMMATRIX InverseTransformMatrix{ Dx::XMMatrixIdentity() };
-
+public:
     void Set(const XMFLOAT3& InRotation, const XMFLOAT3& InScale, const XMFLOAT3& InTranslate);
+	FTransform Multiply(const FTransform& Other) const;
 
 	XMMATRIX GetModelMatrix() const { return TransformMatrix; }
 	XMMATRIX GetInverseModelMatrix() const { return InverseTransformMatrix; }
+
+private:
+    XMMATRIX TransformMatrix{ Dx::XMMatrixIdentity() };
+	XMMATRIX InverseTransformMatrix{ Dx::XMMatrixIdentity() };
 };

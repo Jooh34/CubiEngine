@@ -20,6 +20,7 @@ public:
         Yaw = InYaw;
         Roll = InRoll;
     };
+	void SetCamMovementSpeed(float Speed) { MovementSpeed = Speed; }
 
     XMMATRIX GetViewMatrix() const { return ViewMatrix; }
     XMMATRIX GetProjMatrix() const { return ProjMatrix; }
