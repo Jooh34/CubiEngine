@@ -152,12 +152,6 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             Scene->HistogramLogMin = -5.f;
             Scene->HistogramLogMax = 5.f;
 
-            // set environment map
-            Scene->EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
-                .EquirectangularTexturePath = L"Assets/Models/Bistro/Bistro_v5_2/san_giuseppe_bridge_4k.hdr",
-                .Name = L"Bistro Environment Map"
-			});
-
             // Camera
             Scene->GetCamera().FarZ = 10000.f;
             break;
@@ -170,26 +164,25 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             };
 
             // Directional Light
-            //float LightPosition[4] = { 0.5, -0.5, 0.5, 0 };
-            //float LightColor[4] = { 1,1,1,1 };
-            //float Intensity = 5.f;
-            //Scene->AddLight(LightPosition, LightColor);
+            float LightPosition[4] = { 0.5, -0.5, 0.5, 0 };
+            float LightColor[4] = { 1,1,1,1 };
+            float Intensity = 500.f;
+            Scene->AddLight(LightPosition, LightColor);
             Scene->AddModel(Desc);
 
             // use envmap
             Scene->GIMethod = 0;
-            Scene->EnvmapIntensity = 1.f;
-
-            // set environment map
-            Scene->EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
-                .EquirectangularTexturePath = L"Assets/Models/Bistro/Bistro_v5_2/san_giuseppe_bridge_4k.hdr",
-                .Name = L"Bistro Environment Map"
-			});
+            //Scene->EnvmapIntensity = 1.f;
 
             // Camera
             Scene->GetCamera().NearZ = 0.01f;
             Scene->GetCamera().FarZ = 100.f;
             Scene->GetCamera().SetCamMovementSpeed(0.01f);
+
+            Scene->EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
+                .EquirectangularTexturePath = L"Assets/Textures/WhiteFurnace.hdr",
+                .Name = L"WhiteFurnace Map"
+            });
             break;
         }
         case ESceneType::CornellBox:
