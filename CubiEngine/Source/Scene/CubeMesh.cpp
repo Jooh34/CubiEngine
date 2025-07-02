@@ -108,7 +108,9 @@ FCubeMesh::FCubeMesh(const FGraphicsDevice* const GraphicsDevice, FMeshCreationD
 		.albedoColor = MeshCreationDesc.BaseColorValue,
 		.roughnessFactor = MeshCreationDesc.RoughnessValue,
 		.metallicFactor = MeshCreationDesc.MetallicValue,
-		.emissiveColor = MeshCreationDesc.EmissiveValue
+		.emissiveColor = MeshCreationDesc.EmissiveValue,
+		.refractionFactor = MeshCreationDesc.RefractionFactor,
+		.IOR = MeshCreationDesc.IOR
 	};
 
 	Material->MaterialBuffer.Update(&Material->MaterialBufferData);

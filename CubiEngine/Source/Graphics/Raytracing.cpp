@@ -156,6 +156,8 @@ void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const Gr
 					.metallic = Material->MaterialBufferData.metallicFactor,
 					.roughness = Material->MaterialBufferData.roughnessFactor,
                     .emissiveColor = Material->MaterialBufferData.emissiveColor,
+					.refractionFactor = Material->MaterialBufferData.refractionFactor,
+					.IOR = Material->MaterialBufferData.IOR,
                 }
             );
         }

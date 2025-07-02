@@ -34,7 +34,7 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         });
     }
 
-    ESceneType Scene = ESceneType::CornellBox;
+    ESceneType Scene = ESceneType::CustomCornellBox;
     FSceneLoader::LoadScene(Scene, this, Device);
 
     WhiteFurnaceMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{

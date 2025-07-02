@@ -19,7 +19,7 @@ SamplerState LinearSampler : register(s1);
 #define RANDOM_INDEX_GET_NEXT_RAY 1
 #define MAX_FRAME_ACCUMULATED 3e4
 
-#define PathTracingRayFlag RAY_FLAG_CULL_BACK_FACING_TRIANGLES
+#define PathTracingRayFlag RAY_FLAG_NONE
 
 #define HITGROUP_OFFSET 0
 #define HITGROUP_GEO_MULTIPLIER 2
@@ -91,7 +91,7 @@ void RayGen()
     frameAccumulatedTexture[pixelCoord] = frameAccumulated;
 }
 
-void getDebugDiffuseSpecularFactor(inout float DiffuseFactor, inout float SpecularFactor)
+void getDiffuseSpecularRefractionFactor(inout float diffuseFactor, inout float specularFactor, inout float refractionFactor)
 {
     ConstantBuffer<interlop::DebugBuffer> debugBuffer = ResourceDescriptorHeap[renderResources.debugBufferIndex];
     
@@ -99,29 +99,31 @@ void getDebugDiffuseSpecularFactor(inout float DiffuseFactor, inout float Specul
     {
         if (debugBuffer.bEnableSpecular)
         {
-            DiffuseFactor = 0.5f; SpecularFactor = 0.5f;
+            diffuseFactor = 0.5f; specularFactor = 0.5f;
         }
         else
         {
-            DiffuseFactor = 1.0f;
+            diffuseFactor = 1.0f;
         }
     }
     else
     {
         if (debugBuffer.bEnableSpecular)
         {
-            SpecularFactor = 0.5f; 
+            specularFactor = 0.5f; 
         }
     }
+    
+    float notRefractionFactor = 1.0f - refractionFactor;
+    diffuseFactor *= notRefractionFactor;
+    specularFactor *= notRefractionFactor;
 }
 
-float3 sampleNextRay_oldver(float3 inRay, float3 N, int3 uvz, float3 albedo, float3 F0, float roughness, out float3 throughput)
+float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, float metallic, float roughness, float3 F0, float3 energyCompensation, float refractionFactor, float IOR, out float3 throughput)
 {
-    float DiffuseFactor = 0.0f;
-    float SpecularFactor = 0.0f;
-    getDebugDiffuseSpecularFactor(DiffuseFactor, SpecularFactor);
-
-    float reflectionFactor = 1.0f - roughness;
+    float diffuseFactor = 0.0f;
+    float specularFactor = 0.0f;
+    getDiffuseSpecularRefractionFactor(diffuseFactor, specularFactor, refractionFactor);
 
     float4 randomFloat = renderResources.randomFloats[RANDOM_INDEX_GET_NEXT_RAY];
     float rx = pcgHash(randomFloat.x, uvz);
@@ -129,47 +131,7 @@ float3 sampleNextRay_oldver(float3 inRay, float3 N, int3 uvz, float3 albedo, flo
     float rz = pcgHash(randomFloat.z, uvz);
     float rw = pcgHash(randomFloat.w, uvz);
 
-    if (rx < reflectionFactor) // reflect ray
-    {
-        float3 reflected_ray = inRay - N * (2 * dot(N, inRay));
-        float e1 = ry - 0.5;
-        float e2 = rz - 0.5;
-        float e3 = rw - 0.5;
-        float3 rand_vec = float3(e1 * roughness, e2 * roughness, e3 * roughness);
-
-        throughput = F0 / SpecularFactor;
-        return normalize(reflected_ray + rand_vec);
-    }
-    else
-    {
-        // diffuse ray
-        float2 u = float2(ry, rz);
-        float pdf;
-        float NoL;
-        float3 d;
-
-        // The PDF of sampling a cosine hemisphere is NdotL / Pi, which cancels out those terms
-        ImportanceSampleCosDir(u, N, d, NoL, pdf);
-
-        throughput = albedo / DiffuseFactor;
-        return d;
-    }
-}
-
-float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, float metallic, float roughness, float3 F0, float3 energyCompensation, out float3 throughput)
-{
-    normalTS = float3(0,0,1);
-    float DiffuseFactor = 0.0f;
-    float SpecularFactor = 0.0f;
-    getDebugDiffuseSpecularFactor(DiffuseFactor, SpecularFactor);
-
-    float4 randomFloat = renderResources.randomFloats[RANDOM_INDEX_GET_NEXT_RAY];
-    float rx = pcgHash(randomFloat.x, uvz);
-    float ry = pcgHash(randomFloat.y, uvz);
-    float rz = pcgHash(randomFloat.z, uvz);
-    float rw = pcgHash(randomFloat.w, uvz);
-
-    if (rx < DiffuseFactor)
+    if (rx < diffuseFactor)
     {
         // diffuse ray
         float2 u = float2(ry, rz);
@@ -185,13 +147,29 @@ float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, f
         float3 H = normalize(V + d);
         float VoH = saturate(dot(V, H));
         float3 diffuse = lambertianDiffuseBRDF(albedo, VoH, metallic);
-        throughput = diffuse * NoL / (pdf * DiffuseFactor);
+        throughput = diffuse * NoL / (pdf * diffuseFactor);
         return d;
     }
-    else if (rx < DiffuseFactor + SpecularFactor)
+    else if (rx < diffuseFactor + specularFactor)
     {
         float3 outRayDir = ImportanceSampleGGX_V2(-inRayTS, normalTS, roughness, ry, rz, F0, energyCompensation, throughput);
-        throughput = max(throughput / SpecularFactor, float3(0.0f, 0.0f, 0.0f));
+        throughput = max(throughput / specularFactor, float3(0.0f, 0.0f, 0.0f));
+        return outRayDir;
+    }
+    else if (rx < diffuseFactor + specularFactor + refractionFactor)
+    {
+        // refraction ray
+        bool bFrontFace = dot(inRayTS, normalTS) < 0.0f;
+        float3 actualNormal = bFrontFace ? normalTS : -normalTS;
+        float eta = bFrontFace ? 1.0f / IOR : IOR;
+        float3 outRayDir = refract(inRayTS, actualNormal, eta);
+        if (length(outRayDir) < 0.001f)
+        {
+            // fallback to reflection
+            outRayDir = reflect(inRayTS, actualNormal);
+        }
+
+        throughput = max(albedo / refractionFactor, float3(0.0f, 0.0f, 0.0f));
         return outRayDir;
     }
 
@@ -274,10 +252,8 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     float4 EnvBRDF = EnvBRDFTexture.SampleLevel(MeshSampler, float2(NoV, roughness), 0);
     float3 energyCompensation = 1.0 + F0 * (1.0 / EnvBRDF.z - 1.0);
 
-    float3 throughput = albedo;
-    // float3 sampleNextRay(float3 inRayTS, float3 normalTS, int3 uvz, float3 albedo, float metallic, float roughness, float3 F0, float energyCompensation, out float3 throughput)
-    float3 nextRay = sampleNextRay(inRayTS, normalTS, uvz, albedo, metallic, roughness, F0, energyCompensation, throughput);
-    // float3 nextRay = sampleNextRay_oldver(inRayTS, normalTS, uvz, albedo, F0, roughness, throughput);
+    float3 throughput = float3(0,0,0);
+    float3 nextRay = sampleNextRay(inRayTS, normalTS, uvz, albedo, metallic, roughness, F0, energyCompensation, material.refractionFactor, material.IOR, throughput);
 
     float3 nextRayWS = normalize(mul(nextRay, tangentToWorld));
     

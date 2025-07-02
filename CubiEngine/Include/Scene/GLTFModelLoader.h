@@ -25,6 +25,7 @@ public:
     std::vector<std::unique_ptr<FMesh>> Meshes{};
 
 private:
+	FModelCreationDesc ModelCreationDesc;
     FTransform Transform;
 
     void LoadSamplers(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel);

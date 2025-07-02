@@ -255,6 +255,9 @@ struct FModelCreationDesc
     float OverrideRoughnessValue{ -1.0f };
     float OverrideMetallicValue{ -1.0f };
 	Dx::XMFLOAT3 OverrideEmissiveValue{ -1.0f, -1.0f, -1.0f };
+
+    float RefractionFactor{ 0 };
+    float IOR{ 1 };
 };
 
 struct FMeshCreationDesc
@@ -269,6 +272,9 @@ struct FMeshCreationDesc
     float RoughnessValue{ -1.0f };
     float MetallicValue{ -1.0f };
     Dx::XMFLOAT3 EmissiveValue{ -1.0f, -1.0f, -1.0f };
+
+    float RefractionFactor{ 0 };
+    float IOR{ 1 };
 };
 
 enum class EShadowMethod

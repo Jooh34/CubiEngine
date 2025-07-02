@@ -10,7 +10,8 @@ enum ESceneType
 	FlightHelmet,
 	Suzanne,
 	Bistro,
-	CornellBox
+	CornellBox,
+	CustomCornellBox,
 };
 
 class FSceneLoader

@@ -7,7 +7,7 @@
 #include "Math/CubiMath.h"
 
 FGLTFModelLoader::FGLTFModelLoader(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
-	:ModelName(ModelCreationDesc.ModelName)
+	:ModelName(ModelCreationDesc.ModelName), ModelCreationDesc(ModelCreationDesc)
 {
     OverrideBaseColorValue = ModelCreationDesc.OverrideBaseColorValue;
     OverrideRoughnessValue = ModelCreationDesc.OverrideRoughnessValue;
@@ -294,7 +294,9 @@ void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice
                 },
                 .roughnessFactor = bOverrideRoughness ? OverrideRoughnessValue : (float)material.pbrMetallicRoughness.roughnessFactor,
                 .metallicFactor = bOverrideMetallic ? OverrideMetallicValue : (float)material.pbrMetallicRoughness.metallicFactor,
-                .emissiveColor = bOverrideEmissive ? OverrideEmissiveValue : XMFLOAT3{0.f, 0.f, 0.f}
+                .emissiveColor = bOverrideEmissive ? OverrideEmissiveValue : XMFLOAT3{0.f, 0.f, 0.f},
+                .refractionFactor = ModelCreationDesc.RefractionFactor,
+                .IOR = ModelCreationDesc.IOR,
         };
 
         PbrMaterial->MaterialBuffer.Update(&PbrMaterial->MaterialBufferData);
