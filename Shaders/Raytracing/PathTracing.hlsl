@@ -232,13 +232,13 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
 
     float3x3 ObjectToWorld = transpose(Inverse3x3(ObjectToWorld3x3));
 
-    float3x3 tangentToWorld;
     float3 normalWS = normalize(mul(hitSurface.normal, ObjectToWorld).xyz);
     float3 tangentWS = normalize(mul(hitSurface.tangent, ObjectToWorld).xyz);
     const float3 biTangentWS = normalize(cross(normalWS, tangentWS));
 
-    tangentToWorld = float3x3(tangentWS, biTangentWS, normalWS);
-    float3x3 worldToTangent = transpose(tangentToWorld);
+    float3x3 tangentToWorld = float3x3(tangentWS, biTangentWS, normalWS);
+
+    float3x3 worldToTangent = Inverse3x3(tangentToWorld);
     
     float3 normalTS = getNormalSampleTS(textureCoords, material.normalTextureIndex, MeshSampler);
 
@@ -261,7 +261,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     RayDesc ray;
     ray.Origin = positionWS;
     ray.Direction = nextRayWS;
-    ray.TMin = EPS;
+    ray.TMin = RAY_MIN;
     ray.TMax = FP32Max;
 
     FPathTracePayload nextPayload;

@@ -10,8 +10,8 @@ float3 ConcentricDiskSamplingHelper(float2 E)
 	float2 a = abs(p);
 	float Lo = min(a.x, a.y);
 	float Hi = max(a.x, a.y);
-	float Epsilon = 5.42101086243e-20; 
-	float Phi = (PI / 4) * (Lo / (Hi + Epsilon) + 2 * float(a.y >= a.x));
+	float eps = 5.42101086243e-20; 
+	float Phi = (PI / 4) * (Lo / (Hi + eps) + 2 * float(a.y >= a.x));
 	float Radius = Hi;
 	const uint SignMask = 0x80000000;
 	float2 Disk = asfloat((asuint(float2(cos(Phi), sin(Phi))) & ~SignMask) | (asuint(p) & SignMask));
@@ -66,7 +66,7 @@ void ImportanceSampleCosDir(float2 u, float3 N, out float3 outL, out float NdotL
     outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
 
     NdotL = saturate(dot(N,L));
-    pdf = max(CosTheta * INV_PI, VERY_SMALL_NUMBER);
+    pdf = max(CosTheta * INV_PI, EPS);
 }
 
 // https://ameye.dev/notes/sampling-the-hemisphere/
@@ -88,7 +88,7 @@ void ImportanceSampleCosDirPow(float2 u, float3 N, float p, out float3 outL, out
     outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
 
     NdotL = saturate(dot(N,L));
-    pdf = max((p+1) * pow(CosTheta, p) * INV_PI / 2, VERY_SMALL_NUMBER);
+    pdf = max((p+1) * pow(CosTheta, p) * INV_PI / 2, EPS);
 }
 
 // for normal (0,0,1)
@@ -131,7 +131,7 @@ void ConcentricSampleDisk(float2 u, float3 N, out float3 outL, out float pdf)
     
     outL = normalize(TangentX * L.x + TangentY * L.y + N * L.z);
 
-    pdf = max(cosTheta * (1.f/PI), VERY_SMALL_NUMBER);
+    pdf = max(cosTheta * (1.f/PI), EPS);
 }
 
 float3 Fresnel(in float3 specAlbedo, in float3 h, in float3 l)

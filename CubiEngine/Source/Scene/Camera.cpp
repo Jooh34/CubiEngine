@@ -33,7 +33,7 @@ XMFLOAT2 GetHaltonJitterOffset(uint32_t FrameIndex, float ScreenWidth, float Scr
 FCamera::FCamera(uint32_t Width, uint32_t Height)
 {
     CamPosition = { 0.f,5.f,-30.f,1.f };
-    MovementSpeed = 0.1f;
+    MovementSpeed = 0.001f;
     RotationSpeed = 0.005f;
     Pitch = 0.f;
     Yaw = 0.f;
@@ -41,8 +41,8 @@ FCamera::FCamera(uint32_t Width, uint32_t Height)
 
     FovY = 45.f;
     AspectRatio = static_cast<float>(Width) / Height;
-    NearZ = 1.f;
-    FarZ = 4000.f;
+    NearZ = 0.01f;
+    FarZ = 40.f;
     
     this->Width = Width;
     this->Height = Height;

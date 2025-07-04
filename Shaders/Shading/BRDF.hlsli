@@ -80,8 +80,8 @@ float D_GGX(float a2, float NoH)
 
 float G_GeometricAttenuation(BxDFContext context)
 {
-    float c1 = 2 * context.NoH * context.NoV / (context.VoH+EPSILON);
-    float c2 = 2 * context.NoH * context.NoL / (context.VoH+EPSILON);
+    float c1 = 2 * context.NoH * context.NoV / (context.VoH+EPS);
+    float c2 = 2 * context.NoH * context.NoL / (context.VoH+EPS);
     return min(min(1.f, c1),c2);
 }
 

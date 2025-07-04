@@ -48,7 +48,7 @@ void RayGen()
             // ray.Origin = worldPosition.xyz + worldspaceL * 0.01f; // offset to avoid self intersection;
             ray.Origin = worldPosition.xyz;
             ray.Direction = worldspaceL;
-            ray.TMin = EPS; // offset to avoid self intersection;
+            ray.TMin = RAY_MIN; // offset to avoid self intersection;
             ray.TMax = FP32Max;
 
             FShadowPayload shadowPayload;

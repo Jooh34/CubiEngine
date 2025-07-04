@@ -1,10 +1,8 @@
 // clang-format off
 #pragma once
 
-static const float MIN_FLOAT_VALUE = 1.0e-5;
-static const float EPSILON = 1.0e-4;
 static const float EPS = 1.0e-4;
-static const float VERY_SMALL_NUMBER = 1.0e-4;
+static const float VERY_SMALL_NUMBER = 1.0e-9;
 
 static const float PI = 3.14159265359;
 static const float TWO_PI = 2.0f * PI;
@@ -183,7 +181,7 @@ float4 generateTangent(float3 normal)
 {
     float3 tangent = cross(normal, float3(0.0f, 1.0f, 0.0));
     tangent =
-        normalize(lerp(cross(normal, float3(1.0f, 0.0f, 0.0f)), tangent, step(MIN_FLOAT_VALUE, dot(tangent, tangent))));
+        normalize(lerp(cross(normal, float3(1.0f, 0.0f, 0.0f)), tangent, step(EPS, dot(tangent, tangent))));
 
     return float4(tangent, 1.0f);
 }
@@ -196,7 +194,7 @@ float4 generateTangent(float3 normal)
 void computeBasisVectors(float3 normal, out float3 s, out float3 t)
 {
     t = cross(normal, float3(0.0f, 1.0f, 0.0f));
-    t = lerp(cross(normal, float3(1.0f, 0.0f, 0.0f)), t, step(MIN_FLOAT_VALUE, dot(t, t)));
+    t = lerp(cross(normal, float3(1.0f, 0.0f, 0.0f)), t, step(EPS, dot(t, t)));
 
     t = normalize(t);
     s = normalize(cross(normal, t));
@@ -334,7 +332,7 @@ float3x3 Inverse3x3(float3x3 m)
         a01 * (a10 * a22 - a12 * a20) +
         a02 * (a10 * a21 - a11 * a20);
 
-    if (abs(det) < 1e-6)
+    if (abs(det) < VERY_SMALL_NUMBER)
         return float3x3(0,0,0, 0,0,0, 0,0,0); // 혹은 fallback 처리
 
     float invDet = 1.0 / det;

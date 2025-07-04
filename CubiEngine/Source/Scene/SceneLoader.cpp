@@ -38,8 +38,8 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
                  .ModelPath = "Models/Suzanne/glTF/Suzanne.gltf",
                  .ModelName = L"Suzanne",
 				 .Rotation = { 0.f, 90.f, 0.f },
-                 .Scale = {100.f, 100.f, 100.f},
-				 .Translate = { -500.f, 100.f, 0.f },
+                 .Scale = {1.f, 1.f, 1.f},
+				 .Translate = { -5.f, 1.f, 0.f },
             };
             Scene->AddModel(Suzanne);
 
@@ -47,8 +47,8 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
                  .ModelPath = "Models/Sphere/sphere.gltf",
                  .ModelName = L"MirrorBall",
                  .Rotation = { 0.f, 0.f, 0.f },
-                 .Scale = {50.f, 50.f, 50.f},
-                 .Translate = { -500.f, 300.f, 0.f },
+                 .Scale = {1.f, 1.f, 1.f},
+                 .Translate = { -5.f, 3.f, 0.f },
                  .OverrideBaseColorValue = { 1, 1, 1 },
                  .OverrideRoughnessValue = 0.f,
                  .OverrideMetallicValue = 1.f,
@@ -58,8 +58,8 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             FModelCreationDesc SphereDesc = {
                  .ModelPath = "Models/Sphere/sphere.gltf",
                  .ModelName = L"Sphere",
-                 .Scale = {20.f, 20.f, 20.f},
-                 .Translate = { -500.f, 700.f, 400.f },
+                 .Scale = {0.2f, 0.2f, 0.2f},
+                 .Translate = { -5.f, 7.f, 4.f },
                  .OverrideBaseColorValue = { 1.f, 1.f, 1.f },
                  .OverrideRoughnessValue = 0.1f,
                  .OverrideMetallicValue = 1.f,
@@ -67,7 +67,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             };
 			Scene->AddModel(SphereDesc);
 
-            Scene->GetCamera().SetCamPosition(750, 600, 100);
+            Scene->GetCamera().SetCamPosition(7.5f, 6, 1);
             Scene->GetCamera().SetCamRotation(0.03, -1.7, 0.f);
 			break;
 		}

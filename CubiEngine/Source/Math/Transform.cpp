@@ -18,6 +18,6 @@ FTransform FTransform::Multiply(const FTransform& Other) const
 {
     FTransform Transform{};
     Transform.TransformMatrix = Dx::XMMatrixMultiply(TransformMatrix, Other.TransformMatrix);
-    Transform.InverseTransformMatrix = Dx::XMMatrixInverse(nullptr, TransformMatrix);
+    Transform.InverseTransformMatrix = Dx::XMMatrixInverse(nullptr, Transform.TransformMatrix);
     return Transform;
 }
