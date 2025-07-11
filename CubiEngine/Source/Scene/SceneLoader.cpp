@@ -189,8 +189,8 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
         {
             Scene->EnvmapIntensity = 0.f;
 
-            static constexpr float Size = 100.f;
-            static constexpr float EPS = 1e-4;
+            static constexpr float Size = 1.f;
+            static constexpr float EPS = 1e-6;
 			Scene->GetCamera().SetCamPosition(0, Size/2.f, -1.5*Size);
 
             FMesh* Floor = new FCubeMesh(Device, FMeshCreationDesc{
@@ -280,12 +280,12 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             FMesh* CeilingLight = new FCubeMesh(Device, FMeshCreationDesc{
                 .Name = L"CornellBox CeilingLight",
                 .Rotation = { 0.f, 0.f, 0.f },
-                .Scale = { Size/3.f, EPS, Size/3.f },
+                .Scale = { Size/4.f, EPS, Size/4.f },
                 .Translate = { 0.f, Size, 0.f },
                 .BaseColorValue = { 1,1,1 },
                 .RoughnessValue = 1.f,
                 .MetallicValue = 0.f,
-                .EmissiveValue = { 1e1,1e1,1e1 },
+                .EmissiveValue = { 17,12,4 },
 			});
             Scene->AddMesh(CeilingLight);
             break;
@@ -294,8 +294,8 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
         {
             Scene->EnvmapIntensity = 0.f;
 
-            static constexpr float Size = 100.f;
-            static constexpr float EPS = 1e-4;
+            static constexpr float Size = 1.f;
+            static constexpr float EPS = 1e-6;
             Scene->GetCamera().SetCamPosition(0, Size / 2.f, -1.5 * Size);
 
             FMesh* Floor = new FCubeMesh(Device, FMeshCreationDesc{
@@ -361,12 +361,12 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             FMesh* CeilingLight = new FCubeMesh(Device, FMeshCreationDesc{
                 .Name = L"CornellBox CeilingLight",
                 .Rotation = { 0.f, 0.f, 0.f },
-                .Scale = { Size / 3.f, EPS, Size / 3.f },
+                .Scale = { Size / 4.f, EPS, Size / 4.f },
                 .Translate = { 0.f, Size, 0.f },
                 .BaseColorValue = { 1,1,1 },
                 .RoughnessValue = 1.f,
                 .MetallicValue = 0.f,
-                .EmissiveValue = { 1e1,1e1,1e1 },
+                .EmissiveValue = { 17,12,4 },
                 });
             Scene->AddMesh(CeilingLight);
 

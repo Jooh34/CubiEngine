@@ -5,7 +5,7 @@
 #include "ShaderInterlop/RenderResources.hlsli"
 #include "Utils.hlsli"
 static const float FP32Max = 3.402823466e+38f;
-static const float RAY_MIN = 1e-4f;
+static const float RAY_MIN = 1e-6f;
 
 // Hit information, aka ray payload
 // This sample only carries a shading color and hit distance.
