@@ -32,8 +32,8 @@ void FRaytracingShadowPass::InitSizeDependantResource(const FGraphicsDevice* con
 
 void FRaytracingShadowPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)
 {
-    GraphicsContext->AddResourceBarrier(SceneTexture.DepthTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(RaytracingShadowTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(SceneTexture.DepthTexture.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(RaytracingShadowTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 
     D3D12_DISPATCH_RAYS_DESC RayDesc = RaytracingShadowPassSBT.CreateRayDesc(Width, Height);
@@ -48,8 +48,8 @@ void FRaytracingShadowPass::AddPass(FGraphicsContext* GraphicsContext, FScene* S
 
     interlop::RaytracingShadowRenderResource RenderResources = {
         .invViewProjectionMatrix = Scene->GetCamera().GetInvViewProjMatrix(),
-        .dstTextureIndex = RaytracingShadowTexture.UavIndex,
-        .depthTextureIndex = SceneTexture.DepthTexture.SrvIndex,
+        .dstTextureIndex = RaytracingShadowTexture->UavIndex,
+        .depthTextureIndex = SceneTexture.DepthTexture->SrvIndex,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex
     };

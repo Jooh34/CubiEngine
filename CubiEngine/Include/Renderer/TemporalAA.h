@@ -21,6 +21,6 @@ public:
     FPipelineState TemporalAAResolvePipelineState;
     FPipelineState TemporalAAUpdateHistoryPipelineState;
 
-    FTexture HistoryTexture;
-    FTexture ResolveTexture;
+    std::unique_ptr<FTexture> HistoryTexture;
+    std::unique_ptr<FTexture> ResolveTexture;
 };

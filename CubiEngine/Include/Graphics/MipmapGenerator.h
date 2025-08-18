@@ -10,7 +10,7 @@ class FMipmapGenerator
 public:
     FMipmapGenerator(FGraphicsDevice* const Device);
 
-    void GenerateMipmap(FTexture& Texture);
+    void GenerateMipmap(FTexture* Texture);
 
 private:
     FGraphicsDevice* Device;

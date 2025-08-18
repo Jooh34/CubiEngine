@@ -106,11 +106,11 @@ void FBloomPass::AddBloomPass(FGraphicsContext* GraphicsContext, FScene* Scene, 
         CreateGaussianBlurWeight(GaussianBlurWeight, KernelSize, StdDev);
 
         // -------------- BloomX --------------
-        InputTexture = &DownSampledSceneTextures[BloomIndex];
-        OutputTexture = &BloomXTextures[BloomIndex];
+        InputTexture = DownSampledSceneTextures[BloomIndex].get();
+        OutputTexture = BloomXTextures[BloomIndex].get();
 
-        GraphicsContext->AddResourceBarrier(*InputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-        GraphicsContext->AddResourceBarrier(*OutputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        GraphicsContext->AddResourceBarrier(InputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        GraphicsContext->AddResourceBarrier(OutputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
         GraphicsContext->ExecuteResourceBarriers();
 
         interlop::GaussianBlurWRenderResource RenderResources = {
@@ -140,15 +140,15 @@ void FBloomPass::AddBloomPass(FGraphicsContext* GraphicsContext, FScene* Scene, 
         1);
         
         // -------------- BloomY --------------
-        InputTexture = &BloomXTextures[BloomIndex];
-        OutputTexture = (BloomIndex ==0) ? &BloomResultTexture : &BloomYTextures[BloomIndex];
-        FTexture* AdditiveTexture = (BloomIndex == BloomStep - 1) ? nullptr : &BloomYTextures[BloomIndex + 1];
+        InputTexture = BloomXTextures[BloomIndex].get();
+        OutputTexture = (BloomIndex == 0) ? BloomResultTexture.get() : BloomYTextures[BloomIndex].get();
+        FTexture* AdditiveTexture = (BloomIndex == BloomStep - 1) ? nullptr : BloomYTextures[BloomIndex + 1].get();
 
-        GraphicsContext->AddResourceBarrier(*InputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-        GraphicsContext->AddResourceBarrier(*OutputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        GraphicsContext->AddResourceBarrier(InputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        GraphicsContext->AddResourceBarrier(OutputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
         if (AdditiveTexture)
         {
-            GraphicsContext->AddResourceBarrier(*AdditiveTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+            GraphicsContext->AddResourceBarrier(AdditiveTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
         }
         GraphicsContext->ExecuteResourceBarriers();
 
@@ -188,11 +188,11 @@ void FBloomPass::DownSampleSceneTexture(FGraphicsContext* GraphicsContext, FText
     SCOPED_NAMED_EVENT(GraphicsContext, DownSampleSceneTexture);
     
     FTexture* InputTexture = HDR;
-    FTexture* OutputTexture = &DownSampledSceneTextures[0];
+    FTexture* OutputTexture = DownSampledSceneTextures[0].get();
     for (int i = 0; i < BLOOM_MAX_STEP; i++)
     {
-        GraphicsContext->AddResourceBarrier(*InputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-        GraphicsContext->AddResourceBarrier(*OutputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        GraphicsContext->AddResourceBarrier(InputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        GraphicsContext->AddResourceBarrier(OutputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
         GraphicsContext->ExecuteResourceBarriers();
 
         interlop::DownSampleRenderResource RenderResources = {
@@ -213,8 +213,8 @@ void FBloomPass::DownSampleSceneTexture(FGraphicsContext* GraphicsContext, FText
 
         if (i != BLOOM_MAX_STEP - 1)
         {
-            InputTexture = &DownSampledSceneTextures[i];
-            OutputTexture = &DownSampledSceneTextures[i+1];
+            InputTexture = DownSampledSceneTextures[i].get();
+            OutputTexture = DownSampledSceneTextures[i+1].get();
         }
     }
 }

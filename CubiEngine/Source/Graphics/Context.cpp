@@ -21,12 +21,12 @@ void FContext::AddResourceBarrier(ID3D12Resource* const Resource, const D3D12_RE
     ResourceBarriers.emplace_back(CD3DX12_RESOURCE_BARRIER::Transition(Resource, PreviousState, NewState));
 }
 
-void FContext::AddResourceBarrier(FTexture& Texture, const D3D12_RESOURCE_STATES NewState)
+void FContext::AddResourceBarrier(FTexture* Texture, const D3D12_RESOURCE_STATES NewState)
 {
-    if (Texture.ResourceState == NewState) return;
+    if (Texture->ResourceState == NewState) return;
 
-    AddResourceBarrier(Texture.GetResource(), Texture.ResourceState, NewState);
-    Texture.ResourceState = NewState;
+    AddResourceBarrier(Texture->GetResource(), Texture->ResourceState, NewState);
+    Texture->ResourceState = NewState;
 }
 
 void FContext::AddResourceBarrier(D3D12_RESOURCE_BARRIER& Barrier)
@@ -34,9 +34,9 @@ void FContext::AddResourceBarrier(D3D12_RESOURCE_BARRIER& Barrier)
     ResourceBarriers.emplace_back(Barrier);
 }
 
-void FContext::AddUAVBarrier(FTexture& Texture)
+void FContext::AddUAVBarrier(FTexture* Texture)
 {
-    ResourceBarriers.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(Texture.GetResource()));
+    ResourceBarriers.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(Texture->GetResource()));
 }
 
 void FContext::AddUAVBarrier(FBuffer& Buffer)

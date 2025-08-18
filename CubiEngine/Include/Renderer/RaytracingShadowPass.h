@@ -16,7 +16,7 @@ public:
 
     void AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture);
 
-    FTexture& GetRaytracingShadowTexture() { return RaytracingShadowTexture; }
+    FTexture* GetRaytracingShadowTexture() { return RaytracingShadowTexture.get(); }
 
 private:
     const FGraphicsDevice* GraphicsDevice;
@@ -24,5 +24,5 @@ private:
     FRaytracingPipelineState RaytracingShadowPipelineState;
     FShaderBindingTable RaytracingShadowPassSBT;
 
-    FTexture RaytracingShadowTexture;
+    std::unique_ptr<FTexture> RaytracingShadowTexture;
 };

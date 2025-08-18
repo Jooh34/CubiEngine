@@ -15,14 +15,14 @@ public:
 
     void AddPass(FGraphicsContext* GraphicsContext, FScene* Scene);
 
-    FTexture& GetPathTracingSceneTexture() { return PathTracingSceneTexture; }
+    FTexture* GetPathTracingSceneTexture() { return PathTracingSceneTexture.get(); }
 
 private:
     FRaytracingPipelineState PathTracingPassPipelineState;
     FShaderBindingTable PathTracingPassSBT;
 
-    FTexture PathTracingSceneTexture;
-    FTexture FrameAccumulatedTexture;
+    std::unique_ptr<FTexture> PathTracingSceneTexture;
+    std::unique_ptr<FTexture> FrameAccumulatedTexture;
 
     uint32_t CollectedFrame = 0;
     uint32_t SamplePerPixel = 8;

@@ -72,15 +72,15 @@ void FSSAOPass::AddSSAOPass(FGraphicsContext* GraphicsContext, FScene* Scene, FS
 {
     SCOPED_NAMED_EVENT(GraphicsContext, SSAO);
 
-    GraphicsContext->AddResourceBarrier(SceneTexture.GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(SceneTexture.DepthTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(SSAOTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(SceneTexture.GBufferB.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.DepthTexture.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SSAOTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 
     interlop::SSAORenderResource RenderResources = {
-        .GBufferBIndex = SceneTexture.GBufferB.SrvIndex,
-        .depthTextureIndex = SceneTexture.DepthTexture.SrvIndex,
-        .dstTextureIndex = SSAOTexture.UavIndex,
+        .GBufferBIndex = SceneTexture.GBufferB->SrvIndex,
+        .depthTextureIndex = SceneTexture.DepthTexture->SrvIndex,
+        .dstTextureIndex = SSAOTexture->UavIndex,
         .SSAOKernelBufferIndex = SSAOKernelBuffer.CbvIndex,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .frameCount = GFrameCount,
@@ -95,7 +95,7 @@ void FSSAOPass::AddSSAOPass(FGraphicsContext* GraphicsContext, FScene* Scene, FS
 
     // shader (8,8,1)
     GraphicsContext->Dispatch(
-        max((uint32_t)std::ceil(SSAOTexture.Width / 8.0f), 1u),
-        max((uint32_t)std::ceil(SSAOTexture.Height / 8.0f), 1u),
+        max((uint32_t)std::ceil(SSAOTexture->Width / 8.0f), 1u),
+        max((uint32_t)std::ceil(SSAOTexture->Height / 8.0f), 1u),
     1);
 }

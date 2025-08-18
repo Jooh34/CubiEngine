@@ -49,62 +49,62 @@ void FGraphicsContext::Reset()
     SetDescriptorHeaps();
 }
 
-void FGraphicsContext::ClearRenderTargetView(const FTexture& InRenderTarget, std::span<const float, 4> Color)
+void FGraphicsContext::ClearRenderTargetView(const FTexture* InRenderTarget, std::span<const float, 4> Color)
 {
     const auto rtvDescriptorHandle =
-        Device->GetRtvDescriptorHeap()->GetDescriptorHandleFromIndex(InRenderTarget.RtvIndex);
+        Device->GetRtvDescriptorHeap()->GetDescriptorHandleFromIndex(InRenderTarget->RtvIndex);
 
     CommandList->ClearRenderTargetView(rtvDescriptorHandle.CpuDescriptorHandle, Color.data(), 0u, nullptr);
 }
 
-void FGraphicsContext::ClearDepthStencilView(const FTexture& Texture)
+void FGraphicsContext::ClearDepthStencilView(const FTexture* Texture)
 {
     const auto DsvHandle =
-        Device->GetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(Texture.DsvIndex);
+        Device->GetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(Texture->DsvIndex);
 
     CommandList->ClearDepthStencilView(DsvHandle.CpuDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH,
         0.0f, 1u, 0u, nullptr); // ReversedZ
 }
 
-void FGraphicsContext::SetRenderTarget(const FTexture& RenderTarget) const
+void FGraphicsContext::SetRenderTarget(const FTexture* RenderTarget) const
 {
     D3D12_CPU_DESCRIPTOR_HANDLE RtvHandle =
-        Device->GetRtvDescriptorHeap()->GetDescriptorHandleFromIndex(RenderTarget.RtvIndex).CpuDescriptorHandle;
+        Device->GetRtvDescriptorHeap()->GetDescriptorHandleFromIndex(RenderTarget->RtvIndex).CpuDescriptorHandle;
 
     CommandList->OMSetRenderTargets(1, &RtvHandle, FALSE, nullptr);
 }
 
-void FGraphicsContext::SetRenderTarget(const FTexture& RenderTarget, const FTexture& DepthStencilTexture) const
+void FGraphicsContext::SetRenderTarget(const FTexture* RenderTarget, const FTexture* DepthStencilTexture) const
 {
     D3D12_CPU_DESCRIPTOR_HANDLE RtvHandle =
-        Device->GetRtvDescriptorHeap()->GetDescriptorHandleFromIndex(RenderTarget.RtvIndex).CpuDescriptorHandle;
+        Device->GetRtvDescriptorHeap()->GetDescriptorHandleFromIndex(RenderTarget->RtvIndex).CpuDescriptorHandle;
 
     D3D12_CPU_DESCRIPTOR_HANDLE DsvHandle =
-        Device->GetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(DepthStencilTexture.DsvIndex).CpuDescriptorHandle;
+        Device->GetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(DepthStencilTexture->DsvIndex).CpuDescriptorHandle;
 
     CommandList->OMSetRenderTargets(1, &RtvHandle, TRUE, &DsvHandle);
 }
 
-void FGraphicsContext::SetRenderTargets(const std::span<const FTexture> RenderTargets, const FTexture& DepthStencilTexture) const
+void FGraphicsContext::SetRenderTargets(const std::span<const FTexture*> RenderTargets, const FTexture* DepthStencilTexture) const
 {
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> RtvHandles(RenderTargets.size());
     
     for (int i=0; i<RenderTargets.size(); i++)
     {
         RtvHandles[i] = Device->GetRtvDescriptorHeap()
-            ->GetDescriptorHandleFromIndex(RenderTargets[i].RtvIndex).CpuDescriptorHandle;
+            ->GetDescriptorHandleFromIndex(RenderTargets[i]->RtvIndex).CpuDescriptorHandle;
     }
 
     D3D12_CPU_DESCRIPTOR_HANDLE DsvHandle =
-        Device->GetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(DepthStencilTexture.DsvIndex).CpuDescriptorHandle;
+        Device->GetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(DepthStencilTexture->DsvIndex).CpuDescriptorHandle;
 
     CommandList->OMSetRenderTargets(RtvHandles.size(), RtvHandles.data(), TRUE, &DsvHandle);
 }
 
-void FGraphicsContext::SetRenderTargetDepthOnly(const FTexture& DepthStencilTexture) const
+void FGraphicsContext::SetRenderTargetDepthOnly(const FTexture* DepthStencilTexture) const
 {
     D3D12_CPU_DESCRIPTOR_HANDLE DsvHandle =
-        Device->GetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(DepthStencilTexture.DsvIndex).CpuDescriptorHandle;
+        Device->GetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(DepthStencilTexture->DsvIndex).CpuDescriptorHandle;
 
     CommandList->OMSetRenderTargets(0, nullptr, FALSE, &DsvHandle);
 }

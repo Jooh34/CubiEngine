@@ -23,12 +23,12 @@ public:
 
     void Render(FGraphicsContext* const GraphicsContext,
         interlop::ScreenSpaceCubeMapRenderResources& RenderResource,
-        FTexture& Target, const FTexture& DepthBuffer);
+        FTexture* Target, const FTexture* DepthBuffer);
 
-    FTexture CubeMapTexture;
-    FTexture PrefilteredCubemapTexture;
-    FTexture IrradianceCubemapTexture;
-    FTexture BRDFLutTexture;
+    std::unique_ptr<FTexture> CubeMapTexture;
+    std::unique_ptr<FTexture> PrefilteredCubemapTexture;
+    std::unique_ptr<FTexture> IrradianceCubemapTexture;
+    std::unique_ptr<FTexture> BRDFLutTexture;
 
     FPipelineState ConvertEquirectToCubeMapPipelineState;
     FPipelineState ScreenSpaceCubemapPipelineState;

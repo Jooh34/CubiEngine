@@ -125,7 +125,7 @@ void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const Gr
         FRaytracingGeometryContext& Context = RaytracingGeometryContextList[i];
         FMesh* Mesh = Context.Mesh;
         FPBRMaterial* Material = Context.Material;
-        uint32_t MaterialSrvIndex = Context.Material->AlbedoTexture.SrvIndex;
+        uint32_t MaterialSrvIndex = Context.Material->GetAlbedoSrv();
 
         if (Mesh)
         {
@@ -146,11 +146,11 @@ void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const Gr
                 interlop::FRaytracingMaterial{
                     .albedoTextureIndex = MaterialSrvIndex,
                     .albedoTextureSamplerIndex = Material->AlbedoSampler.SamplerIndex,
-                    .metalRoughnessTextureIndex = Material->MetalRoughnessTexture.SrvIndex,
+                    .metalRoughnessTextureIndex = Material->GetMetalRoughnessSrv(),
                     .metalRoughnessTextureSamplerIndex = Material->MetalRoughnessSampler.SamplerIndex,
-                    .normalTextureIndex = Material->NormalTexture.SrvIndex,
+                    .normalTextureIndex = Material->GetNormalSrv(),
                     .normalTextureSamplerIndex = Material->NormalSampler.SamplerIndex,
-					.ormTextureIndex = Material->ORMTexture.SrvIndex,
+					.ormTextureIndex = Material->GetORMTextureSrv(),
 					.ormTextureSamplerIndex = Material->ORMSampler.SamplerIndex,
                     .albedoColor = Material->MaterialBufferData.albedoColor,
 					.metallic = Material->MaterialBufferData.metallicFactor,

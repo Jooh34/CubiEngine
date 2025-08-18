@@ -163,9 +163,7 @@ void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice
             Desc.Height = static_cast<uint32_t>(Height);
             Desc.Usage = ETextureUsage::TextureFromData;
 
-            FTexture texture = GraphicsDevice->CreateTexture(Desc, (std::byte*)data);
-
-            return texture;
+            return GraphicsDevice->CreateTexture(Desc, (std::byte*)data);
         };
 
     Materials.resize(GLTFModel.materials.size());

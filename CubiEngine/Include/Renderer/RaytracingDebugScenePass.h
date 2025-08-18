@@ -16,11 +16,11 @@ public:
 
     void AddPass(FGraphicsContext* GraphicsContext, FScene* Scene);
 
-    FTexture& GetRaytracingDebugSceneTexture() { return RaytracingDebugSceneTexture; }
+    FTexture* GetRaytracingDebugSceneTexture() { return RaytracingDebugSceneTexture.get(); }
 
 private:
     FRaytracingPipelineState RaytracingDebugScenePassPipelineState;
     FShaderBindingTable RaytracingDebugScenePassSBT;
 
-    FTexture RaytracingDebugSceneTexture;
+    std::unique_ptr<FTexture> RaytracingDebugSceneTexture;
 };

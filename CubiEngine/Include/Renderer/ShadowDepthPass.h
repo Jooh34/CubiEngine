@@ -19,13 +19,13 @@ public:
     void Render(FGraphicsContext* GraphicsContext, FScene* Scene);
     void AddVSMPassCS(FGraphicsContext* GraphicsContext, FScene* Scene);
 
-    FTexture& GetShadowDepthTexture() { return ShadowDepthTexture; }
-    FTexture& GetMomentTexture() { return MomentTexture; }
+    FTexture* GetShadowDepthTexture() { return ShadowDepthTexture.get(); }
+    FTexture* GetMomentTexture() { return MomentTexture.get(); }
     XMMATRIX GetViewProjectionMatrix(int Index) { return ViewProjectionMatrix[Index]; }
 
 private:
-    FTexture ShadowDepthTexture;
-    FTexture MomentTexture;
+    std::unique_ptr<FTexture> ShadowDepthTexture;
+    std::unique_ptr<FTexture> MomentTexture;
 
     FPipelineState ShadowDepthPassPipelineState;
     FPipelineState VSMShadowDepthPassPipelineState;

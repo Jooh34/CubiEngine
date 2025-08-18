@@ -20,10 +20,10 @@ public:
 
     virtual void Reset();
     
-    void AddResourceBarrier(FTexture& Texture, const D3D12_RESOURCE_STATES NewState);
+    void AddResourceBarrier(FTexture* Texture, const D3D12_RESOURCE_STATES NewState);
     void AddResourceBarrier(D3D12_RESOURCE_BARRIER& Barrier);
 
-    void AddUAVBarrier(FTexture& Texture);
+    void AddUAVBarrier(FTexture* Texture);
     void AddUAVBarrier(FBuffer& Buffer);
 
     void ExecuteResourceBarriers();

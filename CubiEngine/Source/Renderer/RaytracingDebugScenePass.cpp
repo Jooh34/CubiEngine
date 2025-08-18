@@ -31,7 +31,7 @@ void FRaytracingDebugScenePass::InitSizeDependantResource(const FGraphicsDevice*
 
 void FRaytracingDebugScenePass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene)
 {
-    GraphicsContext->AddResourceBarrier(RaytracingDebugSceneTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(RaytracingDebugSceneTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 
     D3D12_DISPATCH_RAYS_DESC RayDesc = RaytracingDebugScenePassSBT.CreateRayDesc(Width, Height);
@@ -46,12 +46,12 @@ void FRaytracingDebugScenePass::AddPass(FGraphicsContext* GraphicsContext, FScen
 
     interlop::RTSceneDebugRenderResource RenderResources = {
         .invViewProjectionMatrix = Scene->GetCamera().GetInvViewProjMatrix(),
-        .dstTextureIndex = RaytracingDebugSceneTexture.UavIndex,
+        .dstTextureIndex = RaytracingDebugSceneTexture->UavIndex,
         .geometryInfoBufferIdx = Scene->GetRaytracingScene().GetGeometryInfoBufferSrv(),
         .materialBufferIdx = Scene->GetRaytracingScene().GetMaterialBufferSrv(),
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
-        .envmapTextureIndex = Scene->GetEnvironmentMap()->CubeMapTexture.SrvIndex,
+        .envmapTextureIndex = Scene->GetEnvironmentMap()->CubeMapTexture->SrvIndex,
     };
 
     GraphicsContext->SetComputeRoot32BitConstants(RTParams_CBuffer, 48u, &RenderResources);

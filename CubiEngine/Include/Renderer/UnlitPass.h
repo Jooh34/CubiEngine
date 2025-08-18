@@ -15,8 +15,8 @@ public:
 	void InitSizeDependantResource(const FGraphicsDevice* Device, uint32_t InWidth, uint32_t InHeight) override;
 
     void Render(FScene* const Scene, FGraphicsContext* const GraphicsContext,
-        const FTexture& DepthBuffer, uint32_t Width, uint32_t Height);
+        const FTexture* DepthBuffer, uint32_t Width, uint32_t Height);
 
-    FTexture UnlitTexture;
+    std::unique_ptr<FTexture> UnlitTexture;
     FPipelineState UnlitPipelineState;
 };

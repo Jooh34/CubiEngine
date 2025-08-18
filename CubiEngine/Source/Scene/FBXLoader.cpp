@@ -59,7 +59,7 @@ D3D12_TEXTURE_ADDRESS_MODE FFBXLoader::ConvertTextureAddressMode(aiTextureMapMod
 
 void FFBXLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const aiScene* Scene)
 {
-    auto LoadTexture = [&](aiMaterial* material, std::string& material_name, aiTextureType type, DXGI_FORMAT format, FTexture& outTexture, FSampler& outSampler)
+    auto LoadTexture = [&](aiMaterial* material, std::string& material_name, aiTextureType type, DXGI_FORMAT format, std::unique_ptr<FTexture>& outTexture, FSampler& outSampler)
         {
             if (material->GetTextureCount(type) > 0)
             {

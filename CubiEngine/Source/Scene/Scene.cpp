@@ -247,12 +247,12 @@ void FScene::RenderEnvironmentMap(FGraphicsContext* const GraphicsContext, FScen
 {
     interlop::ScreenSpaceCubeMapRenderResources RenderResource = {
         .sceneBufferIndex = GetSceneBuffer().CbvIndex,
-        .cubenmapTextureIndex = GetEnvironmentMap()->CubeMapTexture.SrvIndex,
+        .cubenmapTextureIndex = GetEnvironmentMap()->CubeMapTexture->SrvIndex,
     };
 
     if (GetEnvironmentMap())
     {
-        GetEnvironmentMap()->Render(GraphicsContext, RenderResource, SceneTexture.HDRTexture, SceneTexture.DepthTexture);
+        GetEnvironmentMap()->Render(GraphicsContext, RenderResource, SceneTexture.HDRTexture.get(), SceneTexture.DepthTexture.get());
     }
 }
 

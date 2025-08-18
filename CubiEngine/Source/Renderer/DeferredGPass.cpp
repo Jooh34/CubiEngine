@@ -68,13 +68,13 @@ void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const Graphic
         SCOPED_NAMED_EVENT(GraphicsContext, DeferredGPassModel);
 
         GraphicsContext->SetGraphicsPipelineState(GeometryPassPipelineState);
-        std::array<FTexture, 4> Textures = {
-            SceneTexture.GBufferA,
-            SceneTexture.GBufferB,
-            SceneTexture.GBufferC,
-            SceneTexture.VelocityTexture,
+        std::array<const FTexture*, 4> Textures = {
+            SceneTexture.GBufferA.get(),
+            SceneTexture.GBufferB.get(),
+            SceneTexture.GBufferC.get(),
+            SceneTexture.VelocityTexture.get(),
         };
-        GraphicsContext->SetRenderTargets(Textures, SceneTexture.DepthTexture);
+        GraphicsContext->SetRenderTargets(Textures, SceneTexture.DepthTexture.get());
         GraphicsContext->SetViewport(D3D12_VIEWPORT{
             .TopLeftX = 0.0f,
             .TopLeftY = 0.0f,
@@ -87,10 +87,10 @@ void FDeferredGPass::Render(FScene* const Scene, FGraphicsContext* const Graphic
         GraphicsContext->SetPrimitiveTopologyLayout(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         
         // No need to clear GBuffer
-        GraphicsContext->ClearRenderTargetView(SceneTexture.GBufferA, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-        GraphicsContext->ClearRenderTargetView(SceneTexture.GBufferB, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-        GraphicsContext->ClearRenderTargetView(SceneTexture.GBufferC, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-        GraphicsContext->ClearRenderTargetView(SceneTexture.HDRTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        GraphicsContext->ClearRenderTargetView(SceneTexture.GBufferA.get(), std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        GraphicsContext->ClearRenderTargetView(SceneTexture.GBufferB.get(), std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        GraphicsContext->ClearRenderTargetView(SceneTexture.GBufferC.get(), std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        GraphicsContext->ClearRenderTargetView(SceneTexture.HDRTexture.get(), std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
 
         interlop::DeferredGPassRenderResources RenderResources{};
 
@@ -118,20 +118,20 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
     interlop::PBRRenderResources RenderResources = {
         .dstTexelSize = {1.0f / Width, 1.0f / Height},
         .numCascadeShadowMap = GNumCascadeShadowMap,
-        .GBufferAIndex = SceneTexture.GBufferA.SrvIndex,
-        .GBufferBIndex = SceneTexture.GBufferB.SrvIndex,
-        .GBufferCIndex = SceneTexture.GBufferC.SrvIndex,
-        .depthTextureIndex = SceneTexture.DepthTexture.SrvIndex,
-        .prefilteredEnvmapIndex = Scene->GetEnvironmentMap()->PrefilteredCubemapTexture.SrvIndex,
-        .cubemapTextureIndex = Scene->GetEnvironmentMap()->CubeMapTexture.SrvIndex,
-        .envBRDFTextureIndex = Scene->GetEnvironmentMap()->BRDFLutTexture.SrvIndex,
-        .envIrradianceTextureIndex = Scene->GetEnvironmentMap()->IrradianceCubemapTexture.SrvIndex,
+        .GBufferAIndex = SceneTexture.GBufferA->SrvIndex,
+        .GBufferBIndex = SceneTexture.GBufferB->SrvIndex,
+        .GBufferCIndex = SceneTexture.GBufferC->SrvIndex,
+        .depthTextureIndex = SceneTexture.DepthTexture->SrvIndex,
+        .prefilteredEnvmapIndex = Scene->GetEnvironmentMap()->PrefilteredCubemapTexture->SrvIndex,
+        .cubemapTextureIndex = Scene->GetEnvironmentMap()->CubeMapTexture->SrvIndex,
+        .envBRDFTextureIndex = Scene->GetEnvironmentMap()->BRDFLutTexture->SrvIndex,
+        .envIrradianceTextureIndex = Scene->GetEnvironmentMap()->IrradianceCubemapTexture->SrvIndex,
         .envMipCount = Scene->GetEnvironmentMap()->GetMipCount(),
-        .shadowDepthTextureIndex = ShadowDepthPass->GetShadowDepthTexture().SrvIndex,
+        .shadowDepthTextureIndex = ShadowDepthPass->GetShadowDepthTexture()->SrvIndex,
         .rtShadowDepthTextureIndex = RaytracingShadowTexture ? RaytracingShadowTexture->SrvIndex : INVALID_INDEX_U32,
-        .vsmMomentTextureIndex = Scene->bUseVSM ? ShadowDepthPass->GetMomentTexture().SrvIndex : INVALID_INDEX_U32,
+        .vsmMomentTextureIndex = Scene->bUseVSM ? ShadowDepthPass->GetMomentTexture()->SrvIndex : INVALID_INDEX_U32,
         .ssaoTextureIndex = SSAOTexture ? SSAOTexture->SrvIndex : INVALID_INDEX_U32,
-        .outputTextureIndex = SceneTexture.HDRTexture.UavIndex,
+        .outputTextureIndex = SceneTexture.HDRTexture->UavIndex,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
         .shadowBufferIndex = Scene->GetShadowBuffer().CbvIndex,
@@ -145,15 +145,15 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
     };
 
     // Resource Barrier
-    GraphicsContext->AddResourceBarrier(SceneTexture.GBufferA, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(SceneTexture.GBufferB, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(SceneTexture.GBufferC, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(SceneTexture.VelocityTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.GBufferA.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.GBufferB.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.GBufferC.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.VelocityTexture.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->AddResourceBarrier(ShadowDepthPass->GetShadowDepthTexture(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(SceneTexture.HDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(SceneTexture.HDRTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     if (SSAOTexture)
     {
-        GraphicsContext->AddResourceBarrier(*SSAOTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        GraphicsContext->AddResourceBarrier(SSAOTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     }
     if (Scene->bUseVSM)
     {

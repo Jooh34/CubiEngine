@@ -62,7 +62,7 @@ void FEyeAdaptationPass::GenerateHistogram(FGraphicsContext* GraphicsContext, FS
 {
     SCOPED_NAMED_EVENT(GraphicsContext, GenerateHistogram);
 
-    GraphicsContext->AddResourceBarrier(*HDR, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(HDR, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->ExecuteResourceBarriers();
     
     float inverseLogLuminanceRange = 1.f / (Scene->HistogramLogMax - Scene->HistogramLogMin);
@@ -114,11 +114,11 @@ void FEyeAdaptationPass::ToneMapping(FGraphicsContext* GraphicsContext, FScene* 
 {
     SCOPED_NAMED_EVENT(GraphicsContext, EyeAdaptationTonemapping);
 
-    GraphicsContext->AddResourceBarrier(*LDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-    GraphicsContext->AddResourceBarrier(*HDRTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(LDRTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(HDRTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     if (BloomTexture)
     {
-        GraphicsContext->AddResourceBarrier(*BloomTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        GraphicsContext->AddResourceBarrier(BloomTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     }
     GraphicsContext->ExecuteResourceBarriers();
 

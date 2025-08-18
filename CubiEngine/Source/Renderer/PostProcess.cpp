@@ -43,7 +43,7 @@ void FPostProcess::InitSizeDependantResource(const FGraphicsDevice* const Device
 }
 
 void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext, FScene* Scene,
-    FTexture& HDRTexture, FTexture& LDRTexture, uint32_t Width, uint32_t Height)
+    FTexture* HDRTexture, FTexture* LDRTexture, uint32_t Width, uint32_t Height)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, Tonemapping);
 
@@ -52,8 +52,8 @@ void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext, FScene* 
     GraphicsContext->ExecuteResourceBarriers();
 
     interlop::TonemappingRenderResources RenderResources = {
-        .srcTextureIndex = HDRTexture.SrvIndex,
-        .dstTextureIndex = LDRTexture.UavIndex,
+        .srcTextureIndex = HDRTexture->SrvIndex,
+        .dstTextureIndex = LDRTexture->UavIndex,
         .bloomTextureIndex = INVALID_INDEX_U32,
         .width = Width,
         .height = Height,
@@ -72,18 +72,18 @@ void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext, FScene* 
     1);
 }
 
-void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture& SrcTexture, FTexture& TargetTexture, uint32_t Width, uint32_t Height)
+void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FScene* Scene, FTexture* SrcTexture, FTexture* TargetTexture, uint32_t Width, uint32_t Height)
 {
     SCOPED_NAMED_EVENT(GraphicsContext, DebugVisualize);
 
     GraphicsContext->AddResourceBarrier(TargetTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
     
-    if (SrcTexture.IsDepthFormat())
+    if (SrcTexture->IsDepthFormat())
     {
         interlop::DebugVisualizeDepthRenderResources RenderResources = {
-            .srcTextureIndex = SrcTexture.SrvIndex,
-            .dstTextureIndex = TargetTexture.UavIndex,
+            .srcTextureIndex = SrcTexture->SrvIndex,
+            .dstTextureIndex = TargetTexture->UavIndex,
             .visDebugMin = Scene->VisualizeDebugMin,
             .visDebugMax = Scene->VisualizeDebugMax,
         };
@@ -99,8 +99,8 @@ void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FScen
     else
     {
         interlop::DebugVisualizeRenderResources RenderResources = {
-            .srcTextureIndex = SrcTexture.SrvIndex,
-            .dstTextureIndex = TargetTexture.UavIndex,
+            .srcTextureIndex = SrcTexture->SrvIndex,
+            .dstTextureIndex = TargetTexture->UavIndex,
             .visDebugMin = Scene->VisualizeDebugMin,
             .visDebugMax = Scene->VisualizeDebugMax,
         };

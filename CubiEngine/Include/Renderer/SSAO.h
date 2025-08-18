@@ -17,7 +17,7 @@ public:
     void GenerateSSAOKernel();
     void AddSSAOPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture);
     
-    FTexture SSAOTexture;
+    std::unique_ptr<FTexture> SSAOTexture;
 
 private:
     FPipelineState SSAOPipelineState;

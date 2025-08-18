@@ -31,7 +31,7 @@ void FDebugPass::InitSizeDependantResource(const FGraphicsDevice* const Device, 
     TextureForCopy = Device->CreateTexture(TextureDesc);
 }
 
-void FDebugPass::Copy(FGraphicsContext* const GraphicsContext, FTexture& SrcTexture, FTexture& DstTexture, uint32_t Width, uint32_t Height)
+void FDebugPass::Copy(FGraphicsContext* const GraphicsContext, FTexture* SrcTexture, FTexture* DstTexture, uint32_t Width, uint32_t Height)
 {
     // Resource Barrier
     GraphicsContext->AddResourceBarrier(SrcTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
@@ -39,8 +39,8 @@ void FDebugPass::Copy(FGraphicsContext* const GraphicsContext, FTexture& SrcText
     GraphicsContext->ExecuteResourceBarriers();
 
     interlop::CopyRenderResources RenderResources = {
-        .srcTextureIndex = SrcTexture.SrvIndex,
-        .dstTextureIndex = DstTexture.UavIndex,
+        .srcTextureIndex = SrcTexture->SrvIndex,
+        .dstTextureIndex = DstTexture->UavIndex,
     };
 
     GraphicsContext->SetComputePipelineState(CopyPipelineState);

@@ -23,17 +23,17 @@ public:
     void UpdateHistory(FGraphicsContext* const GraphicsContext, FScene* Scene);
     void CompositionSSGI(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture);
 
-    FTexture StochasticNormalTexture;
-    FTexture ScreenSpaceGITexture;
-    FTexture DenoisedScreenSpaceGITexture;
+    std::unique_ptr<FTexture> StochasticNormalTexture;
+    std::unique_ptr<FTexture> ScreenSpaceGITexture;
+    std::unique_ptr<FTexture> DenoisedScreenSpaceGITexture;
 
-    FTexture HistoryTexture;
-    FTexture HistroyNumFrameAccumulated;
-    FTexture ResolveTexture;
+    std::unique_ptr<FTexture> HistoryTexture;
+    std::unique_ptr<FTexture> HistroyNumFrameAccumulated;
+    std::unique_ptr<FTexture> ResolveTexture;
 
-    FTexture HalfTexture;
-    FTexture QuarterTexture;
-    FTexture BlurXTexture;
+    std::unique_ptr<FTexture> HalfTexture;
+    std::unique_ptr<FTexture> QuarterTexture;
+    std::unique_ptr<FTexture> BlurXTexture;
 
     
 private:

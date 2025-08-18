@@ -37,7 +37,7 @@ public:
     void OnWindowResized(uint32_t InWidth, uint32_t InHeight);
 
     FSampler CreateSampler(const FSamplerCreationDesc& Desc) const;
-    FTexture CreateTexture(const FTextureCreationDesc& InTextureCreationDesc, const void* Data = nullptr) const;
+    std::unique_ptr<FTexture> CreateTexture(const FTextureCreationDesc& InTextureCreationDesc, const void* Data = nullptr) const;
     FPipelineState CreatePipelineState(const FGraphicsPipelineStateCreationDesc Desc) const;
     FPipelineState CreatePipelineState(const FComputePipelineStateCreationDesc Desc) const;
 
@@ -58,7 +58,7 @@ public:
     FDescriptorHeap* GetSamplerDescriptorHeap() const { return SamplerDescriptorHeap.get(); }
 
     FGraphicsContext* GetCurrentGraphicsContext() const { return PerFrameGraphicsContexts[CurrentFrameIndex].get(); }
-    FTexture& GetCurrentBackBuffer() { return BackBuffers[CurrentFrameIndex]; }
+    FTexture* GetCurrentBackBuffer() { return BackBuffers[CurrentFrameIndex].get(); }
 
     FGPUProfiler& GetGPUProfiler() { return GPUProfiler; }
     
@@ -71,7 +71,7 @@ public:
     
     std::unique_ptr<FComputeContext> GetComputeContext();
 
-    void GenerateMipmap(FTexture& Texture);
+    void GenerateMipmap(FTexture* Texture);
 
     DXGI_FORMAT GetSwapChainFormat() { return SwapchainFormat; }
 
@@ -116,7 +116,7 @@ private:
     DXGI_FORMAT SwapchainFormat;
     uint64_t CurrentFrameIndex{};
     std::array<FFenceValues, FRAMES_IN_FLIGHT> FenceValues{}; // Signal for Command Queue
-    std::array<FTexture, FRAMES_IN_FLIGHT> BackBuffers{};
+    std::array<std::unique_ptr<FTexture>, FRAMES_IN_FLIGHT> BackBuffers{};
 
     std::array<std::unique_ptr<FGraphicsContext>, FRAMES_IN_FLIGHT> PerFrameGraphicsContexts{};
     std::unique_ptr<FCopyContext> CopyContext;

@@ -14,7 +14,7 @@ void FMesh::Render(const FGraphicsContext* const GraphicsContext,
 
 	UnlitRenderResources.modelMatrix = GetModelMatrix();
 
-    UnlitRenderResources.albedoTextureIndex = Material->AlbedoTexture.SrvIndex;
+    UnlitRenderResources.albedoTextureIndex = Material->GetAlbedoSrv();
     UnlitRenderResources.albedoTextureSamplerIndex = Material->AlbedoSampler.SamplerIndex;
 
     UnlitRenderResources.materialBufferIndex = Material->MaterialBuffer.CbvIndex;
@@ -34,22 +34,22 @@ void FMesh::Render(const FGraphicsContext* const GraphicsContext, FScene* Scene,
 	DeferredGPassRenderResources.modelMatrix = GetModelMatrix();
 	DeferredGPassRenderResources.inverseModelMatrix = GetInverseModelMatrix();
 
-	DeferredGPassRenderResources.albedoTextureIndex = Material->AlbedoTexture.SrvIndex;
+	DeferredGPassRenderResources.albedoTextureIndex = Material->GetAlbedoSrv();
 	DeferredGPassRenderResources.albedoTextureSamplerIndex = Material->AlbedoSampler.SamplerIndex;
 
-	DeferredGPassRenderResources.metalRoughnessTextureIndex = Material->MetalRoughnessTexture.SrvIndex;
+	DeferredGPassRenderResources.metalRoughnessTextureIndex = Material->GetMetalRoughnessSrv();
 	DeferredGPassRenderResources.metalRoughnessTextureSamplerIndex = Material->MetalRoughnessSampler.SamplerIndex;
 
-	DeferredGPassRenderResources.normalTextureIndex = Material->NormalTexture.SrvIndex;
+	DeferredGPassRenderResources.normalTextureIndex = Material->GetNormalSrv();
 	DeferredGPassRenderResources.normalTextureSamplerIndex = Material->NormalSampler.SamplerIndex;
 
-	DeferredGPassRenderResources.aoTextureIndex = Material->AOTexture.SrvIndex;
+	DeferredGPassRenderResources.aoTextureIndex = Material->GetAOTextureSrv();
 	DeferredGPassRenderResources.aoTextureSamplerIndex = Material->AOSampler.SamplerIndex;
 
-	DeferredGPassRenderResources.emissiveTextureIndex = Material->EmissiveTexture.SrvIndex;
+	DeferredGPassRenderResources.emissiveTextureIndex = Material->GetEmissiveSrv();
 	DeferredGPassRenderResources.emissiveTextureSamplerIndex = Material->EmissiveSampler.SamplerIndex;
 
-	DeferredGPassRenderResources.ormTextureIndex = Material->ORMTexture.SrvIndex;
+	DeferredGPassRenderResources.ormTextureIndex = Material->GetORMTextureSrv();
 	DeferredGPassRenderResources.ormTextureSamplerIndex = Material->ORMSampler.SamplerIndex;
 
 	DeferredGPassRenderResources.materialBufferIndex = Material->MaterialBuffer.CbvIndex;

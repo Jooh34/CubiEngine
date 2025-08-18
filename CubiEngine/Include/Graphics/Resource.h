@@ -156,16 +156,16 @@ struct FIntRect
 struct FSceneTexture
 {
     FIntRect Size{};
-    FTexture GBufferA{}; // Albedo
-    FTexture GBufferB{}; // Normal
-    FTexture GBufferC{}; // AO + MetalRoughness
-    FTexture VelocityTexture{};
+    std::unique_ptr<FTexture> GBufferA; // Albedo
+    std::unique_ptr<FTexture> GBufferB; // Normal
+    std::unique_ptr<FTexture> GBufferC; // AO + MetalRoughness
+    std::unique_ptr<FTexture> VelocityTexture;
 
-    FTexture DepthTexture{};
-    FTexture PrevDepthTexture{};
+    std::unique_ptr<FTexture> DepthTexture;
+    std::unique_ptr<FTexture> PrevDepthTexture;
 
-    FTexture LDRTexture{};
-    FTexture HDRTexture{};
+    std::unique_ptr<FTexture> LDRTexture;
+    std::unique_ptr<FTexture> HDRTexture;
 };
 
 struct FCbvCreationDesc

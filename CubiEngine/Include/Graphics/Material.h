@@ -7,23 +7,29 @@ class FPBRMaterial
 public:
     std::string Name{};
 
-    FTexture AlbedoTexture{};
+    uint32_t GetAlbedoSrv() const { return AlbedoTexture ? AlbedoTexture->SrvIndex : INVALID_INDEX_U32; };
+    std::unique_ptr<FTexture> AlbedoTexture;
     FSampler AlbedoSampler{};
 
-    FTexture NormalTexture{};
+	uint32_t GetNormalSrv() const { return NormalTexture ? NormalTexture->SrvIndex : INVALID_INDEX_U32; };
+    std::unique_ptr<FTexture> NormalTexture;
     FSampler NormalSampler{};
 
-    FTexture MetalRoughnessTexture{};
+	uint32_t GetMetalRoughnessSrv() const { return MetalRoughnessTexture ? MetalRoughnessTexture->SrvIndex : INVALID_INDEX_U32; };
+    std::unique_ptr<FTexture> MetalRoughnessTexture;
     FSampler MetalRoughnessSampler{};
 
-    FTexture AOTexture{};
+	uint32_t GetAOTextureSrv() const { return AOTexture ? AOTexture->SrvIndex : INVALID_INDEX_U32; };
+    std::unique_ptr<FTexture> AOTexture;
     FSampler AOSampler{};
 
-    FTexture EmissiveTexture{};
+	uint32_t GetEmissiveSrv() const { return EmissiveTexture ? EmissiveTexture->SrvIndex : INVALID_INDEX_U32; };
+    std::unique_ptr<FTexture> EmissiveTexture;
     FSampler EmissiveSampler{};
 
-    FTexture ORMTexture{}; // Bistro
-    FSampler ORMSampler{}; // Bistro
+	uint32_t GetORMTextureSrv() const { return ORMTexture ? ORMTexture->SrvIndex : INVALID_INDEX_U32; };
+    std::unique_ptr<FTexture> ORMTexture;
+    FSampler ORMSampler{};
 
     FBuffer MaterialBuffer{};
     interlop::MaterialBuffer MaterialBufferData;

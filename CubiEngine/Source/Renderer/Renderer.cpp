@@ -51,23 +51,23 @@ void FRenderer::GameTick(float DeltaTime, FInput* Input)
     Editor->GameTick(DeltaTime, Input);
 }
 
-void FRenderer::BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer)
+void FRenderer::BeginFrame(FGraphicsContext* GraphicsContext, FTexture* BackBuffer)
 {
     GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
     if (DeferredGPass)
     {
-        GraphicsContext->AddResourceBarrier(SceneTexture.GBufferA, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        GraphicsContext->AddResourceBarrier(SceneTexture.GBufferB, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        GraphicsContext->AddResourceBarrier(SceneTexture.GBufferC, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        GraphicsContext->AddResourceBarrier(SceneTexture.VelocityTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        GraphicsContext->AddResourceBarrier(SceneTexture.HDRTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(SceneTexture.GBufferA.get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(SceneTexture.GBufferB.get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(SceneTexture.GBufferC.get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(SceneTexture.VelocityTexture.get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(SceneTexture.HDRTexture.get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
     }
-    GraphicsContext->AddResourceBarrier(SceneTexture.DepthTexture, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.DepthTexture.get(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
     GraphicsContext->ExecuteResourceBarriers();
 
     float RenderTargetClearValue[4] = { 0,0,0,1 };
     GraphicsContext->ClearRenderTargetView(BackBuffer, RenderTargetClearValue);
-    GraphicsContext->ClearDepthStencilView(SceneTexture.DepthTexture);
+    GraphicsContext->ClearDepthStencilView(SceneTexture.DepthTexture.get());
 
     GraphicsContext->SetGraphicsRootSignature();
     GraphicsContext->SetComputeRootSignature();
@@ -78,10 +78,10 @@ void FRenderer::CopyHistoricalTexture(FGraphicsContext* GraphicsContext)
     SCOPED_NAMED_EVENT(GraphicsContext, CopyHistoricalTexture);
 
     // Copy Prev Depth Texture
-    GraphicsContext->AddResourceBarrier(SceneTexture.DepthTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
-    GraphicsContext->AddResourceBarrier(SceneTexture.PrevDepthTexture, D3D12_RESOURCE_STATE_COPY_DEST);
+    GraphicsContext->AddResourceBarrier(SceneTexture.DepthTexture.get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.PrevDepthTexture.get(), D3D12_RESOURCE_STATE_COPY_DEST);
     GraphicsContext->ExecuteResourceBarriers();
-    GraphicsContext->CopyResource(SceneTexture.PrevDepthTexture.GetResource(), SceneTexture.DepthTexture.GetResource());
+    GraphicsContext->CopyResource(SceneTexture.PrevDepthTexture->GetResource(), SceneTexture.DepthTexture->GetResource());
 }
 
 void FRenderer::Render()
@@ -90,7 +90,7 @@ void FRenderer::Render()
     GraphicsDevice->GetGPUProfiler().BeginFrame();
 
     FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
-    FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
+    FTexture* BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
 
     BeginFrame(GraphicsContext, BackBuffer);
 
@@ -141,7 +141,7 @@ void FRenderer::Render()
 
 void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
 {
-    FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
+    FTexture* BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
 
     // ----- Deferred GPass ----
     if (DeferredGPass)
@@ -179,9 +179,9 @@ void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
         SCOPED_NAMED_EVENT(GraphicsContext, LightPass);
         SCOPED_GPU_EVENT(GraphicsDevice, LightPass);
 
-        FTexture* SSAOTexture = Scene->bUseSSAO ? &SSAOPass->SSAOTexture : nullptr;
+        FTexture* SSAOTexture = Scene->bUseSSAO ? SSAOPass->SSAOTexture.get() : nullptr;
         DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext,
-            ShadowDepthPass.get(), SceneTexture, SSAOTexture, &RaytracingShadowPass->GetRaytracingShadowTexture()
+            ShadowDepthPass.get(), SceneTexture, SSAOTexture, RaytracingShadowPass->GetRaytracingShadowTexture()
         );
     }
     // ----- Deferred Lighting Pass -----
@@ -199,8 +199,8 @@ void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
         SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
 
-        FTexture* HDR = &SceneTexture.HDRTexture;
-        FTexture* LDR = &SceneTexture.LDRTexture;
+        FTexture* HDR = SceneTexture.HDRTexture.get();
+        FTexture* LDR = SceneTexture.LDRTexture.get();
 
         if (Scene.get()->bUseTaa)
         {
@@ -208,7 +208,7 @@ void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
             SCOPED_GPU_EVENT(GraphicsDevice, TemporalAA);
 
             TemporalAA->Resolve(GraphicsContext, Scene.get(), SceneTexture);
-            HDR = &TemporalAA->ResolveTexture;
+            HDR = TemporalAA->ResolveTexture.get();
 
             TemporalAA->UpdateHistory(GraphicsContext, Scene.get());
         }
@@ -233,7 +233,7 @@ void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
             SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);
             EyeAdaptationPass->ToneMapping(GraphicsContext, Scene.get(), HDR, LDR,
-                Scene->bUseBloom ? &BloomPass->BloomResultTexture : nullptr);
+                Scene->bUseBloom ? BloomPass->BloomResultTexture.get() : nullptr);
         }
 
         // PostProcess->Tonemapping(GraphicsContext, Scene.get(), *HDR, Width, Height);
@@ -245,15 +245,15 @@ void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
             FTexture* SelectedTexture = GetDebugVisualizeTexture(Scene.get());
             if (SelectedTexture != nullptr)
             {
-                PostProcess->DebugVisualize(GraphicsContext, Scene.get(), *SelectedTexture, *LDR, Width, Height);
+                PostProcess->DebugVisualize(GraphicsContext, Scene.get(), SelectedTexture, LDR, Width, Height);
             }
         }
         // ----- Vis Debug -----
 
-        GraphicsContext->AddResourceBarrier(*LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        GraphicsContext->AddResourceBarrier(LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
         GraphicsContext->ExecuteResourceBarriers();
-        GraphicsContext->CopyResource(BackBuffer.GetResource(), LDR->GetResource());
+        GraphicsContext->CopyResource(BackBuffer->GetResource(), LDR->GetResource());
     }
 
     CopyHistoricalTexture(GraphicsContext);
@@ -274,21 +274,21 @@ void FRenderer::RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext)
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
         SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
 
-        FTexture* HDR = &RaytracingDebugScenePass->GetRaytracingDebugSceneTexture();
-        FTexture* LDR = &SceneTexture.LDRTexture;
+        FTexture* HDR = RaytracingDebugScenePass->GetRaytracingDebugSceneTexture();
+        FTexture* LDR = SceneTexture.LDRTexture.get();
 
         {
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
             SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);
-            PostProcess->Tonemapping(GraphicsContext, Scene.get(), *HDR, *LDR, Width, Height);
+            PostProcess->Tonemapping(GraphicsContext, Scene.get(), HDR, LDR, Width, Height);
         }
 
-        FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
+        FTexture* BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
 
-        GraphicsContext->AddResourceBarrier(*LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        GraphicsContext->AddResourceBarrier(LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
         GraphicsContext->ExecuteResourceBarriers();
-        GraphicsContext->CopyResource(BackBuffer.GetResource(), LDR->GetResource());
+        GraphicsContext->CopyResource(BackBuffer->GetResource(), LDR->GetResource());
     }
 }
 
@@ -306,21 +306,21 @@ void FRenderer::RenderPathTracingScene(FGraphicsContext* GraphicsContext)
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
         SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
 
-        FTexture* HDR = &PathTracingPass->GetPathTracingSceneTexture();
-        FTexture* LDR = &SceneTexture.LDRTexture;
+        FTexture* HDR = PathTracingPass->GetPathTracingSceneTexture();
+        FTexture* LDR = SceneTexture.LDRTexture.get();
 
         {
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
             SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);
-            PostProcess->Tonemapping(GraphicsContext, Scene.get(), *HDR, *LDR, Width, Height);
+            PostProcess->Tonemapping(GraphicsContext, Scene.get(), HDR, LDR, Width, Height);
         }
 
-        FTexture& BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
+        FTexture* BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
 
-        GraphicsContext->AddResourceBarrier(*LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        GraphicsContext->AddResourceBarrier(LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
         GraphicsContext->ExecuteResourceBarriers();
-        GraphicsContext->CopyResource(BackBuffer.GetResource(), LDR->GetResource());
+        GraphicsContext->CopyResource(BackBuffer->GetResource(), LDR->GetResource());
     }
 }
 
@@ -454,91 +454,91 @@ FTexture* FRenderer::GetDebugVisualizeTexture(FScene* Scene)
 
     if (Name.compare("Depth") == 0)
     {
-        return &SceneTexture.DepthTexture;
+        return SceneTexture.DepthTexture.get();
     }
     else if (Name.compare("GBufferA") == 0)
     {
-        return &SceneTexture.GBufferA;
+        return SceneTexture.GBufferA.get();
     }
     else if (Name.compare("GBufferB") == 0)
     {
-        return &SceneTexture.GBufferB;
+        return SceneTexture.GBufferB.get();
     }
     else if (Name.compare("GBufferC") == 0)
     {
-        return &SceneTexture.GBufferC;
+        return SceneTexture.GBufferC.get();
     }
     else if (Name.compare("HDRTexture") == 0)
     {
-        return &SceneTexture.HDRTexture;
+        return SceneTexture.HDRTexture.get();
     }
     else if (Name.compare("TemporalHistory") == 0)
     {
-        return &TemporalAA->HistoryTexture;
+        return TemporalAA->HistoryTexture.get();
     }
     else if (Name.compare("StochasticNormal") == 0)
     {
-        return &ScreenSpaceGI->StochasticNormalTexture;
+        return ScreenSpaceGI->StochasticNormalTexture.get();
     }
     else if (Name.compare("ScreenSpaceGI") == 0)
     {
-        return &ScreenSpaceGI->ScreenSpaceGITexture;
+        return ScreenSpaceGI->ScreenSpaceGITexture.get();
     }
     else if (Name.compare("SSGIHistory") == 0)
     {
-        return &ScreenSpaceGI->HistoryTexture;
+        return ScreenSpaceGI->HistoryTexture.get();
     }
     else if (Name.compare("SSGIHistroyNumFrameAccumulated") == 0)
     {
-        return &ScreenSpaceGI->HistroyNumFrameAccumulated;
+        return ScreenSpaceGI->HistroyNumFrameAccumulated.get();
     }
     else if (Name.compare("QuarterTexture") == 0)
     {
-        return &ScreenSpaceGI->QuarterTexture;
+        return ScreenSpaceGI->QuarterTexture.get();
     }
     else if (Name.compare("DenoisedScreenSpaceGITexture") == 0)
     {
-        return &ScreenSpaceGI->DenoisedScreenSpaceGITexture;
+        return ScreenSpaceGI->DenoisedScreenSpaceGITexture.get();
     }
     else if (Name.compare("DownSampledSceneTexture 1/2") == 0)
     {
-        return &BloomPass->DownSampledSceneTextures[0];
+        return BloomPass->DownSampledSceneTextures[0].get();
     }
     else if (Name.compare("DownSampledSceneTexture 1/4") == 0)
     {
-        return &BloomPass->DownSampledSceneTextures[1];
+        return BloomPass->DownSampledSceneTextures[1].get();
     }
     else if (Name.compare("DownSampledSceneTexture 1/8") == 0)
     {
-        return &BloomPass->DownSampledSceneTextures[2];
+        return BloomPass->DownSampledSceneTextures[2].get();
     }
     else if (Name.compare("DownSampledSceneTexture 1/16") == 0)
     {
-        return &BloomPass->DownSampledSceneTextures[3];
+        return BloomPass->DownSampledSceneTextures[3].get();
     }
     else if (Name.compare("BloomYTexture 1/4") == 0)
     {
-        return &BloomPass->BloomYTextures[1];
+        return BloomPass->BloomYTextures[1].get();
     }
     else if (Name.compare("BloomYTexture 1/8") == 0)
     {
-        return &BloomPass->BloomYTextures[2];
+        return BloomPass->BloomYTextures[2].get();
     }
     else if (Name.compare("BloomYTexture 1/16") == 0)
     {
-        return &BloomPass->BloomYTextures[3];
+        return BloomPass->BloomYTextures[3].get();
     }
     else if (Name.compare("BloomResultTexture") == 0)
     {
-        return &BloomPass->BloomResultTexture;
+        return BloomPass->BloomResultTexture.get();
     }
     else if (Name.compare("SSAO Texture") == 0)
     {
-        return &SSAOPass->SSAOTexture;
+        return SSAOPass->SSAOTexture.get();
     }
     else if (Name.compare("RaytracingShadowTexture") == 0)
     {
-        return &RaytracingShadowPass->GetRaytracingShadowTexture();
+        return RaytracingShadowPass->GetRaytracingShadowTexture();
     }
     else
     {

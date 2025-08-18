@@ -38,10 +38,10 @@ void FUnlitPass::InitSizeDependantResource(const FGraphicsDevice* Device, uint32
 }
 
 void FUnlitPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsContext,
-    const FTexture& DepthBuffer, uint32_t Width, uint32_t Height)
+    const FTexture* DepthBuffer, uint32_t Width, uint32_t Height)
 {
     GraphicsContext->SetGraphicsPipelineState(UnlitPipelineState);
-    GraphicsContext->SetRenderTarget(UnlitTexture, DepthBuffer);
+    GraphicsContext->SetRenderTarget(UnlitTexture.get(), DepthBuffer);
     GraphicsContext->SetViewport(D3D12_VIEWPORT{
         .TopLeftX = 0.0f,
         .TopLeftY = 0.0f,
@@ -53,7 +53,7 @@ void FUnlitPass::Render(FScene* const Scene, FGraphicsContext* const GraphicsCon
 
     GraphicsContext->SetPrimitiveTopologyLayout(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    GraphicsContext->ClearRenderTargetView(UnlitTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+    GraphicsContext->ClearRenderTargetView(UnlitTexture.get(), std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
     
     interlop::UnlitPassRenderResources UnlitRenderResources{};
 

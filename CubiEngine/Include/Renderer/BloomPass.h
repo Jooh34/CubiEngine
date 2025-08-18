@@ -18,10 +18,10 @@ public:
     void AddBloomPass(FGraphicsContext* GraphicsContext, FScene* Scene, FTexture* HDR);
     void DownSampleSceneTexture(FGraphicsContext* GraphicsContext, FTexture* HDR);
 
-    FTexture BloomResultTexture;
-    std::vector<FTexture> BloomXTextures;
-    std::vector<FTexture> BloomYTextures;
-    std::vector<FTexture> DownSampledSceneTextures;
+    std::unique_ptr<FTexture> BloomResultTexture;
+    std::vector<std::unique_ptr<FTexture>> BloomXTextures;
+    std::vector<std::unique_ptr<FTexture>> BloomYTextures;
+    std::vector<std::unique_ptr<FTexture>> DownSampledSceneTextures;
 
 private:
     static constexpr int BLOOM_MAX_STEP = 4;

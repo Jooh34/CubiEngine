@@ -73,44 +73,44 @@ void FShadowDepthPass::InitSizeDependantResource(const FGraphicsDevice* const De
 void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
 {
     // todo : shader permutation to use vsm or not.
-    GraphicsContext->AddResourceBarrier(ShadowDepthTexture, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    GraphicsContext->AddResourceBarrier(ShadowDepthTexture.get(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
     if (Scene->bUseVSM)
     {
-        GraphicsContext->AddResourceBarrier(MomentTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        GraphicsContext->AddResourceBarrier(MomentTexture.get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
     }
     GraphicsContext->ExecuteResourceBarriers();
-    GraphicsContext->ClearDepthStencilView(ShadowDepthTexture);
+    GraphicsContext->ClearDepthStencilView(ShadowDepthTexture.get());
 
     if (Scene->bUseVSM)
     {
-        GraphicsContext->ClearRenderTargetView(MomentTexture, std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
+        GraphicsContext->ClearRenderTargetView(MomentTexture.get(), std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
     }
     
 
     if (Scene->bUseVSM)
     {
-        GraphicsContext->SetRenderTarget(MomentTexture, ShadowDepthTexture);
+        GraphicsContext->SetRenderTarget(MomentTexture.get(), ShadowDepthTexture.get());
         GraphicsContext->SetGraphicsPipelineState(VSMShadowDepthPassPipelineState);
     }
     else
     {
-        GraphicsContext->SetRenderTargetDepthOnly(ShadowDepthTexture);
+        GraphicsContext->SetRenderTargetDepthOnly(ShadowDepthTexture.get());
         GraphicsContext->SetGraphicsPipelineState(ShadowDepthPassPipelineState);
     }
 
     GraphicsContext->SetViewport(D3D12_VIEWPORT{
         .TopLeftX = 0.0f,
         .TopLeftY = 0.0f,
-        .Width = static_cast<float>(ShadowDepthTexture.Width),
-        .Height = static_cast<float>(ShadowDepthTexture.Height),
+        .Width = static_cast<float>(ShadowDepthTexture->Width),
+        .Height = static_cast<float>(ShadowDepthTexture->Height),
         .MinDepth = 0.0f,
         .MaxDepth = 1.0f,
     });
     GraphicsContext->SetScissorRects(D3D12_RECT{
         .left = 0u,
         .top = 0u,
-        .right = (LONG)ShadowDepthTexture.Width,
-        .bottom = (LONG)ShadowDepthTexture.Height,
+        .right = (LONG)ShadowDepthTexture->Width,
+        .bottom = (LONG)ShadowDepthTexture->Height,
     });
 
     GraphicsContext->SetPrimitiveTopologyLayout(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -127,8 +127,8 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     {
         for (int CascadeIndex = 0; CascadeIndex < GNumCascadeShadowMap; CascadeIndex++)
         {
-            float ViewportWidth = ShadowDepthTexture.Width / 2.f;
-            float ViewportHeight = ShadowDepthTexture.Height / 2.f;
+            float ViewportWidth = ShadowDepthTexture->Width / 2.f;
+            float ViewportHeight = ShadowDepthTexture->Height / 2.f;
 
             int gridX = CascadeIndex % 2;  // 0, 1 (가로 방향)
             int gridY = CascadeIndex / 2;  // 0, 1 (세로 방향)
@@ -152,8 +152,8 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
             scissorRect.bottom = static_cast<LONG>(TopLeftY + ViewportHeight);
             //scissorRect.left = 0; 
             //scissorRect.top = 0;
-            //scissorRect.right = static_cast<LONG>(ShadowDepthTexture.Width);
-            //scissorRect.bottom = static_cast<LONG>(ShadowDepthTexture.Height);
+            //scissorRect.right = static_cast<LONG>(ShadowDepthTexture->Width);
+            //scissorRect.bottom = static_cast<LONG>(ShadowDepthTexture->Height);
             GraphicsContext->SetScissorRects(scissorRect);
 
             interlop::ShadowDepthPassRenderResource RenderResources{
@@ -172,15 +172,15 @@ void FShadowDepthPass::AddVSMPassCS(FGraphicsContext* GraphicsContext, FScene* S
 
     SCOPED_NAMED_EVENT(GraphicsContext, VSMPass);
 
-    GraphicsContext->AddResourceBarrier(ShadowDepthTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(MomentTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(ShadowDepthTexture.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(MomentTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 
 
     interlop::VSMMomentPassRenderResource RenderResources = {
-        .srcTextureIndex = ShadowDepthTexture.SrvIndex,
-        .momentTextureIndex = MomentTexture.UavIndex,
-        .dstTexelSize = {1.0f / MomentTexture.Width, 1.0f / MomentTexture.Height},
+        .srcTextureIndex = ShadowDepthTexture->SrvIndex,
+        .momentTextureIndex = MomentTexture->UavIndex,
+        .dstTexelSize = {1.0f / MomentTexture->Width, 1.0f / MomentTexture->Height},
     };
 
     GraphicsContext->SetComputePipelineState(MomentPassPipelineState);
@@ -188,7 +188,7 @@ void FShadowDepthPass::AddVSMPassCS(FGraphicsContext* GraphicsContext, FScene* S
 
     // shader (8,8,1)
     GraphicsContext->Dispatch(
-        max((uint32_t)std::ceil(MomentTexture.Width / 8.0f), 1u),
-        max((uint32_t)std::ceil(MomentTexture.Height / 8.0f), 1u),
+        max((uint32_t)std::ceil(MomentTexture->Width / 8.0f), 1u),
+        max((uint32_t)std::ceil(MomentTexture->Height / 8.0f), 1u),
     1);
 }

@@ -26,7 +26,7 @@ public:
     ~FRenderer();
 
     void GameTick(float DeltaTime, FInput* Input);
-    void BeginFrame(FGraphicsContext* GraphicsContext, FTexture& BackBuffer);
+    void BeginFrame(FGraphicsContext* GraphicsContext,FTexture* BackBuffer);
     void CopyHistoricalTexture(FGraphicsContext* GraphicsContext);
     void Render();
     void RenderDeferredShading(FGraphicsContext* GraphicsContext);

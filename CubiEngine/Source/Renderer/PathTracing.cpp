@@ -43,7 +43,7 @@ void FPathTracingPass::InitSizeDependantResource(const FGraphicsDevice* const De
 
 void FPathTracingPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene)
 {
-    GraphicsContext->AddResourceBarrier(PathTracingSceneTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(PathTracingSceneTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 
     D3D12_DISPATCH_RAYS_DESC RayDesc = PathTracingPassSBT.CreateRayDesc(Width, Height);
@@ -60,15 +60,15 @@ void FPathTracingPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene)
 
     interlop::PathTraceRenderResources RenderResources = {
         .invViewProjectionMatrix = Scene->GetCamera().GetInvViewProjMatrix(),
-        .dstTextureIndex = PathTracingSceneTexture.UavIndex,
-		.frameAccumulatedTextureIndex = FrameAccumulatedTexture.UavIndex,
+        .dstTextureIndex = PathTracingSceneTexture->UavIndex,
+		.frameAccumulatedTextureIndex = FrameAccumulatedTexture->UavIndex,
         .geometryInfoBufferIdx = Scene->GetRaytracingScene().GetGeometryInfoBufferSrv(),
         .materialBufferIdx = Scene->GetRaytracingScene().GetMaterialBufferSrv(),
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
-        .envmapTextureIndex = Scene->GetEnvironmentMap()->CubeMapTexture.SrvIndex,
+        .envmapTextureIndex = Scene->GetEnvironmentMap()->CubeMapTexture->SrvIndex,
 		.envmapIntensity = Scene->EnvmapIntensity,
-        .envBRDFTextureIndex = Scene->GetEnvironmentMap()->BRDFLutTexture.SrvIndex,
+        .envBRDFTextureIndex = Scene->GetEnvironmentMap()->BRDFLutTexture->SrvIndex,
         .debugBufferIndex = Scene->GetDebugBuffer().CbvIndex,
         .maxPathDepth = 10,
         .numSamples = (uint32_t)Scene->PathTracingSamplePerPixel,

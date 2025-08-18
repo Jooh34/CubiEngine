@@ -50,7 +50,7 @@ FSampler FGraphicsDevice::CreateSampler(const FSamplerCreationDesc& Desc) const
     return Sampler;
 }
 
-FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCreationDesc, const void* Data) const
+std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCreationDesc, const void* Data) const
 {
     FTextureCreationDesc TextureCreationDesc = InTextureCreationDesc;
 
@@ -129,16 +129,16 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
     
 	bool bUAVAllowed = FTexture::IsUAVAllowed(TextureCreationDesc.Usage, TextureCreationDesc.Format);
 
-    FTexture Texture{};
+    std::unique_ptr<FTexture> Texture = std::make_unique<FTexture>();
     // GPU only memory
     D3D12_RESOURCE_STATES ResourceState;
-    Texture.Allocation = MemoryAllocator->CreateTextureResourceAllocation(TextureCreationDesc, ResourceState, bUAVAllowed);
-    Texture.Width = TextureCreationDesc.Width;
-    Texture.Height = TextureCreationDesc.Height;
-    Texture.ResourceState = ResourceState;
-    Texture.Usage = TextureCreationDesc.Usage;
-    Texture.Format = TextureCreationDesc.Format;
-    Texture.DebugName = TextureCreationDesc.Name;
+    Texture->Allocation = MemoryAllocator->CreateTextureResourceAllocation(TextureCreationDesc, ResourceState, bUAVAllowed);
+    Texture->Width = TextureCreationDesc.Width;
+    Texture->Height = TextureCreationDesc.Height;
+    Texture->ResourceState = ResourceState;
+    Texture->Usage = TextureCreationDesc.Usage;
+    Texture->Format = TextureCreationDesc.Format;
+    Texture->DebugName = TextureCreationDesc.Name;
     
     if (TextureData || HdrTextureData || TextureCreationDesc.Usage == ETextureUsage::DDSTextureFromPath) // Upload Texture Buffer
     {
@@ -176,7 +176,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
             .Name = L"Upload buffer - " + std::wstring(TextureCreationDesc.Name),
         };
 
-        const UINT64 UploadBufferSize = GetRequiredIntermediateSize(Texture.Allocation.Resource.Get(), 0, TextureSubresourceData.size());
+        const UINT64 UploadBufferSize = GetRequiredIntermediateSize(Texture->Allocation.Resource.Get(), 0, TextureSubresourceData.size());
         const FResourceCreationDesc ResourceCreationDesc = FResourceCreationDesc::CreateBufferResourceCreationDesc(UploadBufferSize);
 
         FAllocation UploadAllocation =
@@ -187,7 +187,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
 
         CopyContext->Reset();
 
-        UpdateSubresources(CopyContext->GetCommandList(), Texture.Allocation.Resource.Get(),
+        UpdateSubresources(CopyContext->GetCommandList(), Texture->Allocation.Resource.Get(),
             UploadAllocation.Resource.Get(), 0u, 0u, TextureSubresourceData.size(), TextureSubresourceData.data());
 
         CopyCommandQueue->ExecuteContext(CopyContext.get());
@@ -229,7 +229,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
             };
         }
 
-        Texture.SrvIndex = CreateSrv(SrvCreationDesc, Texture.Allocation.Resource.Get());
+        Texture->SrvIndex = CreateSrv(SrvCreationDesc, Texture->Allocation.Resource.Get());
     }
 
     {
@@ -248,7 +248,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
                     },
             };
 
-            Texture.DsvIndex = CreateDsv(dsvCreationDesc, Texture.Allocation.Resource.Get());
+            Texture->DsvIndex = CreateDsv(dsvCreationDesc, Texture->Allocation.Resource.Get());
         }
 
         // Create RTV (if applicable).
@@ -263,7 +263,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
                     },
             };
 
-            Texture.RtvIndex = CreateRtv(rtvCreationDesc, Texture.Allocation.Resource.Get());
+            Texture->RtvIndex = CreateRtv(rtvCreationDesc, Texture->Allocation.Resource.Get());
         }
 
         // Create UAV
@@ -287,12 +287,12 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
                             },
                     };
                     
-                    uint32_t UavIndex = CreateUav(UavCreationDesc, Texture.Allocation.Resource.Get());
+                    uint32_t UavIndex = CreateUav(UavCreationDesc, Texture->Allocation.Resource.Get());
                     if (i == 0)
                     {
-                        Texture.UavIndex = UavIndex;
+                        Texture->UavIndex = UavIndex;
                     }
-                    Texture.MipUavIndex.push_back(UavIndex);
+                    Texture->MipUavIndex.push_back(UavIndex);
                 }
             }
             else
@@ -307,13 +307,13 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
                                 .Texture2D = {.MipSlice = i, .PlaneSlice = 0u},
                             },
                     };
-                    uint32_t UavIndex = CreateUav(UavCreationDesc, Texture.Allocation.Resource.Get());
+                    uint32_t UavIndex = CreateUav(UavCreationDesc, Texture->Allocation.Resource.Get());
 
                     if (i == 0)
                     {
-                        Texture.UavIndex = UavIndex;
+                        Texture->UavIndex = UavIndex;
                     }
-                    Texture.MipUavIndex.push_back(UavIndex);
+                    Texture->MipUavIndex.push_back(UavIndex);
                 }
             }
 
@@ -322,7 +322,7 @@ FTexture FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCre
 
     if (bUAVAllowed && !FTexture::IsCompressedFormat(TextureCreationDesc.Format))
     {
-		MipmapGenerator->GenerateMipmap(Texture);
+		MipmapGenerator->GenerateMipmap(Texture.get());
     }
 
     return Texture;
@@ -392,7 +392,7 @@ std::unique_ptr<FComputeContext> FGraphicsDevice::GetComputeContext()
     }
 }
 
-void FGraphicsDevice::GenerateMipmap(FTexture& Texture)
+void FGraphicsDevice::GenerateMipmap(FTexture* Texture)
 {
     MipmapGenerator->GenerateMipmap(Texture);
 }
@@ -463,8 +463,8 @@ void FGraphicsDevice::ResizeSwapchainResources(uint32_t InWidth, uint32_t InHeig
 
     for (uint32_t i = 0; i < FRAMES_IN_FLIGHT; i++)
     {
-        BackBuffers[i].Allocation.Reset();
-        BackBuffers[i] = FTexture(); // Release
+        BackBuffers[i]->Allocation.Reset();
+        BackBuffers[i] = nullptr; // Release
     }
     
     // Resize the swap chain buffers
@@ -771,10 +771,11 @@ void FGraphicsDevice::CreateBackBufferRTVs()
         
         Device->CreateRenderTargetView(BackBuffer.Get(), nullptr, RtvHandle.CpuDescriptorHandle);
 
-        BackBuffers[i].Allocation.Resource = BackBuffer;
-        BackBuffers[i].Allocation.Resource->SetName(L"SwapChain BackBuffer");
-        BackBuffers[i].RtvIndex = RtvDescriptorHeap->GetDescriptorIndex(RtvHandle);
-        BackBuffers[i].ResourceState = D3D12_RESOURCE_STATE_PRESENT;
+		BackBuffers[i] = std::make_unique<FTexture>();
+        BackBuffers[i]->Allocation.Resource = BackBuffer;
+        BackBuffers[i]->Allocation.Resource->SetName(L"SwapChain BackBuffer");
+        BackBuffers[i]->RtvIndex = RtvDescriptorHeap->GetDescriptorIndex(RtvHandle);
+        BackBuffers[i]->ResourceState = D3D12_RESOURCE_STATE_PRESENT;
 
         RtvDescriptorHeap->OffsetDescriptor(RtvHandle);
     }

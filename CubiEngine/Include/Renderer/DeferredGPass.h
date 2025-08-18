@@ -8,14 +8,6 @@
 class FScene;
 class FShadowDepthPass;
 
-struct FGBuffer
-{
-    FTexture GBufferA{}; // Albedo
-    FTexture GBufferB{}; // Normal
-    FTexture GBufferC{}; // AO + MetalRoughness
-    FTexture VelocityTexture;
-};
-
 class FDeferredGPass : public FRenderPass
 {
 public:

@@ -58,16 +58,16 @@ void FTemporalAAPass::Resolve(FGraphicsContext* const GraphicsContext, FScene* S
 {
     SCOPED_NAMED_EVENT(GraphicsContext, TemporalAAResolve);
 
-    GraphicsContext->AddResourceBarrier(SceneTexture.HDRTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(SceneTexture.VelocityTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(HistoryTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.HDRTexture.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(SceneTexture.VelocityTexture.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(HistoryTexture.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->ExecuteResourceBarriers();
 
     interlop::TemporalAAResolveRenderResource RenderResources = {
-        .sceneTextureIndex = SceneTexture.HDRTexture.SrvIndex,
-        .historyTextureIndex = HistoryTexture.SrvIndex,
-        .velocityTextureIndex = SceneTexture.VelocityTexture.SrvIndex,
-        .dstTextureIndex = ResolveTexture.UavIndex,
+        .sceneTextureIndex = SceneTexture.HDRTexture->SrvIndex,
+        .historyTextureIndex = HistoryTexture->SrvIndex,
+        .velocityTextureIndex = SceneTexture.VelocityTexture->SrvIndex,
+        .dstTextureIndex = ResolveTexture->UavIndex,
         .dstTexelSize = {1.0f / SceneTexture.Size.Width, 1.0f / SceneTexture.Size.Height},
         .historyFrameCount = HistoryFrameCount,
     };
@@ -86,14 +86,14 @@ void FTemporalAAPass::UpdateHistory(FGraphicsContext* const GraphicsContext, FSc
 {
     SCOPED_NAMED_EVENT(GraphicsContext, TemporalAAUpdateHistory);
 
-    GraphicsContext->AddResourceBarrier(ResolveTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    GraphicsContext->AddResourceBarrier(HistoryTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(ResolveTexture.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    GraphicsContext->AddResourceBarrier(HistoryTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 
     interlop::TemporalAAUpdateHistoryRenderResource RenderResources = {
-        .resolveTextureIndex = ResolveTexture.SrvIndex,
-        .historyTextureIndex = HistoryTexture.UavIndex,
-        .dstTexelSize = {1.0f / HistoryTexture.Width, 1.0f / HistoryTexture.Height},
+        .resolveTextureIndex = ResolveTexture->SrvIndex,
+        .historyTextureIndex = HistoryTexture->UavIndex,
+        .dstTexelSize = {1.0f / HistoryTexture->Width, 1.0f / HistoryTexture->Height},
     };
 
     GraphicsContext->SetComputePipelineState(TemporalAAUpdateHistoryPipelineState);
@@ -101,8 +101,8 @@ void FTemporalAAPass::UpdateHistory(FGraphicsContext* const GraphicsContext, FSc
 
     // shader (8,8,1)
     GraphicsContext->Dispatch(
-        max((uint32_t)std::ceil(HistoryTexture.Width / 8.0f), 1u),
-        max((uint32_t)std::ceil(HistoryTexture.Height / 8.0f), 1u),
+        max((uint32_t)std::ceil(HistoryTexture->Width / 8.0f), 1u),
+        max((uint32_t)std::ceil(HistoryTexture->Height / 8.0f), 1u),
     1);
 
     HistoryFrameCount++;
