@@ -61,8 +61,8 @@ public:
 
     // UI control
     // Debug
-    std::vector<std::string> DebugVisualizeList;
-    int DebugVisualizeIndex = 0;
+    int SelectedTextureIndex = 0;
+    FTexture* SelectedDebugTexture = nullptr;
     float VisualizeDebugMin = 0.f;
     float VisualizeDebugMax = 1.f;
 
@@ -74,7 +74,7 @@ public:
     
     int MaxFPS = 60;
 
-    int RenderingMode = 2;
+    int RenderingMode = 0;
 	int PathTracingSamplePerPixel = 16;
 
     bool bEnableDiffuse = true;
@@ -96,15 +96,15 @@ public:
     // SSAO
     bool bUseSSAO = true;
     int SSAOKernelSize = 64;
-    float SSAOKernelRadius = 4.f;
+    float SSAOKernelRadius = 4e-3f;
     float SSAODepthBias = 1e-6f;
     bool SSAOUseRangeCheck = true;
 
     // SSGI
-    int GIMethod = 1;
+    int GIMethod = 0;
 
     float SSGIIntensity = 5.f;
-    float SSGIRayLength = 1000.f;
+    float SSGIRayLength = 1.f;
     int SSGINumSteps = 64;
     int SSGINumSamples = 1;
     int StochasticNormalSamplingMethod = 1;

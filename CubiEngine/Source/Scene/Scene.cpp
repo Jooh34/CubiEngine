@@ -41,30 +41,6 @@ FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
         .EquirectangularTexturePath = L"Assets/Textures/WhiteFurnace.hdr",
         .Name = L"WhiteFurnace Map"
     });
-
-    DebugVisualizeList.push_back(std::string("None"));
-    DebugVisualizeList.push_back(std::string("Depth"));
-    DebugVisualizeList.push_back(std::string("GBufferA"));
-    DebugVisualizeList.push_back(std::string("GBufferB"));
-    DebugVisualizeList.push_back(std::string("GBufferC"));
-    DebugVisualizeList.push_back(std::string("HDRTexture"));
-    DebugVisualizeList.push_back(std::string("TemporalHistory"));
-    DebugVisualizeList.push_back(std::string("StochasticNormal"));
-    DebugVisualizeList.push_back(std::string("ScreenSpaceGI"));
-    DebugVisualizeList.push_back(std::string("DenoisedScreenSpaceGITexture"));
-    DebugVisualizeList.push_back(std::string("QuarterTexture"));
-    DebugVisualizeList.push_back(std::string("SSGIHistory"));
-    DebugVisualizeList.push_back(std::string("SSGIHistroyNumFrameAccumulated"));
-    DebugVisualizeList.push_back(std::string("DownSampledSceneTexture 1/2"));
-    DebugVisualizeList.push_back(std::string("DownSampledSceneTexture 1/4"));
-    DebugVisualizeList.push_back(std::string("DownSampledSceneTexture 1/8"));
-    DebugVisualizeList.push_back(std::string("DownSampledSceneTexture 1/16"));
-    DebugVisualizeList.push_back(std::string("BloomYTexture 1/4"));
-    DebugVisualizeList.push_back(std::string("BloomYTexture 1/8"));
-    DebugVisualizeList.push_back(std::string("BloomYTexture 1/16"));
-    DebugVisualizeList.push_back(std::string("BloomResultTexture"));
-    DebugVisualizeList.push_back(std::string("SSAO Texture"));
-    DebugVisualizeList.push_back(std::string("RaytracingShadowTexture"));
 }
 
 FScene::~FScene()

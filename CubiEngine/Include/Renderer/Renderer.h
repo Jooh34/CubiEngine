@@ -44,8 +44,6 @@ public:
 private:
     FSceneTexture SceneTexture;
 
-    FTexture* GetDebugVisualizeTexture(FScene* Scene);
-
     FGraphicsDevice* GraphicsDevice;
 
     uint32_t Width{};

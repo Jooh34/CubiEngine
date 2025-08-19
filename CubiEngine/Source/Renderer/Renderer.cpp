@@ -242,7 +242,7 @@ void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, DebugVisualize);
             SCOPED_GPU_EVENT(GraphicsDevice, DebugVisualize);
-            FTexture* SelectedTexture = GetDebugVisualizeTexture(Scene.get());
+            FTexture* SelectedTexture = Scene->SelectedDebugTexture;
             if (SelectedTexture != nullptr)
             {
                 PostProcess->DebugVisualize(GraphicsContext, Scene.get(), SelectedTexture, LDR, Width, Height);
@@ -446,102 +446,4 @@ void FRenderer::InitializeSceneTexture(const FGraphicsDevice* const Device, uint
     SceneTexture.HDRTexture = Device->CreateTexture(HDRTextureDesc);
 
     SceneTexture.Size = { InWidth, InHeight };
-}
-
-FTexture* FRenderer::GetDebugVisualizeTexture(FScene* Scene)
-{
-    std::string Name = Scene->DebugVisualizeList[Scene->DebugVisualizeIndex];
-
-    if (Name.compare("Depth") == 0)
-    {
-        return SceneTexture.DepthTexture.get();
-    }
-    else if (Name.compare("GBufferA") == 0)
-    {
-        return SceneTexture.GBufferA.get();
-    }
-    else if (Name.compare("GBufferB") == 0)
-    {
-        return SceneTexture.GBufferB.get();
-    }
-    else if (Name.compare("GBufferC") == 0)
-    {
-        return SceneTexture.GBufferC.get();
-    }
-    else if (Name.compare("HDRTexture") == 0)
-    {
-        return SceneTexture.HDRTexture.get();
-    }
-    else if (Name.compare("TemporalHistory") == 0)
-    {
-        return TemporalAA->HistoryTexture.get();
-    }
-    else if (Name.compare("StochasticNormal") == 0)
-    {
-        return ScreenSpaceGI->StochasticNormalTexture.get();
-    }
-    else if (Name.compare("ScreenSpaceGI") == 0)
-    {
-        return ScreenSpaceGI->ScreenSpaceGITexture.get();
-    }
-    else if (Name.compare("SSGIHistory") == 0)
-    {
-        return ScreenSpaceGI->HistoryTexture.get();
-    }
-    else if (Name.compare("SSGIHistroyNumFrameAccumulated") == 0)
-    {
-        return ScreenSpaceGI->HistroyNumFrameAccumulated.get();
-    }
-    else if (Name.compare("QuarterTexture") == 0)
-    {
-        return ScreenSpaceGI->QuarterTexture.get();
-    }
-    else if (Name.compare("DenoisedScreenSpaceGITexture") == 0)
-    {
-        return ScreenSpaceGI->DenoisedScreenSpaceGITexture.get();
-    }
-    else if (Name.compare("DownSampledSceneTexture 1/2") == 0)
-    {
-        return BloomPass->DownSampledSceneTextures[0].get();
-    }
-    else if (Name.compare("DownSampledSceneTexture 1/4") == 0)
-    {
-        return BloomPass->DownSampledSceneTextures[1].get();
-    }
-    else if (Name.compare("DownSampledSceneTexture 1/8") == 0)
-    {
-        return BloomPass->DownSampledSceneTextures[2].get();
-    }
-    else if (Name.compare("DownSampledSceneTexture 1/16") == 0)
-    {
-        return BloomPass->DownSampledSceneTextures[3].get();
-    }
-    else if (Name.compare("BloomYTexture 1/4") == 0)
-    {
-        return BloomPass->BloomYTextures[1].get();
-    }
-    else if (Name.compare("BloomYTexture 1/8") == 0)
-    {
-        return BloomPass->BloomYTextures[2].get();
-    }
-    else if (Name.compare("BloomYTexture 1/16") == 0)
-    {
-        return BloomPass->BloomYTextures[3].get();
-    }
-    else if (Name.compare("BloomResultTexture") == 0)
-    {
-        return BloomPass->BloomResultTexture.get();
-    }
-    else if (Name.compare("SSAO Texture") == 0)
-    {
-        return SSAOPass->SSAOTexture.get();
-    }
-    else if (Name.compare("RaytracingShadowTexture") == 0)
-    {
-        return RaytracingShadowPass->GetRaytracingShadowTexture();
-    }
-    else
-    {
-        return nullptr;
-    }
 }

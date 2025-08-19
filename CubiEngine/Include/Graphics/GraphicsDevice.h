@@ -86,6 +86,24 @@ public:
         return CbvSrvUavDescriptorHeap->GetDescriptorHandleFromIndex(Index);
     }
 
+    void AppendDebugTextureKeyList(std::vector<std::string>& Keys) const
+    {
+        Keys.reserve(DebugTextureMap.size());
+        for (auto& kv : DebugTextureMap) {
+            Keys.push_back(kv.first);
+        }
+    }
+
+	FTexture* GetDebugTexture(const std::string& Name) const
+    {
+		auto it = DebugTextureMap.find(Name);
+        if (it != DebugTextureMap.end())
+        {
+			return it->second;
+		}
+		return nullptr;
+	}
+
 private:
     bool bInitialized = false;
 
@@ -139,4 +157,6 @@ private:
     FGPUProfiler GPUProfiler;
 
     std::unique_ptr<FQueryHeap> TimeStampQueryHeap;
+
+    mutable std::map<std::string, FTexture*> DebugTextureMap;
 };

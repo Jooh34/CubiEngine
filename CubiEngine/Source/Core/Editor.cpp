@@ -122,7 +122,12 @@ void FEditor::RenderDebugProperties(FScene* Scene)
 
     ImGui::Begin("Debug Properties");
     
-    AddCombo("Debug Visualize", Scene->DebugVisualizeList, Scene->DebugVisualizeList.size(), Scene->DebugVisualizeIndex);
+    std::vector<std::string> KeyList = { "None" };
+	Device->AppendDebugTextureKeyList(KeyList);
+
+    AddCombo("Debug Visualize", KeyList, KeyList.size(), Scene->SelectedTextureIndex);
+	Scene->SelectedDebugTexture = Device->GetDebugTexture(KeyList[Scene->SelectedTextureIndex]);
+
     ImGui::SliderFloat("VisDebugMin", &Scene->VisualizeDebugMin, 0.f, 1.f);
     ImGui::SliderFloat("VisDebugMax", &Scene->VisualizeDebugMax, 0.f, 1.f);
 
@@ -183,7 +188,7 @@ void FEditor::RenderGIProperties(FScene* Scene)
     {
         ImGui::Checkbox("Use SSAO", &Scene->bUseSSAO);
         ImGui::SliderInt("SSAO Kernel Size", &Scene->SSAOKernelSize, 8, 64);
-        ImGui::SliderFloat("SSAO Kernel Radius", &Scene->SSAOKernelRadius, 1.f, 10.0f);
+        ImGui::SliderFloat("SSAO Kernel Radius", &Scene->SSAOKernelRadius, 1e-3f, 1e-2f);
         ImGui::InputFloat("SSAO Depth Bias", &Scene->SSAODepthBias, 1e-6, 1e-5, "%.6f");
         ImGui::Checkbox("SSAO Range Check", &Scene->SSAOUseRangeCheck);
         ImGui::TreePop();
@@ -194,7 +199,7 @@ void FEditor::RenderGIProperties(FScene* Scene)
         const char* giItems[] = { "Off", "SSGI" };
         AddCombo("GI Method", giItems, IM_ARRAYSIZE(giItems), Scene->GIMethod);
         ImGui::SliderFloat("SSGI Intensity", &Scene->SSGIIntensity, 0.0f, 20.0f);
-        ImGui::SliderFloat("SSGI RayLength", &Scene->SSGIRayLength, 0.0f, 3000.0f);
+        ImGui::SliderFloat("SSGI RayLength", &Scene->SSGIRayLength, 0.0f, 3.0f);
         ImGui::SliderInt("SSGI NumSteps", &Scene->SSGINumSteps, 1, 256);
         ImGui::SliderFloat("SSGI CompareToleranceScale", &Scene->CompareToleranceScale, 1.f, 30.f);
         ImGui::SliderInt("SSGI NumSamples", &Scene->SSGINumSamples, 1, 16);
