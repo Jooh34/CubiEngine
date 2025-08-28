@@ -10,6 +10,8 @@ FDenoisePass::FDenoisePass(const FGraphicsDevice* const Device, uint32_t Width, 
     FOIDenoiser::FCreateDesc CreateDesc{};
     CreateDesc.D3DDevice = Device->GetDevice();
     CreateDesc.DxgiAdapter = Device->GetAdapter1();
+	CreateDesc.Quality = OIDN_QUALITY_BALANCED; // FAST or BALANCED for real-time
+    ;
     OIDenoiser->Initialize(CreateDesc);
 }
 
@@ -33,7 +35,7 @@ FTexture* FDenoisePass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene
 {
     if (bRefeshResource)
     {
-		OIDenoiser->PrepareBuffers(HDR->GetResource(), nullptr, nullptr, DenoisedOutput->GetResource());
+		OIDenoiser->RefreshBuffers(HDR->GetResource(), nullptr, nullptr, DenoisedOutput->GetResource());
         bRefeshResource = false;
     }
 

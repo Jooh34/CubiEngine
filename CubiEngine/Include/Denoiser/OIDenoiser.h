@@ -48,7 +48,7 @@ public:
 	void BindImages(FSharedLinearImage& Color, FSharedLinearImage* Albedo, FSharedLinearImage* Normal, FSharedLinearImage& Output, FTexture* SrcColor);
 	void Execute();
 
-	void PrepareBuffers(
+	void RefreshBuffers(
 		ID3D12Resource* TexColor,
 		ID3D12Resource* TexAlbedo,
 		ID3D12Resource* TexNormal,

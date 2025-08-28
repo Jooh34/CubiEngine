@@ -101,25 +101,28 @@ void FOIDenoiser::Execute()
 	OidnCheck(OidnDevice, "Execute");
 }
 
-void FOIDenoiser::PrepareBuffers(
+void FOIDenoiser::RefreshBuffers(
 	ID3D12Resource* TexColor,
 	ID3D12Resource* TexAlbedo,
 	ID3D12Resource* TexNormal,
 	ID3D12Resource* TexDenoisedOut
 )
 {
-	if (!Color.Buffer)
-	{
-		Color = CreateLinearImageForTexture(TexColor);
-		if (TexAlbedo) Albedo = CreateLinearImageForTexture(TexAlbedo);
-		if (TexNormal) Normal = CreateLinearImageForTexture(TexNormal);
-		Output = CreateLinearImageForTexture(TexDenoisedOut);
+	Color.ReleaseInterop();
+	if (TexAlbedo) Albedo.ReleaseInterop();
+	if (TexNormal) Normal.ReleaseInterop();
+	Output.ReleaseInterop();
+	
 
-		ImportToOidn(Color);
-		if (TexAlbedo) ImportToOidn(Albedo);
-		if (TexNormal) ImportToOidn(Normal);
-		ImportToOidn(Output);
-	}
+	Color = CreateLinearImageForTexture(TexColor);
+	if (TexAlbedo) Albedo = CreateLinearImageForTexture(TexAlbedo);
+	if (TexNormal) Normal = CreateLinearImageForTexture(TexNormal);
+	Output = CreateLinearImageForTexture(TexDenoisedOut);
+
+	ImportToOidn(Color);
+	if (TexAlbedo) ImportToOidn(Albedo);
+	if (TexNormal) ImportToOidn(Normal);
+	ImportToOidn(Output);
 }
 
 void FOIDenoiser::SubmitAndWait(ID3D12CommandQueue* Q, ID3D12Fence* Fence, UINT64& Value, HANDLE FenceEvent)
