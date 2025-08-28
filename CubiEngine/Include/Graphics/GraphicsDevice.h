@@ -51,6 +51,8 @@ public:
     static constexpr uint32_t FRAMES_IN_FLIGHT = 3u;
 
     ID3D12Device5* GetDevice() const { return Device.Get(); }
+    IDXGIAdapter* GetAdapter() const { return Adapter.Get(); }
+    IDXGIAdapter1* GetAdapter1() const { return Adapter1.Get(); }
     FCommandQueue* GetDirectCommandQueue() const { return DirectCommandQueue.get(); }
     FDescriptorHeap* GetCbvSrvUavDescriptorHeap() const { return CbvSrvUavDescriptorHeap.get(); }
     FDescriptorHeap* GetRtvDescriptorHeap() const { return RtvDescriptorHeap.get(); }
@@ -66,6 +68,7 @@ public:
 
     template <typename T>
     FBuffer CreateBuffer(const FBufferCreationDesc& BufferCreationDesc, const std::span<const T> Data = {}) const;
+    FBuffer CreateBuffer(const FBufferCreationDesc& BufferCreationDesc, size_t TotalBytes) const;
 
     void CreateRawBuffer(ComPtr<ID3D12Resource>& outBuffer, uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps) const;
     
@@ -130,6 +133,7 @@ private:
 
     wrl::ComPtr<ID3D12Device5> Device{};
     wrl::ComPtr<IDXGIAdapter> Adapter{};
+    wrl::ComPtr<IDXGIAdapter1> Adapter1{};
 
     DXGI_FORMAT SwapchainFormat;
     uint64_t CurrentFrameIndex{};

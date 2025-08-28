@@ -141,6 +141,7 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     const char* renderingModeItems[] = { "Rasterize", "Debug Raytracing", "PathTrace"};
     AddCombo("Rendering Mode", renderingModeItems, IM_ARRAYSIZE(renderingModeItems), Scene->RenderingMode);
 
+    ImGui::Checkbox("PathTracing Enable Denoiser", &Scene->bEnablePathTracingDenoiser);
     ImGui::SliderInt("PathTracing SamplePerPixel", &Scene->PathTracingSamplePerPixel, 1, 64);
 
     ImGui::SliderInt("Max FPS", &Scene->MaxFPS, 30, 144);

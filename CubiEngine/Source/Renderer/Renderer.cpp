@@ -35,6 +35,8 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32
     INITIALIZE_RENDER_PASS(FRaytracingDebugScenePass, RaytracingDebugScenePass);
     INITIALIZE_RENDER_PASS(FRaytracingShadowPass, RaytracingShadowPass);
     INITIALIZE_RENDER_PASS(FPathTracingPass, PathTracingPass);
+
+    INITIALIZE_RENDER_PASS(FDenoisePass, DenoisePass);
 }
 
 FRenderer::~FRenderer()
@@ -307,8 +309,12 @@ void FRenderer::RenderPathTracingScene(FGraphicsContext* GraphicsContext)
         SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
 
         FTexture* HDR = PathTracingPass->GetPathTracingSceneTexture();
-        FTexture* LDR = SceneTexture.LDRTexture.get();
+        if (Scene->bEnablePathTracingDenoiser)
+        {
+			HDR = DenoisePass->AddPass(GraphicsContext, Scene.get(), HDR);
+        }
 
+        FTexture* LDR = SceneTexture.LDRTexture.get();
         {
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
             SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);

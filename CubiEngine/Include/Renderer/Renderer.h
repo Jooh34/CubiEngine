@@ -14,6 +14,7 @@
 #include "Renderer/RaytracingDebugScenePass.h"
 #include "Renderer/RaytracingShadowPass.h"
 #include "Renderer/PathTracing.h"
+#include "Renderer/DenoisePass.h"
 
 class FInput;
 class FEditor;
@@ -65,6 +66,8 @@ private:
 
     std::unique_ptr<FRaytracingDebugScenePass> RaytracingDebugScenePass;
     std::unique_ptr<FPathTracingPass> PathTracingPass;
+
+    std::unique_ptr<FDenoisePass> DenoisePass;
 
     std::unique_ptr<FEditor> Editor;
 

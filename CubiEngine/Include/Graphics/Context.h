@@ -22,6 +22,7 @@ public:
     
     void AddResourceBarrier(FTexture* Texture, const D3D12_RESOURCE_STATES NewState);
     void AddResourceBarrier(D3D12_RESOURCE_BARRIER& Barrier);
+    void AddResourceBarrier(ID3D12Resource* const Resource, const D3D12_RESOURCE_STATES PreviousState, const D3D12_RESOURCE_STATES NewState);
 
     void AddUAVBarrier(FTexture* Texture);
     void AddUAVBarrier(FBuffer& Buffer);
@@ -31,8 +32,6 @@ public:
     void EndEvent(const char* Name);
 
 protected:
-    void AddResourceBarrier(ID3D12Resource* const Resource, const D3D12_RESOURCE_STATES PreviousState, const D3D12_RESOURCE_STATES NewState);
-
     wrl::ComPtr<ID3D12GraphicsCommandList4> CommandList{};
     wrl::ComPtr<ID3D12CommandAllocator> CommandAllocator{};
 

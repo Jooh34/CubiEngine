@@ -39,11 +39,16 @@ endforeach()
 
 add_executable(CubiEngine ${SRC_FILES})
 
+set(OIDN_PATH "${CMAKE_SOURCE_DIR}/ThirdParty/OpenImageDenoise/oidn-2.3.3.x64.windows")
+
 target_include_directories(CubiEngine PUBLIC "Include" "../Shaders"
     ${CMAKE_SOURCE_DIR}/ThirdParty/PIX/include
+    ${OIDN_PATH}/include
 )
 target_link_libraries(CubiEngine PUBLIC External d3d12.lib d3dcompiler.lib dxcompiler.lib
     ${CMAKE_SOURCE_DIR}/ThirdParty/PIX/lib/WinPixEventRuntime.lib
+    ${OIDN_PATH}/lib/OpenImageDenoise.lib
+    ${OIDN_PATH}/lib/OpenImageDenoise_core.lib
 )
 
 # Enable hot reload in Visual studio 2022.
@@ -92,10 +97,13 @@ foreach(Var IN LISTS fileList)
                 ${CMAKE_SOURCE_DIR}/External/DirectXShaderCompiler/bin/x64/${Var}
                 ${CMAKE_BINARY_DIR}/Bin/$<CONFIG>/${Var})
 endforeach()
-# Copy dll
 
-add_custom_command(
-    TARGET CubiEngine POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/External/DirectXShaderCompiler/lib/x64/dxcompiler.lib
-            ${CMAKE_BINARY_DIR}/Bin/$<CONFIG>/dxcompiler.lib)
+file(GLOB OIDN_DLLS "${OIDN_PATH}/bin/*.dll")
+foreach(dll IN LISTS OIDN_DLLS)
+    message("found dll: ${dll}")
+    add_custom_command(TARGET CubiEngine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${dll}"
+                "$<TARGET_FILE_DIR:CubiEngine>"
+    )
+endforeach()

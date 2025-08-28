@@ -17,7 +17,7 @@ FGraphicsDevice::FGraphicsDevice(const uint32_t Width, const uint32_t Height,
 
     MipmapGenerator = std::make_unique<FMipmapGenerator>(this);
 
-    TimeStampQueryHeap = std::make_unique<FQueryHeap>(this, D3D12_QUERY_TYPE_TIMESTAMP, D3D12_QUERY_HEAP_TYPE_TIMESTAMP);;
+    TimeStampQueryHeap = std::make_unique<FQueryHeap>(this, D3D12_QUERY_TYPE_TIMESTAMP, D3D12_QUERY_HEAP_TYPE_TIMESTAMP);
 }
 
 FGraphicsDevice::~FGraphicsDevice()
@@ -523,6 +523,12 @@ void FGraphicsDevice::InitD3D12Core()
     {
         FatalError("Failed to find D3D12 compatible adapter");
     }
+
+    ThrowIfFailed(Adapter.As(&Adapter1));
+    if (!Adapter1)
+    {
+        FatalError("Failed to find D3D12 compatible adapter1");
+    }
     
     DXGI_ADAPTER_DESC AdapterDesc{};
     ThrowIfFailed(Adapter->GetDesc(&AdapterDesc));
@@ -747,6 +753,80 @@ FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationD
         Buffer.UavIndex = CreateUav(UavCreationDesc, Buffer.Allocation.Resource.Get());
     }
 
+    return Buffer;
+}
+
+FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationDesc, size_t TotalBytes) const
+{
+    FBuffer Buffer{};
+
+    FResourceCreationDesc ResourceCreationDesc = FResourceCreationDesc::CreateBufferResourceCreationDesc(TotalBytes);
+
+    if (BufferCreationDesc.Usage == EBufferUsage::StructuredBufferUAV)
+    {
+        ResourceCreationDesc.ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
+
+    Buffer.Allocation = MemoryAllocator->CreateBufferResourceAllocation(BufferCreationDesc, ResourceCreationDesc);
+    Buffer.SizeInBytes = TotalBytes;
+    Buffer.NumElement = 1;
+    Buffer.ElementSizeInBytes = TotalBytes;
+
+    std::scoped_lock<std::recursive_mutex> LockGuard(ResourceMutex);
+
+    // Create relevant descriptor's.
+    if (BufferCreationDesc.Usage == EBufferUsage::StructuredBuffer || BufferCreationDesc.Usage == EBufferUsage::StructuredBufferUAV)
+    {
+        const FSrvCreationDesc SrvCreationDesc = {
+            .SrvDesc =
+                {
+                    .Format = DXGI_FORMAT_UNKNOWN,
+                    .ViewDimension = D3D12_SRV_DIMENSION_BUFFER,
+                    .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+                    .Buffer =
+                        {
+                            .FirstElement = 0u,
+                            .NumElements = 1,
+                            .StructureByteStride = (UINT)TotalBytes,
+                        },
+                },
+        };
+
+        Buffer.SrvIndex = CreateSrv(SrvCreationDesc, Buffer.Allocation.Resource.Get());
+    }
+    else if (BufferCreationDesc.Usage == EBufferUsage::ConstantBuffer)
+    {
+        const FCbvCreationDesc CbvCreationDesc = {
+            .CbvDesc =
+                {
+                    .BufferLocation = Buffer.Allocation.Resource->GetGPUVirtualAddress(),
+                    .SizeInBytes = static_cast<UINT>(Buffer.SizeInBytes),
+                },
+        };
+
+        Buffer.CbvIndex = CreateCbv(CbvCreationDesc);
+    }
+
+    if (BufferCreationDesc.Usage == EBufferUsage::StructuredBufferUAV)
+    {
+        const FUavCreationDesc UavCreationDesc = {
+            .UavDesc =
+                {
+                    .Format = DXGI_FORMAT_UNKNOWN,
+                    .ViewDimension = D3D12_UAV_DIMENSION_BUFFER,
+                    .Buffer =
+                        {
+                            .FirstElement = 0u,
+                            .NumElements = 1,
+                            .StructureByteStride = (UINT)TotalBytes,
+                            .CounterOffsetInBytes = 0u,
+                            .Flags = D3D12_BUFFER_UAV_FLAG_NONE,
+                        },
+                },
+        };
+
+        Buffer.UavIndex = CreateUav(UavCreationDesc, Buffer.Allocation.Resource.Get());
+    }
 
     return Buffer;
 }
