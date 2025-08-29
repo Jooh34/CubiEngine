@@ -37,13 +37,36 @@ void FPathTracingPass::InitSizeDependantResource(const FGraphicsDevice* const De
         .Name = L"PathTracing FrameAccumulated",
     };
 
+    FTextureCreationDesc PathTracingAlbedoTextureDesc = {
+        .Usage = ETextureUsage::UAVTexture,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+        .Name = L"PathTracing Albedo",
+    };
+
+    FTextureCreationDesc PathTracingNormalTextureDesc = {
+        .Usage = ETextureUsage::UAVTexture,
+        .Width = InWidth,
+        .Height = InHeight,
+        .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+        .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+        .Name = L"PathTracing Normal",
+    };
+
     PathTracingSceneTexture = Device->CreateTexture(PathTracingSceneTextureDesc);
     FrameAccumulatedTexture = Device->CreateTexture(FrameAccumulatedDesc);
+
+    PathTracingAlbedoTexture = Device->CreateTexture(PathTracingAlbedoTextureDesc);
+    PathTracingNormalTexture = Device->CreateTexture(PathTracingNormalTextureDesc);
 }
 
 void FPathTracingPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene)
 {
     GraphicsContext->AddResourceBarrier(PathTracingSceneTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(PathTracingAlbedoTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(PathTracingNormalTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 
     D3D12_DISPATCH_RAYS_DESC RayDesc = PathTracingPassSBT.CreateRayDesc(Width, Height);
@@ -61,6 +84,8 @@ void FPathTracingPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene)
     interlop::PathTraceRenderResources RenderResources = {
         .invViewProjectionMatrix = Scene->GetCamera().GetInvViewProjMatrix(),
         .dstTextureIndex = PathTracingSceneTexture->UavIndex,
+        .albedoTextureIndex = PathTracingAlbedoTexture->UavIndex,
+        .normalTextureIndex = PathTracingNormalTexture->UavIndex,
 		.frameAccumulatedTextureIndex = FrameAccumulatedTexture->UavIndex,
         .geometryInfoBufferIdx = Scene->GetRaytracingScene().GetGeometryInfoBufferSrv(),
         .materialBufferIdx = Scene->GetRaytracingScene().GetMaterialBufferSrv(),

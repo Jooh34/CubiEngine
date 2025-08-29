@@ -30,9 +30,9 @@ public:
     void BeginFrame(FGraphicsContext* GraphicsContext,FTexture* BackBuffer);
     void CopyHistoricalTexture(FGraphicsContext* GraphicsContext);
     void Render();
-    void RenderDeferredShading(FGraphicsContext* GraphicsContext);
-    void RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext);
-    void RenderPathTracingScene(FGraphicsContext* GraphicsContext);
+    FTexture* RenderDeferredShading(FGraphicsContext* GraphicsContext);
+    FTexture* RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext);
+    FTexture* RenderPathTracingScene(FGraphicsContext* GraphicsContext);
 
     void RenderShadow(FGraphicsContext* GraphicsContext, FSceneTexture& SceneTexture);
 

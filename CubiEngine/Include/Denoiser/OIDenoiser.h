@@ -57,7 +57,12 @@ public:
 
 	void SubmitAndWait(ID3D12CommandQueue* Q, ID3D12Fence* Fence, UINT64& Value, HANDLE FenceEvent);
 
-	void AddPass(const FGraphicsDevice* GraphicsDevice, FTexture* SrcColor, FTexture* DenoiseOutput);
+	void AddPass(
+		const FGraphicsDevice* GraphicsDevice,
+		FTexture* SrcColor,
+		FTexture* SrcAlbedo,
+		FTexture* SrcNormal,
+		FTexture* DenoiseOutput);
 
 	virtual ~FOIDenoiser()
 	{

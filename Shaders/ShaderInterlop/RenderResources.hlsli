@@ -384,6 +384,8 @@ namespace interlop
         float4x4 invViewProjectionMatrix;
 
         uint dstTextureIndex;
+        uint albedoTextureIndex;
+        uint normalTextureIndex;
         uint frameAccumulatedTextureIndex;
         uint geometryInfoBufferIdx;
         uint materialBufferIdx;
@@ -399,7 +401,7 @@ namespace interlop
         uint numSamples;
 
         uint bRefreshPathTracingTexture;
-        float3 padding;
+        float padding;
 
         float4 randomFloats[16];
     };

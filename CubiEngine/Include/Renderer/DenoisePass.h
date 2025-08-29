@@ -12,7 +12,11 @@ class FDenoisePass : public FRenderPass
 public:
     FDenoisePass(const FGraphicsDevice* const InDevice, uint32_t Width, uint32_t Height);
     void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight) override;
-    FTexture* AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, FTexture* HDR);
+    FTexture* AddPass(FGraphicsContext* GraphicsContext, FScene* Scene,
+        FTexture* HDR,
+        FTexture* Albedo = nullptr,
+        FTexture* Normal = nullptr
+    );
 
     FTexture* GetDenoisedOutput() { return DenoisedOutput.get(); }
 

@@ -102,18 +102,36 @@ void FRenderer::Render()
         Scene->GenerateRaytracingScene(GraphicsContext);
     }
 
+    FTexture* LDR = nullptr;
     if (Scene->GetRenderingMode() == ERenderingMode::Rasterize)
     {
-        RenderDeferredShading(GraphicsContext);
+        LDR = RenderDeferredShading(GraphicsContext);
     }
 	else if (Scene->GetRenderingMode() == ERenderingMode::DebugRaytracing)
     {
-        RenderDebugRaytracingScene(GraphicsContext);
+        LDR = RenderDebugRaytracingScene(GraphicsContext);
     }
     else
     {
-        RenderPathTracingScene(GraphicsContext);
+        LDR = RenderPathTracingScene(GraphicsContext);
     }
+
+    // ----- Vis Debug -----
+    {
+        SCOPED_NAMED_EVENT(GraphicsContext, DebugVisualize);
+        SCOPED_GPU_EVENT(GraphicsDevice, DebugVisualize);
+        FTexture* SelectedTexture = Scene->SelectedDebugTexture;
+        if (SelectedTexture != nullptr)
+        {
+            PostProcess->DebugVisualize(GraphicsContext, Scene.get(), SelectedTexture, LDR, Width, Height);
+        }
+    }
+    // ----- Vis Debug -----
+
+    GraphicsContext->AddResourceBarrier(LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
+    GraphicsContext->ExecuteResourceBarriers();
+    GraphicsContext->CopyResource(BackBuffer->GetResource(), LDR->GetResource());
 
     // ----- Editor ------
     {
@@ -141,9 +159,9 @@ void FRenderer::Render()
     GFrameCount++;
 }
 
-void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
+FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
 {
-    FTexture* BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
+    FTexture* Output = nullptr;
 
     // ----- Deferred GPass ----
     if (DeferredGPass)
@@ -202,7 +220,7 @@ void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
         SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
 
         FTexture* HDR = SceneTexture.HDRTexture.get();
-        FTexture* LDR = SceneTexture.LDRTexture.get();
+        Output = SceneTexture.LDRTexture.get();
 
         if (Scene.get()->bUseTaa)
         {
@@ -234,36 +252,23 @@ void FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
             SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);
-            EyeAdaptationPass->ToneMapping(GraphicsContext, Scene.get(), HDR, LDR,
+            EyeAdaptationPass->ToneMapping(GraphicsContext, Scene.get(), HDR, Output,
                 Scene->bUseBloom ? BloomPass->BloomResultTexture.get() : nullptr);
         }
 
         // PostProcess->Tonemapping(GraphicsContext, Scene.get(), *HDR, Width, Height);
-
-        // ----- Vis Debug -----
-        {
-            SCOPED_NAMED_EVENT(GraphicsContext, DebugVisualize);
-            SCOPED_GPU_EVENT(GraphicsDevice, DebugVisualize);
-            FTexture* SelectedTexture = Scene->SelectedDebugTexture;
-            if (SelectedTexture != nullptr)
-            {
-                PostProcess->DebugVisualize(GraphicsContext, Scene.get(), SelectedTexture, LDR, Width, Height);
-            }
-        }
-        // ----- Vis Debug -----
-
-        GraphicsContext->AddResourceBarrier(LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
-        GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
-        GraphicsContext->ExecuteResourceBarriers();
-        GraphicsContext->CopyResource(BackBuffer->GetResource(), LDR->GetResource());
     }
 
     CopyHistoricalTexture(GraphicsContext);
-    // ----- Post Process -----
+
+    assert(Output != nullptr);
+    return Output;
 }
 
-void FRenderer::RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext)
+FTexture* FRenderer::RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext)
 {
+    FTexture* Output = nullptr;
+
     if (RaytracingDebugScenePass)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, RaytracingDebugScene);
@@ -277,25 +282,23 @@ void FRenderer::RenderDebugRaytracingScene(FGraphicsContext* GraphicsContext)
         SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
 
         FTexture* HDR = RaytracingDebugScenePass->GetRaytracingDebugSceneTexture();
-        FTexture* LDR = SceneTexture.LDRTexture.get();
+        Output = SceneTexture.LDRTexture.get();
 
         {
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
             SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);
-            PostProcess->Tonemapping(GraphicsContext, Scene.get(), HDR, LDR, Width, Height);
+            PostProcess->Tonemapping(GraphicsContext, Scene.get(), HDR, Output, Width, Height);
         }
-
-        FTexture* BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
-
-        GraphicsContext->AddResourceBarrier(LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
-        GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
-        GraphicsContext->ExecuteResourceBarriers();
-        GraphicsContext->CopyResource(BackBuffer->GetResource(), LDR->GetResource());
     }
+
+    assert(Output != nullptr);
+    return Output;
 }
 
-void FRenderer::RenderPathTracingScene(FGraphicsContext* GraphicsContext)
+FTexture* FRenderer::RenderPathTracingScene(FGraphicsContext* GraphicsContext)
 {
+    FTexture* Output = nullptr;
+
     if (PathTracingPass)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, PathTracing);
@@ -311,23 +314,28 @@ void FRenderer::RenderPathTracingScene(FGraphicsContext* GraphicsContext)
         FTexture* HDR = PathTracingPass->GetPathTracingSceneTexture();
         if (Scene->bEnablePathTracingDenoiser)
         {
-			HDR = DenoisePass->AddPass(GraphicsContext, Scene.get(), HDR);
+            if (Scene->bDenoiserAlbedoNormal)
+            {
+				HDR = DenoisePass->AddPass(GraphicsContext, Scene.get(), HDR,
+                    PathTracingPass->GetPathTracingAlbedo(), PathTracingPass->GetPathTracingNormal()
+                );
+            }
+            else
+            {
+				HDR = DenoisePass->AddPass(GraphicsContext, Scene.get(), HDR);
+            }
         }
 
-        FTexture* LDR = SceneTexture.LDRTexture.get();
+        Output = SceneTexture.LDRTexture.get();
         {
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
             SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);
-            PostProcess->Tonemapping(GraphicsContext, Scene.get(), HDR, LDR, Width, Height);
+            PostProcess->Tonemapping(GraphicsContext, Scene.get(), HDR, Output, Width, Height);
         }
-
-        FTexture* BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
-
-        GraphicsContext->AddResourceBarrier(LDR, D3D12_RESOURCE_STATE_COPY_SOURCE);
-        GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
-        GraphicsContext->ExecuteResourceBarriers();
-        GraphicsContext->CopyResource(BackBuffer->GetResource(), LDR->GetResource());
     }
+
+    assert(Output != nullptr);
+    return Output;
 }
 
 void FRenderer::RenderShadow(FGraphicsContext* GraphicsContext, FSceneTexture& SceneTexture)

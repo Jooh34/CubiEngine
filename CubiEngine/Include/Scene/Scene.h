@@ -76,7 +76,8 @@ public:
 
     int RenderingMode = 0;
 	int PathTracingSamplePerPixel = 16;
-	bool bEnablePathTracingDenoiser = true;
+    bool bEnablePathTracingDenoiser = true;
+    bool bDenoiserAlbedoNormal = true;
 
     bool bEnableDiffuse = true;
     bool bEnableSpecular = true;

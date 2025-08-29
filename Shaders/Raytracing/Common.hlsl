@@ -30,6 +30,8 @@ struct FPathTracePayload
     uint depth;
     uint2 uv;
     uint sampleIndex;
+    float3 albedo;
+    float3 normal;
 };
 
 enum RayTypes {

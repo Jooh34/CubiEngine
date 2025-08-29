@@ -30,6 +30,8 @@ FPathTracePayload defaultPathTracePayload(const uint2 pixelCoord, uint sampleInd
     payload.depth = 0;
     payload.uv = pixelCoord;
     payload.sampleIndex = sampleIndex;
+    payload.albedo = float3(0.f, 0.f, 0.f);
+    payload.normal = float3(0.f, 0.f, 0.f);
 
     return payload;
 }

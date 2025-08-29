@@ -1,6 +1,7 @@
 #include "Renderer/DenoisePass.h"
 #include "Graphics/Resource.h"
 #include "Graphics/GraphicsDevice.h"
+#include "Scene/Scene.h"
 
 FDenoisePass::FDenoisePass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height)
     : FRenderPass(Device, Width, Height)
@@ -31,15 +32,18 @@ void FDenoisePass::InitSizeDependantResource(const FGraphicsDevice* const Device
     bRefeshResource = true;
 }
 
-FTexture* FDenoisePass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, FTexture* HDR)
+FTexture* FDenoisePass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, FTexture* HDR, FTexture* Albedo, FTexture* Normal)
 {
     if (bRefeshResource)
     {
-		OIDenoiser->RefreshBuffers(HDR->GetResource(), nullptr, nullptr, DenoisedOutput->GetResource());
+		ID3D12Resource* AlbedoResource = Scene->bDenoiserAlbedoNormal ? Albedo->GetResource() : nullptr;
+		ID3D12Resource* NormalResource = Scene->bDenoiserAlbedoNormal ? Normal->GetResource() : nullptr;
+
+		OIDenoiser->RefreshBuffers(HDR->GetResource(), AlbedoResource, NormalResource, DenoisedOutput->GetResource());
         bRefeshResource = false;
     }
 
-	OIDenoiser->AddPass(GraphicsDevice, HDR, DenoisedOutput.get());
+	OIDenoiser->AddPass(GraphicsDevice, HDR, Albedo, Normal, DenoisedOutput.get());
 
     return DenoisedOutput.get();
 }

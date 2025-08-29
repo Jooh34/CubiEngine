@@ -16,6 +16,8 @@ public:
     void AddPass(FGraphicsContext* GraphicsContext, FScene* Scene);
 
     FTexture* GetPathTracingSceneTexture() { return PathTracingSceneTexture.get(); }
+    FTexture* GetPathTracingAlbedo() { return PathTracingAlbedoTexture.get(); }
+    FTexture* GetPathTracingNormal() { return PathTracingNormalTexture.get(); }
 
 private:
     FRaytracingPipelineState PathTracingPassPipelineState;
@@ -23,6 +25,9 @@ private:
 
     std::unique_ptr<FTexture> PathTracingSceneTexture;
     std::unique_ptr<FTexture> FrameAccumulatedTexture;
+
+    std::unique_ptr<FTexture> PathTracingAlbedoTexture;
+    std::unique_ptr<FTexture> PathTracingNormalTexture;
 
     uint32_t CollectedFrame = 0;
     uint32_t SamplePerPixel = 8;

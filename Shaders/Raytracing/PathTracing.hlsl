@@ -29,15 +29,22 @@ SamplerState LinearSampler : register(s1);
 void RayGen()
 {
     RWTexture2D<float4> dstTexture = ResourceDescriptorHeap[renderResources.dstTextureIndex];
+    RWTexture2D<float4> albedoTexture = ResourceDescriptorHeap[renderResources.albedoTextureIndex];
+    RWTexture2D<float4> normalTexture = ResourceDescriptorHeap[renderResources.normalTextureIndex];
     RWTexture2D<uint> frameAccumulatedTexture = ResourceDescriptorHeap[renderResources.frameAccumulatedTextureIndex];
     const uint2 pixelCoord = DispatchRaysIndex().xy;
     
     uint frameAccumulated = frameAccumulatedTexture[pixelCoord];
     float3 prevRadiance = dstTexture[pixelCoord].xyz;
+    float3 prevAlbedo = albedoTexture[pixelCoord].xyz;
+    float3 prevNormal = normalTexture[pixelCoord].xyz;
+
     if (renderResources.bRefreshPathTracingTexture)
     {
         dstTexture[pixelCoord] = float4(0.0f, 0.0f, 0.0f, 1.0f);
         prevRadiance = float3(0.0f, 0.0f, 0.0f);
+        prevAlbedo = float3(0.0f, 0.0f, 0.0f);
+        prevNormal = float3(0.0f, 0.0f, 0.0f);
         frameAccumulatedTexture[pixelCoord] = 0;
         frameAccumulated = 0;
     }
@@ -49,6 +56,8 @@ void RayGen()
     
     uint numSamples = renderResources.numSamples;
     float3 newRadiance = prevRadiance;
+    float3 newAlbedo = prevAlbedo;
+    float3 newNormal = prevNormal;
 
     for (uint s=0; s<numSamples; s++)
     {
@@ -80,14 +89,17 @@ void RayGen()
             payload
         );
 
-        float3 currRadiance = payload.radiance;
         const float lerpFactor = frameAccumulated / float(frameAccumulated + 1.f);
-        newRadiance = lerp(currRadiance, newRadiance, lerpFactor);
+        newRadiance = lerp(payload.radiance, newRadiance, lerpFactor);
+        newAlbedo = lerp(payload.albedo, newAlbedo, lerpFactor);
+        newNormal = lerp(payload.normal, newNormal, lerpFactor);
 
         frameAccumulated += 1;
     }
 
     dstTexture[pixelCoord] = float4(newRadiance, 1.0f);
+    albedoTexture[pixelCoord] = float4(newAlbedo, 1.0f);
+    normalTexture[pixelCoord] = float4(newNormal, 1.0f);
     frameAccumulatedTexture[pixelCoord] = frameAccumulated;
 }
 
@@ -197,7 +209,7 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     // Russian Roulette
     float RandomFloatForRoulette = pcgHash(renderResources.randomFloats[RANDOM_INDEX_PIXEL_JITTER].z, uvz);
     bool bTerminate = TerminateByRussianRoulette(RandomFloatForRoulette, albedo);
-    if (bTerminate)
+    if (payload.depth > 0 && bTerminate)
     {
         payload.radiance = float3(0.f, 0.f, 0.f);
         payload.distance = 0;
@@ -271,6 +283,12 @@ void ClosestHit(inout FPathTracePayload payload, in Attributes attr)
     nextPayload.uv = payload.uv;
     nextPayload.sampleIndex = payload.sampleIndex;
     
+    if (payload.depth == 0)
+    {
+        payload.albedo = albedo;
+        payload.normal = normalWS * 2.f - 1.f;
+    }
+
     if (payload.depth+1 >= renderResources.maxPathDepth)
     {
         payload.radiance = float3(0.0f, 0.0f, 0.0f);

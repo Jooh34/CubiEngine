@@ -135,24 +135,38 @@ void FOIDenoiser::SubmitAndWait(ID3D12CommandQueue* Q, ID3D12Fence* Fence, UINT6
 	}
 }
 
+static void CopyTextureToLinearBuffer(FGraphicsContext* GraphicsContext, FTexture* SrcTexture, const FSharedLinearImage& DstBuffer)
+{
+	D3D12_TEXTURE_COPY_LOCATION SrcLoc(SrcTexture->GetResource(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX);
+	SrcLoc.SubresourceIndex = 0;
+	D3D12_TEXTURE_COPY_LOCATION DstLoc(DstBuffer.Buffer.Get(), D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT);
+	DstLoc.PlacedFootprint = DstBuffer.Footprint;
+	GraphicsContext->CopyTextureRegion(&DstLoc, 0, 0, 0, &SrcLoc, nullptr);
+}
+
 void FOIDenoiser::AddPass(
 	const FGraphicsDevice* GraphicsDevice,
 	FTexture* SrcColor,
+	FTexture* SrcAlbedo,
+	FTexture* SrcNormal,
 	FTexture* DenoiseOutput
 )
 {
 	FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
 	GraphicsContext->AddResourceBarrier(SrcColor, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	if (SrcAlbedo)
+		GraphicsContext->AddResourceBarrier(SrcAlbedo, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	if (SrcNormal)
+		GraphicsContext->AddResourceBarrier(SrcNormal, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	GraphicsContext->ExecuteResourceBarriers();
 
-	D3D12_TEXTURE_COPY_LOCATION SrcLoc(SrcColor->GetResource(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX);
-	SrcLoc.SubresourceIndex = 0;
-	D3D12_TEXTURE_COPY_LOCATION DstLoc(Color.Buffer.Get(), D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT);
-	DstLoc.PlacedFootprint = Color.Footprint;
-	GraphicsContext->CopyTextureRegion(&DstLoc, 0, 0, 0, &SrcLoc, nullptr);
+	CopyTextureToLinearBuffer(GraphicsContext, SrcColor, Color);
+	if (SrcAlbedo)
+		CopyTextureToLinearBuffer(GraphicsContext, SrcAlbedo, Albedo);
+	if (SrcNormal)
+		CopyTextureToLinearBuffer(GraphicsContext, SrcNormal, Normal);
 
 	FrameInterop Interop;
-
 	if (!Interop.Fence)
 	{
 		GraphicsDevice->GetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&Interop.Fence));
@@ -161,7 +175,7 @@ void FOIDenoiser::AddPass(
 
 	SubmitAndWait(GraphicsDevice->GetDirectCommandQueue()->GetCommandQueue(), Interop.Fence.Get(), Interop.FenceValue, Interop.FenceEvent);
 
-	BindImages(Color, nullptr, nullptr, Output, SrcColor);
+	BindImages(Color, &Albedo, &Normal, Output, SrcColor);
 	Execute();
 
 	GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
