@@ -146,10 +146,7 @@ struct FTexture
         return GetResource() != nullptr;
     }
 
-    ~FTexture()
-    {
-        // notify to DebugTexture
-    }
+    ~FTexture();
 };
 
 struct FIntRect

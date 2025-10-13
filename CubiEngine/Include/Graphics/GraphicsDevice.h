@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+#include <string>
 #include "Graphics/DescriptorHeap.h"
 #include "Graphics/CommandQueue.h"
 #include "Graphics/Resource.h"
@@ -89,23 +91,54 @@ public:
         return CbvSrvUavDescriptorHeap->GetDescriptorHandleFromIndex(Index);
     }
 
-    void AppendDebugTextureKeyList(std::vector<std::string>& Keys) const
+    static void AppendDebugTextureKeyList(std::vector<std::string>& Keys)
     {
-        Keys.reserve(DebugTextureMap.size());
+        Keys.reserve(Keys.size() + DebugTextureMap.size());
         for (auto& kv : DebugTextureMap) {
-            Keys.push_back(kv.first);
+            if (!kv.first.empty()) {
+                Keys.push_back(kv.first);
+            }
         }
     }
 
-	FTexture* GetDebugTexture(const std::string& Name) const
+	static FTexture* GetDebugTexture(const std::string& Name)
     {
 		auto it = DebugTextureMap.find(Name);
         if (it != DebugTextureMap.end())
         {
 			return it->second;
 		}
-		return nullptr;
+        return nullptr;
 	}
+
+	static bool AddDebugTexture(const std::string& Name, FTexture* Texture)
+	{
+        if (Name.empty() || !Texture) {
+            return false;
+        }
+
+        DebugTextureMap[Name] = Texture;
+        return true;
+	}
+
+    static bool RemoveDebugTexture(const std::string& Name, const FTexture* Texture)
+    {
+        if (Name.empty() || !Texture) {
+            return false;
+        }
+
+		auto it = DebugTextureMap.find(Name);
+        if (it == DebugTextureMap.end()) {
+            return false;
+        }
+
+        if (it->second != Texture) {
+            return false;
+        }
+
+        DebugTextureMap.erase(it);
+        return true;
+    }
 
 private:
     bool bInitialized = false;
@@ -162,5 +195,5 @@ private:
 
     std::unique_ptr<FQueryHeap> TimeStampQueryHeap;
 
-    mutable std::map<std::string, FTexture*> DebugTextureMap;
+    static std::map<std::string, FTexture*> DebugTextureMap;
 };

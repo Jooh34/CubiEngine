@@ -8,6 +8,8 @@
 #include "ShaderInterlop/RenderResources.hlsli"
 #include <DirectXTex.h>
 
+std::map<std::string, FTexture*> FGraphicsDevice::DebugTextureMap{};
+
 FGraphicsDevice::FGraphicsDevice(const uint32_t Width, const uint32_t Height,
     const DXGI_FORMAT SwapchainFormat, const HWND WindowHandle)
     : SwapchainFormat(SwapchainFormat), WindowHandle(WindowHandle), GPUProfiler(this)
@@ -326,15 +328,11 @@ std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationD
     }
 
 	std::string TextureName = wStringToString(InTextureCreationDesc.Name);
-	if (DebugTextureMap.find(TextureName) != DebugTextureMap.end())
-	{
-        Log(std::format(L"Texture with name {} already exists.", InTextureCreationDesc.Name));
-	}
-    else if (Texture->Usage == ETextureUsage::DepthStencil ||
+    if (Texture->Usage == ETextureUsage::DepthStencil ||
         Texture->Usage == ETextureUsage::RenderTarget ||
         Texture->Usage == ETextureUsage::UAVTexture)
     {
-        DebugTextureMap[TextureName] = Texture.get();
+        AddDebugTexture(TextureName, Texture.get());
     }
 
     return Texture;
