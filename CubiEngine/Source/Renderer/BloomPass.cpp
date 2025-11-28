@@ -1,12 +1,13 @@
 #include "Renderer/BloomPass.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include "Graphics/Profiler.h"
 #include "Math/CubiMath.h"
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FBloomPass::FBloomPass(FGraphicsDevice* Device, const uint32_t Width, const uint32_t Height)
-	: FRenderPass(Device, Width, Height)
+FBloomPass::FBloomPass(const uint32_t Width, const uint32_t Height)
+	: FRenderPass(Width, Height)
 {
     FComputePipelineStateCreationDesc GaussianBlurPipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -16,7 +17,7 @@ FBloomPass::FBloomPass(FGraphicsDevice* Device, const uint32_t Width, const uint
         },
         .PipelineName = L"GaussianBlurW Pipeline"
     };
-    GaussianBlurPipelineState = Device->CreatePipelineState(GaussianBlurPipelineDesc);
+    GaussianBlurPipelineState = RHICreatePipelineState(GaussianBlurPipelineDesc);
 
     FComputePipelineStateCreationDesc DownSamplePipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -26,10 +27,10 @@ FBloomPass::FBloomPass(FGraphicsDevice* Device, const uint32_t Width, const uint
         },
         .PipelineName = L"DownSample Pipeline"
     };
-    DownSamplePipelineState = Device->CreatePipelineState(DownSamplePipelineDesc);
+    DownSamplePipelineState = RHICreatePipelineState(DownSamplePipelineDesc);
 }
 
-void FBloomPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FBloomPass::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
     FTextureCreationDesc BloomResultTextureDesc{
         .Usage = ETextureUsage::UAVTexture,
@@ -39,7 +40,7 @@ void FBloomPass::InitSizeDependantResource(const FGraphicsDevice* const Device, 
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"BloomResult Texture",
     };
-    BloomResultTexture = Device->CreateTexture(BloomResultTextureDesc);
+    BloomResultTexture = RHICreateTexture(BloomResultTextureDesc);
     
     BloomXTextures.clear();
     BloomXTextures.reserve(BLOOM_MAX_STEP);
@@ -62,7 +63,7 @@ void FBloomPass::InitSizeDependantResource(const FGraphicsDevice* const Device, 
             .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
             .Name = NameBuffer,
         };
-        BloomXTextures.push_back(Device->CreateTexture(BloomXTextureDesc));
+        BloomXTextures.push_back(RHICreateTexture(BloomXTextureDesc));
 
         swprintf(NameBuffer, 100, L"BloomY Texture 1/%d", (int)Denom);
         FTextureCreationDesc BloomYTextureDesc{
@@ -73,7 +74,7 @@ void FBloomPass::InitSizeDependantResource(const FGraphicsDevice* const Device, 
             .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
             .Name = NameBuffer,
         };
-        BloomYTextures.push_back(Device->CreateTexture(BloomYTextureDesc));
+        BloomYTextures.push_back(RHICreateTexture(BloomYTextureDesc));
 
         swprintf(NameBuffer, 100, L"DownSampled Scene Texture 1/%d", (int)Denom);
         FTextureCreationDesc DownSampledSceneTextureDesc{
@@ -84,7 +85,7 @@ void FBloomPass::InitSizeDependantResource(const FGraphicsDevice* const Device, 
             .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
             .Name = NameBuffer,
         };
-        DownSampledSceneTextures.push_back(Device->CreateTexture(DownSampledSceneTextureDesc));
+        DownSampledSceneTextures.push_back(RHICreateTexture(DownSampledSceneTextureDesc));
     }
 }
 

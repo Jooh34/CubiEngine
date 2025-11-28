@@ -7,14 +7,14 @@
 #include "Scene/Mesh.h"
 #include "Math/Transform.h"
 
-class FGraphicsDevice;
+
 class FGraphicsContext;
 class FScene;
 
 class FGLTFModelLoader
 {
 public:
-    FGLTFModelLoader(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc);
+    FGLTFModelLoader(const FModelCreationDesc& ModelCreationDesc);
 
     std::wstring ModelName;
     std::string ModelDir;
@@ -27,9 +27,9 @@ public:
 private:
 	FModelCreationDesc ModelCreationDesc;
 
-    void LoadSamplers(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel);
-    void LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel);
-    void LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc,
+    void LoadSamplers(const tinygltf::Model& GLTFModel);
+    void LoadMaterials(const tinygltf::Model& GLTFModel);
+    void LoadNode(const FModelCreationDesc& ModelCreationDesc,
          const uint32_t NodeIndex, const tinygltf::Model& GLTFModel, const FTransform& LocalTransform);
 
 	XMFLOAT3 OverrideBaseColorValue{ -1.0f, -1.0f, -1.0f };

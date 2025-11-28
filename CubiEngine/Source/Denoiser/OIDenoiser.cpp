@@ -1,5 +1,6 @@
 #include "Denoiser/OIDenoiser.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/GraphicsContext.h"
+#include "Graphics/D3D12DynamicRHI.h"
 
 static void OidnCheck(OIDNDevice Dev, const char* Where)
 {
@@ -145,14 +146,13 @@ static void CopyTextureToLinearBuffer(FGraphicsContext* GraphicsContext, FTextur
 }
 
 void FOIDenoiser::AddPass(
-	const FGraphicsDevice* GraphicsDevice,
 	FTexture* SrcColor,
 	FTexture* SrcAlbedo,
 	FTexture* SrcNormal,
 	FTexture* DenoiseOutput
 )
 {
-	FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
+	FGraphicsContext* GraphicsContext = RHIGetCurrentGraphicsContext();
 	GraphicsContext->AddResourceBarrier(SrcColor, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	if (SrcAlbedo)
 		GraphicsContext->AddResourceBarrier(SrcAlbedo, D3D12_RESOURCE_STATE_COPY_SOURCE);
@@ -169,16 +169,16 @@ void FOIDenoiser::AddPass(
 	FrameInterop Interop;
 	if (!Interop.Fence)
 	{
-		GraphicsDevice->GetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&Interop.Fence));
+		RHIGetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&Interop.Fence));
 		Interop.FenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	}
 
-	SubmitAndWait(GraphicsDevice->GetDirectCommandQueue()->GetCommandQueue(), Interop.Fence.Get(), Interop.FenceValue, Interop.FenceEvent);
+	SubmitAndWait(RHIGetDirectCommandQueue()->GetD3D12CommandQueue(), Interop.Fence.Get(), Interop.FenceValue, Interop.FenceEvent);
 
 	BindImages(Color, &Albedo, &Normal, Output, SrcColor);
 	Execute();
 
-	GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
+	GraphicsContext = RHIGetCurrentGraphicsContext();
 	GraphicsContext->AddResourceBarrier(DenoiseOutput, D3D12_RESOURCE_STATE_COPY_DEST);
 	GraphicsContext->ExecuteResourceBarriers();
 

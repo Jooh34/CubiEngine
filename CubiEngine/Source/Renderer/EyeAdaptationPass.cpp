@@ -1,14 +1,15 @@
 #include "Renderer/EyeAdaptationPass.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FEyeAdaptationPass::FEyeAdaptationPass(FGraphicsDevice* Device, const uint32_t Width, const uint32_t Height)
-	: FRenderPass(Device, Width, Height)
+FEyeAdaptationPass::FEyeAdaptationPass(const uint32_t Width, const uint32_t Height)
+	: FRenderPass(Width, Height)
 {
     std::vector<UINT> Data(256, 0);
 
-    HistogramBuffer = Device->CreateBuffer<UINT>(
+    HistogramBuffer = RHICreateBuffer<UINT>(
         FBufferCreationDesc{
             .Usage = EBufferUsage::StructuredBufferUAV,
             .Name = L"Histogram buffer ",
@@ -17,7 +18,7 @@ FEyeAdaptationPass::FEyeAdaptationPass(FGraphicsDevice* Device, const uint32_t W
 
     // 4 element to align 16 byte
     std::vector<XMFLOAT4> AverageLuminanceData(1, XMFLOAT4{ 0,0,0,0 });
-    AverageLuminanceBuffer = Device->CreateBuffer<XMFLOAT4>(
+    AverageLuminanceBuffer = RHICreateBuffer<XMFLOAT4>(
         FBufferCreationDesc{
             .Usage = EBufferUsage::StructuredBufferUAV,
             .Name = L"AverageLuminance buffer ",
@@ -32,7 +33,7 @@ FEyeAdaptationPass::FEyeAdaptationPass(FGraphicsDevice* Device, const uint32_t W
         .PipelineName = L"GenerateHistogram Pipeline"
     };
     
-    GenerateHistogramPipelineState = Device->CreatePipelineState(GenerateHistogramPipelineStateDesc);
+    GenerateHistogramPipelineState = RHICreatePipelineState(GenerateHistogramPipelineStateDesc);
 
     FComputePipelineStateCreationDesc CalculateAverageLuminancePipelineStateDesc = FComputePipelineStateCreationDesc
     {
@@ -43,9 +44,9 @@ FEyeAdaptationPass::FEyeAdaptationPass(FGraphicsDevice* Device, const uint32_t W
         .PipelineName = L"CalculateAverageLuminance Pipeline"
     };
 
-    CalcuateAverageLuminancePipelineState = Device->CreatePipelineState(CalculateAverageLuminancePipelineStateDesc);
+    CalcuateAverageLuminancePipelineState = RHICreatePipelineState(CalculateAverageLuminancePipelineStateDesc);
 
-    EyeAdaptationTonemappingPipelineState = Device->CreatePipelineState(FComputePipelineStateCreationDesc{
+    EyeAdaptationTonemappingPipelineState = RHICreatePipelineState(FComputePipelineStateCreationDesc{
         .ShaderModule
         {
             .computeShaderPath = L"Shaders/EyeAdaptation/Tonemapping.hlsl",
@@ -54,7 +55,7 @@ FEyeAdaptationPass::FEyeAdaptationPass(FGraphicsDevice* Device, const uint32_t W
     });
 }
 
-void FEyeAdaptationPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FEyeAdaptationPass::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
 }
 

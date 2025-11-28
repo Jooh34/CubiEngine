@@ -5,10 +5,10 @@
 #include "Scene/SphereMesh.h"
 #include "Math/CubiMath.h"
 
-void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevice* Device)
+void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene)
 {
     // set environment map
-    Scene->EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
+    Scene->EnviromentMap = std::make_unique<FCubeMap>(FCubeMapCreationDesc{
         .EquirectangularTexturePath = L"Assets/Textures/pisa.hdr",
         .Name = L"Environment Map"
 	});
@@ -179,7 +179,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             Scene->GetCamera().FarZ = 100.f;
             Scene->GetCamera().SetCamMovementSpeed(0.01f);
 
-            Scene->EnviromentMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
+            Scene->EnviromentMap = std::make_unique<FCubeMap>(FCubeMapCreationDesc{
                 .EquirectangularTexturePath = L"Assets/Textures/WhiteFurnace.hdr",
                 .Name = L"WhiteFurnace Map"
             });
@@ -193,7 +193,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             static constexpr float EPS = 1e-6;
 			Scene->GetCamera().SetCamPosition(0, Size/2.f, -1.5*Size);
 
-            FMesh* Floor = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* Floor = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox Floor",
 				.Rotation = { 0.f, 0.f, 0.f },
                 .Scale = { Size, EPS, Size },
@@ -205,7 +205,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
 			});
 			Scene->AddMesh(Floor);
 
-            FMesh* Ceiling = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* Ceiling = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox Ceiling",
                 .Rotation = { 0.f, 0.f, 0.f },
                 .Scale = { Size, EPS, Size },
@@ -217,7 +217,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
                 });
             Scene->AddMesh(Ceiling);
 
-            FMesh* BackWall = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* BackWall = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox BackWall",
                 .Rotation = { 0.f, 0.f, 0.f },
                 .Scale = { Size, Size, EPS },
@@ -229,7 +229,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
 			});
             Scene->AddMesh(BackWall);
 
-            FMesh* LeftWall = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* LeftWall = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox LeftWall",
                 .Rotation = { 0.f, 0.f, 0.f },
                 .Scale = { EPS, Size, Size },
@@ -241,7 +241,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
 			});
             Scene->AddMesh(LeftWall);
 
-            FMesh* RightWall = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* RightWall = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox RightWall",
                 .Rotation = { 0.f, 0.f, 0.f },
                 .Scale = { EPS, Size, Size },
@@ -253,7 +253,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             });
             Scene->AddMesh(RightWall);
 
-            FMesh* ShortBox = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* ShortBox = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox ShortBox",
                 .Rotation = { 0.f, DegreeToRadian(20.f), 0.f},
                 .Scale = { Size / 4.f, Size / 4.f, Size / 4.f },
@@ -265,7 +265,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
 			});
             Scene->AddMesh(ShortBox);
 
-            FMesh* TailBox = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* TailBox = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox TailBox",
                 .Rotation = { 0.f, -DegreeToRadian(20.f), 0.f},
                 .Scale = { Size / 4.f, Size / 2.f, Size / 4.f },
@@ -277,7 +277,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
 			});
             Scene->AddMesh(TailBox);
 
-            FMesh* CeilingLight = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* CeilingLight = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox CeilingLight",
                 .Rotation = { 0.f, 0.f, 0.f },
                 .Scale = { Size/4.f, EPS, Size/4.f },
@@ -298,7 +298,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             static constexpr float EPS = 1e-6;
             Scene->GetCamera().SetCamPosition(0, Size / 2.f, -1.5 * Size);
 
-            FMesh* Floor = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* Floor = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox Floor",
                 .Rotation = { 0.f, 0.f, 0.f },
                 .Scale = { Size, EPS, Size },
@@ -310,7 +310,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
                 });
             Scene->AddMesh(Floor);
 
-            FMesh* Ceiling = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* Ceiling = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox Ceiling",
                 .Rotation = { 0.f, 0.f, 0.f },
                 .Scale = { Size, EPS, Size },
@@ -322,7 +322,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
                 });
             Scene->AddMesh(Ceiling);
 
-            FMesh* BackWall = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* BackWall = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox BackWall",
                 .Rotation = { 0.f, 0.f, 0.f },
                 .Scale = { Size, Size, EPS },
@@ -334,7 +334,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
                 });
             Scene->AddMesh(BackWall);
 
-            FMesh* LeftWall = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* LeftWall = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox LeftWall",
                 .Rotation = { 0.f, 0.f, 0.f },
                 .Scale = { EPS, Size, Size },
@@ -346,7 +346,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
                 });
             Scene->AddMesh(LeftWall);
 
-            FMesh* RightWall = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* RightWall = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox RightWall",
                 .Rotation = { 0.f, 0.f, 0.f },
                 .Scale = { EPS, Size, Size },
@@ -358,7 +358,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
                 });
             Scene->AddMesh(RightWall);
 
-            FMesh* CeilingLight = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* CeilingLight = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox CeilingLight",
                 .Rotation = { 0.f, 0.f, 0.f },
                 .Scale = { Size / 4.f, EPS, Size / 4.f },
@@ -370,7 +370,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
                 });
             Scene->AddMesh(CeilingLight);
 
-            FMesh* ShortBox = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* ShortBox = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox ShortBox",
                 .Rotation = { 0.f, DegreeToRadian(20.f), 0.f},
                 .Scale = { Size / 4.f, Size / 4.f, Size / 4.f },
@@ -382,7 +382,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
                 });
             Scene->AddMesh(ShortBox);
 
-            FMesh* TailBox = new FCubeMesh(Device, FMeshCreationDesc{
+            FMesh* TailBox = new FCubeMesh(FMeshCreationDesc{
                 .Name = L"CornellBox TailBox",
                 .Rotation = { 0.f, -DegreeToRadian(20.f), 0.f},
                 .Scale = { Size / 4.f, Size / 2.f, Size / 4.f },
@@ -406,7 +406,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevic
             };
             Scene->AddModel(Suzanne);
 
-            FMesh* GlassBall = new FSphereMesh(Device, FMeshCreationDesc{
+            FMesh* GlassBall = new FSphereMesh(FMeshCreationDesc{
                  .Name = L"GlassBall",
                  .Rotation = { 0.f, 0.f, 0.f },
                  .Scale = { Size / 4.f, Size / 4.f, Size / 4.f },

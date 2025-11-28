@@ -1,11 +1,12 @@
 #include "Renderer/PostProcess.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include "Graphics/Profiler.h"
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FPostProcess::FPostProcess(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
-    : FRenderPass(GraphicsDevice, Width, Height)
+FPostProcess::FPostProcess(uint32_t Width, uint32_t Height)
+    : FRenderPass(Width, Height)
 {
     FComputePipelineStateCreationDesc TonemappingPipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -15,7 +16,7 @@ FPostProcess::FPostProcess(FGraphicsDevice* const GraphicsDevice, uint32_t Width
         },
         .PipelineName = L"Tonemapping Pipeline"
     };
-    TonemappingPipelineState = GraphicsDevice->CreatePipelineState(TonemappingPipelineDesc);
+    TonemappingPipelineState = RHICreatePipelineState(TonemappingPipelineDesc);
     
     FComputePipelineStateCreationDesc DebugVisualizePipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -25,7 +26,7 @@ FPostProcess::FPostProcess(FGraphicsDevice* const GraphicsDevice, uint32_t Width
         },
         .PipelineName = L"DebugVisualize Pipeline"
     };
-    DebugVisualizePipeline = GraphicsDevice->CreatePipelineState(DebugVisualizePipelineDesc);
+    DebugVisualizePipeline = RHICreatePipelineState(DebugVisualizePipelineDesc);
     
     FComputePipelineStateCreationDesc DebugVisualizeDepthPipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -35,10 +36,10 @@ FPostProcess::FPostProcess(FGraphicsDevice* const GraphicsDevice, uint32_t Width
         },
         .PipelineName = L"DebugVisualizeDepth Pipeline"
     };
-    DebugVisualizeDepthPipeline = GraphicsDevice->CreatePipelineState(DebugVisualizeDepthPipelineDesc);
+    DebugVisualizeDepthPipeline = RHICreatePipelineState(DebugVisualizeDepthPipelineDesc);
 }
 
-void FPostProcess::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FPostProcess::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
 }
 

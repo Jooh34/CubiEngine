@@ -2,7 +2,6 @@
 
 #include "Graphics/RaytracingPipelineState.h"
 
-class FGraphicsDevice;
 class FGraphicsContext;
 class FScene;
 class FMesh;
@@ -32,7 +31,7 @@ class FRaytracingGeometry
 {
 public:
     FRaytracingGeometry() = delete;
-    FRaytracingGeometry(const FGraphicsDevice* const GraphicsDevice,
+    FRaytracingGeometry(
         std::pair<ComPtr<ID3D12Resource>, uint32_t>& VertexBuffer,
         std::pair<ComPtr<ID3D12Resource>, uint32_t>& IndexBuffer
     );
@@ -48,18 +47,16 @@ class FRaytracingScene
 {
 public:
     void GenerateRaytracingScene(
-        const FGraphicsDevice* const GraphicsDevice,
         FGraphicsContext* const GraphicsContext,
         std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList
     );
 
     void GenerateRaytracingBuffers(
-        const FGraphicsDevice* const GraphicsDevice,
         FGraphicsContext* const GraphicsContext,
         std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList
     );
 
-    void CreateTopLevelASResourceView(const FGraphicsDevice* const GraphicsDevice);
+    void CreateTopLevelASResourceView();
     uint32_t GetTopLevelASResourceView() { return SrvIndex; };
     D3D12_GPU_VIRTUAL_ADDRESS GetTopLevelASGPUVirtualAddress() { return GPUVirtualAddress; };
 

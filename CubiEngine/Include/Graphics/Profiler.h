@@ -3,27 +3,12 @@
 #include "Graphics/Resource.h"
 #include "WinPixEventRuntime/pix3.h"
 #include "Graphics/Query.h"
+#include "Graphics/GraphicsContext.h"
 
-class FGraphicsDevice;
-
-class FDeviceChild
-{
-protected:
-    FGraphicsDevice* Parent;
-
-public:
-    FDeviceChild(FGraphicsDevice* InParent = nullptr) : Parent(InParent) {}
-
-    FORCEINLINE FGraphicsDevice* GetParentDevice() const
-    {
-        return Parent;
-    }
-};
-
-class FGPUEventNode : public FDeviceChild
+class FGPUEventNode
 {
 public:
-    FGPUEventNode(const char* Name, FGPUEventNode* Parent, FGraphicsDevice* ParentDevice);
+    FGPUEventNode(const char* Name, FGPUEventNode* Parent);
     void StartTiming();
     void StopTiming();
     double GetTiming(UINT64* ReadBackData);
@@ -44,10 +29,10 @@ struct FProfileData
     bool bHasChildren;
 };
 
-class FGPUProfiler : public FDeviceChild
+class FGPUProfiler
 {
 public:
-    FGPUProfiler(FGraphicsDevice* GraphicsDevice);
+    FGPUProfiler();
 
     void BeginFrame();
     void EndFrame();
@@ -74,20 +59,18 @@ private:
 
 class GPUProfileScopedObject
 {
-    FGraphicsDevice* Device;
-
 public:
-    GPUProfileScopedObject(FGraphicsDevice* Device, const char* Name);
+    GPUProfileScopedObject(const char* Name);
     ~GPUProfileScopedObject();
 };
 
 #if ENABLE_PIX_EVENT
     #define SCOPED_NAMED_EVENT(GraphicsContext, NAME)\
-        PIXScopedEventObject Event_##NAME = PIXScopedEventObject(GraphicsContext->GetCommandList(), PIX_COLOR(255, 255, 255), #NAME);
+        PIXScopedEventObject Event_##NAME = PIXScopedEventObject(GraphicsContext->GetD3D12CommandList(), PIX_COLOR(255, 255, 255), #NAME);
 #else
     #define SCOPED_NAMED_EVENT(GraphicsContext, NAME)
 #endif
 
-#define SCOPED_GPU_EVENT(Device, NAME)\
-    GPUProfileScopedObject GPUProfileEvent_##NAME = GPUProfileScopedObject(Device, #NAME);
+#define SCOPED_GPU_EVENT(NAME)\
+    GPUProfileScopedObject GPUProfileEvent_##NAME = GPUProfileScopedObject(#NAME);
 

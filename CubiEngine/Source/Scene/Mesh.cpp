@@ -77,12 +77,12 @@ void FMesh::Render(const FGraphicsContext* const GraphicsContext,
 	GraphicsContext->DrawIndexedInstanced(IndicesCount);
 }
 
-void FMesh::GenerateRaytracingGeometry(const FGraphicsDevice* const GraphicsDevice)
+void FMesh::GenerateRaytracingGeometry()
 {
     std::pair<ComPtr<ID3D12Resource>, uint32_t> A = std::pair<ComPtr<ID3D12Resource>, uint32_t>(PositionBuffer.GetResource(), (uint32_t)PositionBuffer.NumElement);
     std::pair<ComPtr<ID3D12Resource>, uint32_t> B = std::pair<ComPtr<ID3D12Resource>, uint32_t>(IndexBuffer.GetResource(), (uint32_t)IndexBuffer.NumElement);
 
-    RaytracingGeometry = make_shared<FRaytracingGeometry>( GraphicsDevice, A, B );
+    RaytracingGeometry = make_shared<FRaytracingGeometry>( A, B );
 }
 
 void FMesh::GatherRaytracingGeometry(std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList)

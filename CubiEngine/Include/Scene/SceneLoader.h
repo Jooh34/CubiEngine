@@ -1,7 +1,7 @@
 #pragma once
 
 class FScene;
-class FGraphicsDevice;
+
 
 enum ESceneType
 {
@@ -18,5 +18,5 @@ enum ESceneType
 class FSceneLoader
 {
 public:
-	static void LoadScene(ESceneType SceneType, FScene* Scene, FGraphicsDevice* Device);
+	static void LoadScene(ESceneType SceneType, FScene* Scene);
 };

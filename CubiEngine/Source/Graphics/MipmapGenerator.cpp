@@ -1,10 +1,10 @@
 #include "Graphics/MipmapGenerator.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FMipmapGenerator::FMipmapGenerator(FGraphicsDevice* const Device) : Device(Device)
+FMipmapGenerator::FMipmapGenerator()
 {
-    GenerateMipmapPipelineState = Device->CreatePipelineState(FComputePipelineStateCreationDesc{
+    GenerateMipmapPipelineState = RHICreatePipelineState(FComputePipelineStateCreationDesc{
         .ShaderModule
         {
             .computeShaderPath = L"Shaders/MipMap/GenerateMipmapCS.hlsl",
@@ -12,7 +12,7 @@ FMipmapGenerator::FMipmapGenerator(FGraphicsDevice* const Device) : Device(Devic
         .PipelineName = L"Mipmap Generation Pipeline",
     });
 
-    GenerateCubemapMipmapPipelineState = Device->CreatePipelineState(FComputePipelineStateCreationDesc{
+    GenerateCubemapMipmapPipelineState = RHICreatePipelineState(FComputePipelineStateCreationDesc{
         .ShaderModule
         {
             .computeShaderPath = L"Shaders/MipMap/GenerateCubemapMipmapCS.hlsl",
@@ -30,7 +30,7 @@ void FMipmapGenerator::GenerateMipmap(FTexture* Texture)
 
     //assert(Texture.IsPowerOfTwo());
     
-    std::unique_ptr<FComputeContext> Context = Device->GetComputeContext();
+    std::unique_ptr<FComputeContext> Context = RHIGetComputeContext();
     Context->Reset();
 
     Context->AddResourceBarrier(Texture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -77,5 +77,5 @@ void FMipmapGenerator::GenerateMipmap(FTexture* Texture)
         Context->ExecuteResourceBarriers();
     }
 
-    Device->ExecuteAndFlushComputeContext(std::move(Context));
+    RHIExecuteAndFlushComputeContext(std::move(Context));
 }

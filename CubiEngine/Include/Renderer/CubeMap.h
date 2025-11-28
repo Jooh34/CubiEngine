@@ -9,13 +9,12 @@ struct FCubeMapCreationDesc
     std::wstring Name;
 };
 
-class FGraphicsDevice;
 class FGraphicsContext;
 
 class FCubeMap
 {
 public:
-    FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc);
+    FCubeMap(const FCubeMapCreationDesc& Desc);
 
     void GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint32_t MipCount);
     void GenerateBRDFLut(const FCubeMapCreationDesc& Desc);
@@ -39,7 +38,5 @@ public:
     uint32_t GetMipCount() const { return MipCount; };
 
 private:
-    FGraphicsDevice* Device;
-
     uint32_t MipCount = 6u;
 };

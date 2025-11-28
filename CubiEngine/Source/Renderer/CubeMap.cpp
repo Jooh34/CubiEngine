@@ -1,11 +1,12 @@
 #include "Renderer/CubeMap.h"
 #include "Graphics/Resource.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : Device(Device)
+FCubeMap::FCubeMap(const FCubeMapCreationDesc& Desc)
 {
-    std::unique_ptr<FTexture> EquirectangularTexture = Device->CreateTexture(FTextureCreationDesc{
+    std::unique_ptr<FTexture> EquirectangularTexture = RHICreateTexture(FTextureCreationDesc{
         .Usage = ETextureUsage::HDRTextureFromPath,
         .Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
         .MipLevels = MipCount,
@@ -14,7 +15,7 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
         .Path = Desc.EquirectangularTexturePath,
     });
 
-    CubeMapTexture = Device->CreateTexture(FTextureCreationDesc{
+    CubeMapTexture = RHICreateTexture(FTextureCreationDesc{
         .Usage = ETextureUsage::CubeMap,
         .Width = GCubeMapTextureDimension,
         .Height = GCubeMapTextureDimension,
@@ -25,7 +26,7 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
     });
 
     ConvertEquirectToCubeMapPipelineState =
-        Device->CreatePipelineState(FComputePipelineStateCreationDesc{
+        RHICreatePipelineState(FComputePipelineStateCreationDesc{
             .ShaderModule =
                 {
                     .computeShaderPath = L"Shaders/CubeMap/ConvertEquirectToCubeMap.hlsl",
@@ -34,7 +35,7 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
         });
     
     ScreenSpaceCubemapPipelineState =
-        Device->CreatePipelineState(FGraphicsPipelineStateCreationDesc{
+        RHICreatePipelineState(FGraphicsPipelineStateCreationDesc{
         .ShaderModule =
             {
                 .vertexShaderPath = L"Shaders/CubeMap/ScreenSpaceCubemap.hlsl",
@@ -50,7 +51,7 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
         .DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO,
         });
 
-    std::unique_ptr<FComputeContext> ComputeContext = Device->GetComputeContext();
+    std::unique_ptr<FComputeContext> ComputeContext = RHIGetComputeContext();
     ComputeContext->Reset();
 
     ComputeContext->AddResourceBarrier(CubeMapTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -74,7 +75,7 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
         ComputeContext->Dispatch(numGroups, numGroups, 6u);
     }
    
-    Device->ExecuteAndFlushComputeContext(std::move(ComputeContext));
+    RHIExecuteAndFlushComputeContext(std::move(ComputeContext));
 
     GeneratePrefilteredCubemap(Desc, MipCount);
     GenerateBRDFLut(Desc);
@@ -84,7 +85,7 @@ FCubeMap::FCubeMap(FGraphicsDevice* Device, const FCubeMapCreationDesc& Desc) : 
 void FCubeMap::GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint32_t MipCount)
 {
     PrefilterPipelineState =
-        Device->CreatePipelineState(FComputePipelineStateCreationDesc{
+        RHICreatePipelineState(FComputePipelineStateCreationDesc{
             .ShaderModule =
                 {
                     .computeShaderPath = L"Shaders/CubeMap/GeneratePrefilteredCubemapCS.hlsl",
@@ -92,7 +93,7 @@ void FCubeMap::GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint
             .PipelineName = L"GeneratePrefilteredCubemapCS Pipeline",
         });
 
-    PrefilteredCubemapTexture = Device->CreateTexture(FTextureCreationDesc{
+    PrefilteredCubemapTexture = RHICreateTexture(FTextureCreationDesc{
         .Usage = ETextureUsage::CubeMap,
         .Width = GPreFilteredCubeMapTextureDimension,
         .Height = GPreFilteredCubeMapTextureDimension,
@@ -102,7 +103,7 @@ void FCubeMap::GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint
         .Name = Desc.Name + std::wstring(L" Prefiltered Cubemap"),
      });
 
-    std::unique_ptr<FComputeContext> ComputeContext = Device->GetComputeContext();
+    std::unique_ptr<FComputeContext> ComputeContext = RHIGetComputeContext();
     ComputeContext->Reset();
 
     ComputeContext->AddResourceBarrier(CubeMapTexture.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
@@ -133,13 +134,13 @@ void FCubeMap::GeneratePrefilteredCubemap(const FCubeMapCreationDesc& Desc, uint
     ComputeContext->AddResourceBarrier(PrefilteredCubemapTexture.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     ComputeContext->ExecuteResourceBarriers();
 
-    Device->ExecuteAndFlushComputeContext(std::move(ComputeContext));
+    RHIExecuteAndFlushComputeContext(std::move(ComputeContext));
 }
 
 void FCubeMap::GenerateBRDFLut(const FCubeMapCreationDesc& Desc)
 {
     BRDFLutPipelineState =
-        Device->CreatePipelineState(FComputePipelineStateCreationDesc{
+        RHICreatePipelineState(FComputePipelineStateCreationDesc{
             .ShaderModule =
                 {
                     .computeShaderPath = L"Shaders/CubeMap/GenerateBRDFLutCS.hlsl",
@@ -147,7 +148,7 @@ void FCubeMap::GenerateBRDFLut(const FCubeMapCreationDesc& Desc)
             .PipelineName = L"GenerateBRDFLutCS Pipeline",
         });
 
-    BRDFLutTexture = Device->CreateTexture(FTextureCreationDesc{
+    BRDFLutTexture = RHICreateTexture(FTextureCreationDesc{
         .Usage = ETextureUsage::UAVTexture,
         .Width = GBRDFLutTextureDimension,
         .Height = GBRDFLutTextureDimension,
@@ -157,7 +158,7 @@ void FCubeMap::GenerateBRDFLut(const FCubeMapCreationDesc& Desc)
         .Name = Desc.Name + std::wstring(L" BRDFLut Texture"),
     });
     
-    std::unique_ptr<FComputeContext> ComputeContext = Device->GetComputeContext();
+    std::unique_ptr<FComputeContext> ComputeContext = RHIGetComputeContext();
     ComputeContext->Reset();
 
     ComputeContext->AddResourceBarrier(BRDFLutTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -176,13 +177,13 @@ void FCubeMap::GenerateBRDFLut(const FCubeMapCreationDesc& Desc)
     ComputeContext->AddResourceBarrier(BRDFLutTexture.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     ComputeContext->ExecuteResourceBarriers();
 
-    Device->ExecuteAndFlushComputeContext(std::move(ComputeContext));
+    RHIExecuteAndFlushComputeContext(std::move(ComputeContext));
 }
 
 void FCubeMap::GenerateIrradianceMap(const FCubeMapCreationDesc& Desc)
 {
     GenerateIrradianceMapPipelineState =
-        Device->CreatePipelineState(FComputePipelineStateCreationDesc{
+        RHICreatePipelineState(FComputePipelineStateCreationDesc{
             .ShaderModule =
                 {
                     .computeShaderPath = L"Shaders/CubeMap/GenerateIrradianceMap.hlsl",
@@ -190,7 +191,7 @@ void FCubeMap::GenerateIrradianceMap(const FCubeMapCreationDesc& Desc)
             .PipelineName = L"GenerateIrradianceMapCS Pipeline",
         });
 
-    IrradianceCubemapTexture = Device->CreateTexture(FTextureCreationDesc{
+    IrradianceCubemapTexture = RHICreateTexture(FTextureCreationDesc{
         .Usage = ETextureUsage::CubeMap,
         .Width = GIrradianceCubeMapTextureDimension,
         .Height = GIrradianceCubeMapTextureDimension,
@@ -200,7 +201,7 @@ void FCubeMap::GenerateIrradianceMap(const FCubeMapCreationDesc& Desc)
         .Name = Desc.Name + std::wstring(L"Irradiance Cubemap"),
     });
 
-    std::unique_ptr<FComputeContext> ComputeContext = Device->GetComputeContext();
+    std::unique_ptr<FComputeContext> ComputeContext = RHIGetComputeContext();
     ComputeContext->Reset();
 
     ComputeContext->AddResourceBarrier(IrradianceCubemapTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -221,7 +222,7 @@ void FCubeMap::GenerateIrradianceMap(const FCubeMapCreationDesc& Desc)
     ComputeContext->AddResourceBarrier(IrradianceCubemapTexture.get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     ComputeContext->ExecuteResourceBarriers();
 
-    Device->ExecuteAndFlushComputeContext(std::move(ComputeContext));
+    RHIExecuteAndFlushComputeContext(std::move(ComputeContext));
 }
 
 void FCubeMap::Render(FGraphicsContext* const GraphicsContext,

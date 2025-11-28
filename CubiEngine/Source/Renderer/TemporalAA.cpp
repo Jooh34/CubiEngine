@@ -1,11 +1,12 @@
 #include "Renderer/TemporalAA.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include "Graphics/Profiler.h"
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FTemporalAAPass::FTemporalAAPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
-    : FRenderPass(GraphicsDevice, Width, Height),
+FTemporalAAPass::FTemporalAAPass(uint32_t Width, uint32_t Height)
+    : FRenderPass(Width, Height),
         HistoryFrameCount(0)
 {
     FComputePipelineStateCreationDesc TemporalAAResolvePipelineDesc = FComputePipelineStateCreationDesc
@@ -16,7 +17,7 @@ FTemporalAAPass::FTemporalAAPass(FGraphicsDevice* const GraphicsDevice, uint32_t
         },
         .PipelineName = L"TemporalAA Resolve Pipeline"
     };
-    TemporalAAResolvePipelineState = GraphicsDevice->CreatePipelineState(TemporalAAResolvePipelineDesc);
+    TemporalAAResolvePipelineState = RHICreatePipelineState(TemporalAAResolvePipelineDesc);
 
     FComputePipelineStateCreationDesc TemporalAAUpdateHistoryPipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -26,10 +27,10 @@ FTemporalAAPass::FTemporalAAPass(FGraphicsDevice* const GraphicsDevice, uint32_t
         },
         .PipelineName = L"TemporalAA UpdateHistory Pipeline"
     };
-    TemporalAAUpdateHistoryPipelineState = GraphicsDevice->CreatePipelineState(TemporalAAUpdateHistoryPipelineDesc);
+    TemporalAAUpdateHistoryPipelineState = RHICreatePipelineState(TemporalAAUpdateHistoryPipelineDesc);
 }
 
-void FTemporalAAPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FTemporalAAPass::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
     FTextureCreationDesc HistoryTextureDesc{
         .Usage = ETextureUsage::UAVTexture,
@@ -40,7 +41,7 @@ void FTemporalAAPass::InitSizeDependantResource(const FGraphicsDevice* const Dev
         .Name = L"TemporalAA History Texture",
     };
 
-    HistoryTexture = Device->CreateTexture(HistoryTextureDesc);
+    HistoryTexture = RHICreateTexture(HistoryTextureDesc);
 
     FTextureCreationDesc ResolveTextureDesc{
         .Usage = ETextureUsage::UAVTexture,
@@ -51,7 +52,7 @@ void FTemporalAAPass::InitSizeDependantResource(const FGraphicsDevice* const Dev
         .Name = L"TemporalAA Resolve Texture",
     };
 
-    ResolveTexture = Device->CreateTexture(ResolveTextureDesc);
+    ResolveTexture = RHICreateTexture(ResolveTextureDesc);
 }
 
 void FTemporalAAPass::Resolve(FGraphicsContext* const GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)

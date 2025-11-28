@@ -1,43 +1,43 @@
 #include "Scene/Scene.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
 #include "Scene/GLTFModelLoader.h"
 #include "Scene/FBXLoader.h"
 #include "Scene/SceneLoader.h"
 #include <thread>
 
-FScene::FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height)
-    : Device(Device), Camera(Width, Height)
+FScene::FScene(uint32_t Width, uint32_t Height)
+    : Camera(Width, Height)
 {
     std::chrono::high_resolution_clock Clock{};
     PrevTime = Clock.now();
 
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++)
     {
-        SceneBuffer[i] = Device->CreateBuffer<interlop::SceneBuffer>(FBufferCreationDesc{
+        SceneBuffer[i] = RHICreateBuffer<interlop::SceneBuffer>(FBufferCreationDesc{
            .Usage = EBufferUsage::ConstantBuffer,
            .Name = L"Scene Buffer" + i,
         });
 
-        LightBuffer[i] = Device->CreateBuffer<interlop::LightBuffer>(FBufferCreationDesc{
+        LightBuffer[i] = RHICreateBuffer<interlop::LightBuffer>(FBufferCreationDesc{
             .Usage = EBufferUsage::ConstantBuffer,
             .Name = L"Light Buffer" + i,
         });
 
-        ShadowBuffer[i] = Device->CreateBuffer<interlop::ShadowBuffer>(FBufferCreationDesc{
+        ShadowBuffer[i] = RHICreateBuffer<interlop::ShadowBuffer>(FBufferCreationDesc{
             .Usage = EBufferUsage::ConstantBuffer,
             .Name = L"Shadow Buffer" + i,
         });
 
-        DebugBuffer[i] = Device->CreateBuffer<interlop::DebugBuffer>(FBufferCreationDesc{
+        DebugBuffer[i] = RHICreateBuffer<interlop::DebugBuffer>(FBufferCreationDesc{
             .Usage = EBufferUsage::ConstantBuffer,
             .Name = L"Debug Buffer" + i,
         });
     }
 
     ESceneType Scene = ESceneType::Sponza;
-    FSceneLoader::LoadScene(Scene, this, Device);
+    FSceneLoader::LoadScene(Scene, this);
 
-    WhiteFurnaceMap = std::make_unique<FCubeMap>(Device, FCubeMapCreationDesc{
+    WhiteFurnaceMap = std::make_unique<FCubeMap>(FCubeMapCreationDesc{
         .EquirectangularTexturePath = L"Assets/Textures/WhiteFurnace.hdr",
         .Name = L"WhiteFurnace Map"
     });
@@ -139,7 +139,7 @@ void FScene::AddModel(const FModelCreationDesc& Desc)
     std::string_view Extension = GetExtension(Desc.ModelPath);
     if (Extension == "glb" || Extension == "gltf")
     {
-		FGLTFModelLoader Model = FGLTFModelLoader(Device, Desc);
+		FGLTFModelLoader Model = FGLTFModelLoader(Desc);
 		Meshes.insert(
 			Meshes.end(),
 			std::make_move_iterator(Model.Meshes.begin()),
@@ -148,7 +148,7 @@ void FScene::AddModel(const FModelCreationDesc& Desc)
     }
 	else if (Extension == "fbx")
     {
-		FFBXLoader Model = FFBXLoader(Device, Desc);
+		FFBXLoader Model = FFBXLoader(Desc);
         Meshes.insert(
 			Meshes.end(),
 			std::make_move_iterator(Model.Meshes.begin()),
@@ -246,5 +246,5 @@ void FScene::GenerateRaytracingScene(FGraphicsContext* const GraphicsContext)
         return;
     }
 
-    RaytracingScene.GenerateRaytracingScene(Device, GraphicsContext, RaytracingGeometryContextList);
+    RaytracingScene.GenerateRaytracingScene(GraphicsContext, RaytracingGeometryContextList);
 }

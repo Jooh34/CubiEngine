@@ -1,4 +1,6 @@
 #include "Renderer/Renderer.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include "Core/Input.h"
 #include "Core/Editor.h"
 #include "Graphics/Profiler.h"
@@ -7,20 +9,18 @@
 
 #define GI_METHOD_SSGI 1
 
-#define SCOPED_GPU_EVENT(Device, NAME)\
-    GPUProfileScopedObject GPUProfileEvent_##NAME = GPUProfileScopedObject(Device, #NAME);
 #define INITIALIZE_RENDER_PASS(TYPE, VAR_NAME)\
-    VAR_NAME = std::make_unique<TYPE>(GraphicsDevice, Width, Height); \
+    VAR_NAME = std::make_unique<TYPE>(Width, Height); \
     VAR_NAME->Initialize(); \
     RenderPasses.push_back(VAR_NAME.get());
     
 
-FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32_t Width, uint32_t Height)
-    :Width(Width), Height(Height), GraphicsDevice(GraphicsDevice)
+FRenderer::FRenderer(SDL_Window* Window, uint32_t Width, uint32_t Height)
+    :Width(Width), Height(Height)
 {
-    InitSizeDependantResource(GraphicsDevice, Width, Height);
-    Scene = std::make_unique<FScene>(GraphicsDevice, Width, Height);
-    Editor = std::make_unique<FEditor>(GraphicsDevice, Window, Width, Height);
+    InitSizeDependantResource(Width, Height);
+    Scene = std::make_unique<FScene>(Width, Height);
+    Editor = std::make_unique<FEditor>(Window, Width, Height);
 
     INITIALIZE_RENDER_PASS(FDeferredGPass, DeferredGPass);
     INITIALIZE_RENDER_PASS(FDebugPass, DebugPass);
@@ -41,10 +41,11 @@ FRenderer::FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32
 
 FRenderer::~FRenderer()
 {
-    if (GraphicsDevice)
-    {
-        GraphicsDevice->FlushAllQueue();
-    }
+}
+
+void FRenderer::Cleanup()
+{
+    RHIFlushAllQueue();
 }
 
 void FRenderer::GameTick(float DeltaTime, FInput* Input)
@@ -88,17 +89,17 @@ void FRenderer::CopyHistoricalTexture(FGraphicsContext* GraphicsContext)
 
 void FRenderer::Render()
 {
-    GraphicsDevice->BeginFrame();
-    GraphicsDevice->GetGPUProfiler().BeginFrame();
+    RHIBeginFrame();
+    RHIGetGPUProfiler().BeginFrame();
 
-    FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
-    FTexture* BackBuffer = GraphicsDevice->GetCurrentBackBuffer();
+    FGraphicsContext* GraphicsContext = RHIGetCurrentGraphicsContext();
+    FTexture* BackBuffer = RHIGetCurrentBackBuffer();
 
     BeginFrame(GraphicsContext, BackBuffer);
 
     {
         SCOPED_NAMED_EVENT(GraphicsContext, GenerateRaytracingScene);
-        SCOPED_GPU_EVENT(GraphicsDevice, GenerateRaytracingScene);
+        SCOPED_GPU_EVENT(GenerateRaytracingScene);
         Scene->GenerateRaytracingScene(GraphicsContext);
     }
 
@@ -119,7 +120,7 @@ void FRenderer::Render()
     // ----- Vis Debug -----
     {
         SCOPED_NAMED_EVENT(GraphicsContext, DebugVisualize);
-        SCOPED_GPU_EVENT(GraphicsDevice, DebugVisualize);
+        SCOPED_GPU_EVENT(DebugVisualize);
         FTexture* SelectedTexture = Scene->SelectedDebugTexture;
         if (SelectedTexture != nullptr)
         {
@@ -136,7 +137,7 @@ void FRenderer::Render()
     // ----- Editor ------
     {
         SCOPED_NAMED_EVENT(GraphicsContext, Editor);
-        SCOPED_GPU_EVENT(GraphicsDevice, Editor);
+        SCOPED_GPU_EVENT(Editor);
 
         GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
         GraphicsContext->ExecuteResourceBarriers();
@@ -148,13 +149,13 @@ void FRenderer::Render()
     GraphicsContext->AddResourceBarrier(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
     GraphicsContext->ExecuteResourceBarriers();
 
-    GraphicsDevice->GetGPUProfiler().EndFrame();
+    RHIGetGPUProfiler().EndFrame();
 
-    GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
-    GraphicsDevice->Present();
+    RHIGetDirectCommandQueue()->ExecuteContext(GraphicsContext);
+    RHIPresent();
 
-    GraphicsDevice->EndFrame();
-    GraphicsDevice->GetGPUProfiler().EndFrameAfterFence();
+    RHIEndFrame();
+    RHIGetGPUProfiler().EndFrameAfterFence();
 
     GFrameCount++;
 }
@@ -167,13 +168,13 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
     if (DeferredGPass)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, DeferredGPass);
-        SCOPED_GPU_EVENT(GraphicsDevice, DeferredGPass);
+        SCOPED_GPU_EVENT(DeferredGPass);
         DeferredGPass->Render(Scene.get(), GraphicsContext, SceneTexture);
 
         // Render Skybox
         {
             SCOPED_NAMED_EVENT(GraphicsContext, EnvironmentMap);
-            SCOPED_GPU_EVENT(GraphicsDevice, EnvironmentMap);
+            SCOPED_GPU_EVENT(EnvironmentMap);
             Scene->RenderEnvironmentMap(GraphicsContext, SceneTexture);
         }
     }
@@ -187,7 +188,7 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
     if (Scene->bUseSSAO)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, SSAO);
-        SCOPED_GPU_EVENT(GraphicsDevice, SSAO);
+        SCOPED_GPU_EVENT(SSAO);
 
         SSAOPass->AddSSAOPass(GraphicsContext, Scene.get(), SceneTexture);
     }
@@ -197,7 +198,7 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
     if (DeferredGPass)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, LightPass);
-        SCOPED_GPU_EVENT(GraphicsDevice, LightPass);
+        SCOPED_GPU_EVENT(LightPass);
 
         FTexture* SSAOTexture = Scene->bUseSSAO ? SSAOPass->SSAOTexture.get() : nullptr;
         DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext,
@@ -209,7 +210,7 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
     if (Scene->GIMethod == GI_METHOD_SSGI)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, ScreenSpaceGI);
-        SCOPED_GPU_EVENT(GraphicsDevice, ScreenSpaceGI);
+        SCOPED_GPU_EVENT(ScreenSpaceGI);
 
         ScreenSpaceGI->AddPass(GraphicsContext, Scene.get(), SceneTexture);
     }
@@ -217,7 +218,7 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
     // ----- Post Process -----
     {
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
-        SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
+        SCOPED_GPU_EVENT(PostProcess);
 
         FTexture* HDR = SceneTexture.HDRTexture.get();
         Output = SceneTexture.LDRTexture.get();
@@ -225,7 +226,7 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
         if (Scene.get()->bUseTaa)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, TemporalAA);
-            SCOPED_GPU_EVENT(GraphicsDevice, TemporalAA);
+            SCOPED_GPU_EVENT(TemporalAA);
 
             TemporalAA->Resolve(GraphicsContext, Scene.get(), SceneTexture);
             HDR = TemporalAA->ResolveTexture.get();
@@ -236,7 +237,7 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
         if (Scene.get()->bUseEyeAdaptation)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, EyeAdaptation);
-            SCOPED_GPU_EVENT(GraphicsDevice, EyeAdaptation);
+            SCOPED_GPU_EVENT(EyeAdaptation);
 
             EyeAdaptationPass->GenerateHistogram(GraphicsContext, Scene.get(), HDR);
             EyeAdaptationPass->CalculateAverageLuminance(GraphicsContext, Scene.get(), Width, Height);
@@ -245,13 +246,13 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
         if (Scene->bUseBloom)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, Bloom);
-            SCOPED_GPU_EVENT(GraphicsDevice, Bloom);
+            SCOPED_GPU_EVENT(Bloom);
             BloomPass->AddBloomPass(GraphicsContext, Scene.get(), HDR);
         }
 
         {
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
-            SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);
+            SCOPED_GPU_EVENT(ToneMapping);
             EyeAdaptationPass->ToneMapping(GraphicsContext, Scene.get(), HDR, Output,
                 Scene->bUseBloom ? BloomPass->BloomResultTexture.get() : nullptr);
         }
@@ -272,21 +273,21 @@ FTexture* FRenderer::RenderDebugRaytracingScene(FGraphicsContext* GraphicsContex
     if (RaytracingDebugScenePass)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, RaytracingDebugScene);
-        SCOPED_GPU_EVENT(GraphicsDevice, RaytracingDebugScene);
+        SCOPED_GPU_EVENT(RaytracingDebugScene);
 
         RaytracingDebugScenePass->AddPass(GraphicsContext, Scene.get());
     }
 
     {
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
-        SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
+        SCOPED_GPU_EVENT(PostProcess);
 
         FTexture* HDR = RaytracingDebugScenePass->GetRaytracingDebugSceneTexture();
         Output = SceneTexture.LDRTexture.get();
 
         {
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
-            SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);
+            SCOPED_GPU_EVENT(ToneMapping);
             PostProcess->Tonemapping(GraphicsContext, Scene.get(), HDR, Output, Width, Height);
         }
     }
@@ -302,14 +303,14 @@ FTexture* FRenderer::RenderPathTracingScene(FGraphicsContext* GraphicsContext)
     if (PathTracingPass)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, PathTracing);
-        SCOPED_GPU_EVENT(GraphicsDevice, PathTracing);
+        SCOPED_GPU_EVENT(PathTracing);
 
         PathTracingPass->AddPass(GraphicsContext, Scene.get());
     }
 
     {
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
-        SCOPED_GPU_EVENT(GraphicsDevice, PostProcess);
+        SCOPED_GPU_EVENT(PostProcess);
 
         FTexture* HDR = PathTracingPass->GetPathTracingSceneTexture();
         if (Scene->bEnablePathTracingDenoiser)
@@ -329,7 +330,7 @@ FTexture* FRenderer::RenderPathTracingScene(FGraphicsContext* GraphicsContext)
         Output = SceneTexture.LDRTexture.get();
         {
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
-            SCOPED_GPU_EVENT(GraphicsDevice, ToneMapping);
+            SCOPED_GPU_EVENT(ToneMapping);
             PostProcess->Tonemapping(GraphicsContext, Scene.get(), HDR, Output, Width, Height);
         }
     }
@@ -345,7 +346,7 @@ void FRenderer::RenderShadow(FGraphicsContext* GraphicsContext, FSceneTexture& S
         if (ShadowDepthPass)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, ShadowDepth);
-            SCOPED_GPU_EVENT(GraphicsDevice, ShadowDepth)
+            SCOPED_GPU_EVENT(ShadowDepth)
             ShadowDepthPass->Render(GraphicsContext, Scene.get());
         }
     }
@@ -354,7 +355,7 @@ void FRenderer::RenderShadow(FGraphicsContext* GraphicsContext, FSceneTexture& S
         if (RaytracingShadowPass)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, RaytracingShadow);
-            SCOPED_GPU_EVENT(GraphicsDevice, RaytracingShadow);
+            SCOPED_GPU_EVENT(RaytracingShadow);
             RaytracingShadowPass->AddPass(GraphicsContext, Scene.get(), SceneTexture);
         }
     }
@@ -364,21 +365,21 @@ void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
 {
     Width = InWidth;
     Height = InHeight;
-    InitSizeDependantResource(GraphicsDevice, InWidth, InHeight);
-    GraphicsDevice->OnWindowResized(InWidth, InHeight);
+    InitSizeDependantResource(InWidth, InHeight);
+    RHIResizeSwapchainResources(InWidth, InHeight);
 
 	for (auto& RenderPass : RenderPasses)
 	{
-		RenderPass->OnWindowResized(GraphicsDevice, InWidth, InHeight);
+		RenderPass->OnWindowResized(InWidth, InHeight);
 	}
 }
 
-void FRenderer::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FRenderer::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
-    InitializeSceneTexture(Device, InWidth, InHeight);
+    InitializeSceneTexture(InWidth, InHeight);
 }
 
-void FRenderer::InitializeSceneTexture(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FRenderer::InitializeSceneTexture(uint32_t InWidth, uint32_t InHeight)
 {
     FTextureCreationDesc DepthTextureDesc = {
         .Usage = ETextureUsage::DepthStencil,
@@ -448,16 +449,16 @@ void FRenderer::InitializeSceneTexture(const FGraphicsDevice* const Device, uint
     };
 
 
-    SceneTexture.DepthTexture = Device->CreateTexture(DepthTextureDesc);
-    SceneTexture.PrevDepthTexture = Device->CreateTexture(PrevDepthTextureDesc);
+    SceneTexture.DepthTexture = RHICreateTexture(DepthTextureDesc);
+    SceneTexture.PrevDepthTexture = RHICreateTexture(PrevDepthTextureDesc);
 
-    SceneTexture.GBufferA = Device->CreateTexture(GBufferADesc);
-    SceneTexture.GBufferB = Device->CreateTexture(GBufferBDesc);
-    SceneTexture.GBufferC = Device->CreateTexture(GBufferCDesc);
-    SceneTexture.VelocityTexture = Device->CreateTexture(VelocityTextureDesc);
+    SceneTexture.GBufferA = RHICreateTexture(GBufferADesc);
+    SceneTexture.GBufferB = RHICreateTexture(GBufferBDesc);
+    SceneTexture.GBufferC = RHICreateTexture(GBufferCDesc);
+    SceneTexture.VelocityTexture = RHICreateTexture(VelocityTextureDesc);
 
-    SceneTexture.LDRTexture = Device->CreateTexture(LDRTextureDesc);
-    SceneTexture.HDRTexture = Device->CreateTexture(HDRTextureDesc);
+    SceneTexture.LDRTexture = RHICreateTexture(LDRTextureDesc);
+    SceneTexture.HDRTexture = RHICreateTexture(HDRTextureDesc);
 
     SceneTexture.Size = { InWidth, InHeight };
 }

@@ -1,9 +1,10 @@
 #include "Renderer/DebugPass.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FDebugPass::FDebugPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
-	:FRenderPass(GraphicsDevice, Width, Height)
+FDebugPass::FDebugPass(uint32_t Width, uint32_t Height)
+	:FRenderPass(Width, Height)
 {
     FComputePipelineStateCreationDesc PipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -14,10 +15,10 @@ FDebugPass::FDebugPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, ui
         .PipelineName = L"Debug Copy Pipeline"
     };
 
-    CopyPipelineState = GraphicsDevice->CreatePipelineState(PipelineDesc);
+    CopyPipelineState = RHICreatePipelineState(PipelineDesc);
 }
 
-void FDebugPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FDebugPass::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
     FTextureCreationDesc TextureDesc{
         .Usage = ETextureUsage::RenderTarget,
@@ -28,7 +29,7 @@ void FDebugPass::InitSizeDependantResource(const FGraphicsDevice* const Device, 
         .Name = L"Copy Texture",
     };
 
-    TextureForCopy = Device->CreateTexture(TextureDesc);
+    TextureForCopy = RHICreateTexture(TextureDesc);
 }
 
 void FDebugPass::Copy(FGraphicsContext* const GraphicsContext, FTexture* SrcTexture, FTexture* DstTexture, uint32_t Width, uint32_t Height)

@@ -2,8 +2,9 @@
 #include "Graphics/ShaderCompiler.h"
 #include "Core/FileSystem.h"
 #include "Graphics/Dx12Helper.h"
+#include "Graphics/D3D12DynamicRHI.h"
 
-FRaytracingPipelineState::FRaytracingPipelineState(ID3D12Device5* const device, const FRaytracingPipelineStateCreationDesc& pipelineStateCreationDesc)
+FRaytracingPipelineState::FRaytracingPipelineState(const FRaytracingPipelineStateCreationDesc& pipelineStateCreationDesc)
 {
     const auto& ShaderRGS =
         ShaderCompiler::Compile(ShaderTypes::Raytracing,
@@ -34,7 +35,7 @@ FRaytracingPipelineState::FRaytracingPipelineState(ID3D12Device5* const device, 
             FFileSystem::GetFullPath(L"Shaders/Raytracing/Shadow.hlsl"),
             L"ShadowMiss").shaderBlob;
 
-    RayTracingPipelineGenerator PipelineGenerator(device);
+    RayTracingPipelineGenerator PipelineGenerator(RHIGetDevice());
     PipelineGenerator.AddLibrary(ShaderRGS.Get(), { std::wstring(pipelineStateCreationDesc.EntryPointRGS) });
     PipelineGenerator.AddLibrary(ShaderCHS.Get(), { std::wstring(pipelineStateCreationDesc.EntryPointCHS) });
     PipelineGenerator.AddLibrary(ShaderRMS.Get(), { std::wstring(pipelineStateCreationDesc.EntryPointRMS) });

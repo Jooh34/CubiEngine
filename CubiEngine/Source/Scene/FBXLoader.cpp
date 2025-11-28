@@ -2,10 +2,11 @@
 #include "Core/FileSystem.h"
 #include "Graphics/Resource.h"
 #include "Graphics/Material.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include <DirectXTex.h>
 
-FFBXLoader::FFBXLoader(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
+FFBXLoader::FFBXLoader(const FModelCreationDesc& ModelCreationDesc)
 {
     std::string ModelPath = "Assets/" + std::string(ModelCreationDesc.ModelPath.data());
 
@@ -30,20 +31,20 @@ FFBXLoader::FFBXLoader(const FGraphicsDevice* const GraphicsDevice, const FModel
         throw std::runtime_error("FBX load failed: " + std::string(Importer.GetErrorString()));
     }
     
-	LoadMaterials(GraphicsDevice, scene);
-	LoadMeshes(GraphicsDevice, scene, ModelCreationDesc);
+	LoadMaterials(scene);
+	LoadMeshes(scene, ModelCreationDesc);
 
-    FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
+    FGraphicsContext* GraphicsContext = RHIGetCurrentGraphicsContext();
     GraphicsContext->Reset();
 
     for (const auto& Mesh : Meshes)
     {
-        Mesh->GenerateRaytracingGeometry(GraphicsDevice);
+        Mesh->GenerateRaytracingGeometry();
     }
 
     // sync gpu immediatly
-    GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
-    GraphicsDevice->GetDirectCommandQueue()->Flush();
+    RHIGetDirectCommandQueue()->ExecuteContext(GraphicsContext);
+    RHIGetDirectCommandQueue()->Flush();
 }
 
 D3D12_TEXTURE_ADDRESS_MODE FFBXLoader::ConvertTextureAddressMode(aiTextureMapMode mode) const
@@ -57,7 +58,7 @@ D3D12_TEXTURE_ADDRESS_MODE FFBXLoader::ConvertTextureAddressMode(aiTextureMapMod
     }
 }
 
-void FFBXLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const aiScene* Scene)
+void FFBXLoader::LoadMaterials(const aiScene* Scene)
 {
     auto LoadTexture = [&](aiMaterial* material, std::string& material_name, aiTextureType type, DXGI_FORMAT format, std::unique_ptr<FTexture>& outTexture, FSampler& outSampler)
         {
@@ -73,7 +74,7 @@ void FFBXLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, cons
                     TextureDesc.Format = format;
                     TextureDesc.MipLevels = 6;
 
-                    outTexture = GraphicsDevice->CreateTexture(TextureDesc);
+                    outTexture = RHICreateTexture(TextureDesc);
                 }
                 else
                 {
@@ -96,7 +97,7 @@ void FFBXLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, cons
                 Desc.SamplerDesc.MipLODBias = 0.0f;
                 Desc.SamplerDesc.MaxAnisotropy = 1;
                 Desc.SamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-                outSampler = GraphicsDevice->CreateSampler(Desc);
+                outSampler = RHICreateSampler(Desc);
 
                 return AI_SUCCESS;
             }
@@ -129,7 +130,7 @@ void FFBXLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, cons
         LoadTexture(material, ORMName, aiTextureType_SPECULAR, DXGI_FORMAT_UNKNOWN, PbrMaterial->ORMTexture, PbrMaterial->ORMSampler);
 
 
-        PbrMaterial->MaterialBuffer = GraphicsDevice->CreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
+        PbrMaterial->MaterialBuffer = RHICreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
             .Usage = EBufferUsage::ConstantBuffer,
             .Name = StringToWString(PbrMaterial->Name) + L"_MaterialBuffer",
 		});
@@ -151,7 +152,7 @@ void FFBXLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, cons
 	}
 }
 
-void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const aiScene* Scene, const FModelCreationDesc& ModelCreationDesc)
+void FFBXLoader::LoadMeshes(const aiScene* Scene, const FModelCreationDesc& ModelCreationDesc)
 {
 	for (uint32_t meshIndex = 0; meshIndex < Scene->mNumMeshes; meshIndex++)
 	{
@@ -231,35 +232,35 @@ void FFBXLoader::LoadMeshes(const FGraphicsDevice* const GraphicsDevice, const a
 
         ResultMesh->IndicesCount = static_cast<uint32_t>(Indice.size());
 
-        ResultMesh->PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+        ResultMesh->PositionBuffer = RHICreateBuffer<XMFLOAT3>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" position buffer",
             },
             Positions);
 
-        ResultMesh->TextureCoordsBuffer = GraphicsDevice->CreateBuffer<XMFLOAT2>(
+        ResultMesh->TextureCoordsBuffer = RHICreateBuffer<XMFLOAT2>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" texture coord buffer",
             },
             TextureCoords);
 
-        ResultMesh->NormalBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+        ResultMesh->NormalBuffer = RHICreateBuffer<XMFLOAT3>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" normal buffer",
             },
             Normals);
 
-        ResultMesh->TangentBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>( // Add tangent buffer creation
+        ResultMesh->TangentBuffer = RHICreateBuffer<XMFLOAT3>( // Add tangent buffer creation
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" tangent buffer",
             },
             Tangents);
 
-        ResultMesh->IndexBuffer = GraphicsDevice->CreateBuffer<UINT>(
+        ResultMesh->IndexBuffer = RHICreateBuffer<UINT>(
             FBufferCreationDesc{
                 .Usage = EBufferUsage::StructuredBuffer,
                 .Name = MeshName + L" index buffer",

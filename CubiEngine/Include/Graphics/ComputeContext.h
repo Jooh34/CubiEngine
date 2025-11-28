@@ -4,12 +4,11 @@
 #include "Graphics/Resource.h"
 #include "Graphics/PipelineState.h"
 
-class FGraphicsDevice;
 
 class FComputeContext : public FContext
 {
 public:
-    FComputeContext(FGraphicsDevice* const Device);
+    FComputeContext();
     void SetDescriptorHeaps() const;
     void Reset() override;
 
@@ -19,7 +18,5 @@ public:
     void Dispatch(const uint32_t ThreadGroupX, const uint32_t ThreadGroupY, const uint32_t ThreadGroupZ) const;
 
 private:
-    FGraphicsDevice* Device;
-
     static constexpr uint32_t NUMBER_32_BIT_CONSTANTS = 64;
 };

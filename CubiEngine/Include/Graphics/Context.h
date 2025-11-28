@@ -5,9 +5,9 @@
 class FContext
 {
 public:
-    ID3D12GraphicsCommandList4* const GetCommandList() const
+    ID3D12GraphicsCommandList4* const GetD3D12CommandList() const
     {
-        return CommandList.Get();
+        return D3D12CommandList.Get();
     }
 
     void CopyTextureRegion(
@@ -32,8 +32,8 @@ public:
     void EndEvent(const char* Name);
 
 protected:
-    wrl::ComPtr<ID3D12GraphicsCommandList4> CommandList{};
-    wrl::ComPtr<ID3D12CommandAllocator> CommandAllocator{};
+    wrl::ComPtr<ID3D12GraphicsCommandList4> D3D12CommandList{};
+    wrl::ComPtr<ID3D12CommandAllocator> D3D12CommandAllocator{};
 
     std::vector<CD3DX12_RESOURCE_BARRIER> ResourceBarriers;
 };

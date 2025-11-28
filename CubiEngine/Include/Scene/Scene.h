@@ -21,7 +21,7 @@ enum class ERenderingMode
 class FScene
 {
 public:
-    FScene(FGraphicsDevice* Device, uint32_t Width, uint32_t Height);
+    FScene(uint32_t Width, uint32_t Height);
     ~FScene();
 
     void GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height);
@@ -140,7 +140,6 @@ private:
     static constexpr uint32_t FRAMES_IN_FLIGHT = 3u;
     
 	std::vector<std::unique_ptr<FMesh>> Meshes{};
-    FGraphicsDevice* Device;
 
     FCamera Camera;
     std::array<FBuffer, FRAMES_IN_FLIGHT> SceneBuffer;

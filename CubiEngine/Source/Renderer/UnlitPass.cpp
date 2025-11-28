@@ -1,10 +1,11 @@
 #include "Renderer/UnlitPass.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FUnlitPass::FUnlitPass(FGraphicsDevice* Device, const uint32_t Width, const uint32_t Height)
-	: FRenderPass(Device, Width, Height)
+FUnlitPass::FUnlitPass(const uint32_t Width, const uint32_t Height)
+	: FRenderPass(Width, Height)
 {
     FGraphicsPipelineStateCreationDesc PipelineDesc = FGraphicsPipelineStateCreationDesc
     {
@@ -29,11 +30,11 @@ FUnlitPass::FUnlitPass(FGraphicsDevice* Device, const uint32_t Width, const uint
         .InitialState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
         .Name = L"Unlit Texture",
     };
-    UnlitPipelineState = Device->CreatePipelineState(PipelineDesc);
-    UnlitTexture = Device->CreateTexture(TextureDesc);
+    UnlitPipelineState = RHICreatePipelineState(PipelineDesc);
+    UnlitTexture = RHICreateTexture(TextureDesc);
 }
 
-void FUnlitPass::InitSizeDependantResource(const FGraphicsDevice* Device, uint32_t InWidth, uint32_t InHeight)
+void FUnlitPass::InitSizeDependantResource(const uint32_t InWidth, uint32_t InHeight)
 {
 }
 

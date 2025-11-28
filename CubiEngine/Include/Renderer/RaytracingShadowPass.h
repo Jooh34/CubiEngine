@@ -10,17 +10,15 @@ class FGraphicsContext;
 class FRaytracingShadowPass : public FRenderPass
 {
 public:
-    FRaytracingShadowPass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height);
+    FRaytracingShadowPass(uint32_t Width, uint32_t Height);
 
-    void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight) override;
+    void InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight) override;
 
     void AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture);
 
     FTexture* GetRaytracingShadowTexture() { return RaytracingShadowTexture.get(); }
 
 private:
-    const FGraphicsDevice* GraphicsDevice;
-
     FRaytracingPipelineState RaytracingShadowPipelineState;
     FShaderBindingTable RaytracingShadowPassSBT;
 

@@ -3,8 +3,6 @@
 #include <OpenImageDenoise/oidn.h>
 #include "Graphics/Resource.h"
 
-class FGraphicsDevice;
-
 struct FSharedLinearImage
 {
 	// D3D12-side
@@ -58,7 +56,6 @@ public:
 	void SubmitAndWait(ID3D12CommandQueue* Q, ID3D12Fence* Fence, UINT64& Value, HANDLE FenceEvent);
 
 	void AddPass(
-		const FGraphicsDevice* GraphicsDevice,
 		FTexture* SrcColor,
 		FTexture* SrcAlbedo,
 		FTexture* SrcNormal,

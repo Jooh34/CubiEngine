@@ -1,9 +1,8 @@
 #include "Graphics/Query.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
 
-FQueryHeap::FQueryHeap(FGraphicsDevice* GraphicsDevice, D3D12_QUERY_TYPE QueryType, D3D12_QUERY_HEAP_TYPE HeapType)
-    : GraphicsDevice(GraphicsDevice)
-    , QueryType(QueryType)
+FQueryHeap::FQueryHeap(D3D12_QUERY_TYPE QueryType, D3D12_QUERY_HEAP_TYPE HeapType)
+    : QueryType(QueryType)
     , HeapType(HeapType)
     , NumQueries(MaxHeapSize / GetResultSize())
 {
@@ -12,7 +11,7 @@ FQueryHeap::FQueryHeap(FGraphicsDevice* GraphicsDevice, D3D12_QUERY_TYPE QueryTy
     QueryHeapDesc.Type = HeapType;
     QueryHeapDesc.NodeMask = 0;
 
-    GraphicsDevice->GetDevice()->CreateQueryHeap(&QueryHeapDesc, IID_PPV_ARGS(&QueryHeap));
+    RHIGetDevice()->CreateQueryHeap(&QueryHeapDesc, IID_PPV_ARGS(&QueryHeap));
 
     // Query 결과를 저장할 Readback Buffer 생성
     D3D12_RESOURCE_DESC readbackBufferDesc = {};
@@ -28,7 +27,7 @@ FQueryHeap::FQueryHeap(FGraphicsDevice* GraphicsDevice, D3D12_QUERY_TYPE QueryTy
     
     CD3DX12_HEAP_PROPERTIES HeapProperies = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK);
     ThrowIfFailed(
-        GraphicsDevice->GetDevice()->CreateCommittedResource(
+        RHIGetDevice()->CreateCommittedResource(
             &HeapProperies,
             D3D12_HEAP_FLAG_NONE,
             &readbackBufferDesc,

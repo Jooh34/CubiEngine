@@ -5,13 +5,12 @@
 #include "Graphics/PipelineState.h"
 #include "Graphics/RaytracingPipelineState.h"
 
-class FGraphicsDevice;
 class FQueryHeap;
 
 class FGraphicsContext : public FContext
 {
 public:
-    FGraphicsContext(FGraphicsDevice* const Device);
+    FGraphicsContext();
     void SetDescriptorHeaps() const;
     void Reset();
 
@@ -59,7 +58,5 @@ public:
     void SetComputeRootDescriptorTable(UINT RootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE BaseDescriptor);
 
 private:
-    FGraphicsDevice* Device;
-
     static constexpr uint32_t NUMBER_32_BIT_CONSTANTS = 64;
 };

@@ -1,14 +1,15 @@
 #include "Renderer/SSAO.h"
 #include "Graphics/Profiler.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include "Scene/Scene.h"
 #include "Math/CubiMath.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FSSAOPass::FSSAOPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
-	: FRenderPass(GraphicsDevice, Width, Height)
+FSSAOPass::FSSAOPass(uint32_t Width, uint32_t Height)
+	: FRenderPass(Width, Height)
 {
-    SSAOKernelBuffer = GraphicsDevice->CreateBuffer<interlop::SSAOKernelBuffer>(FBufferCreationDesc{
+    SSAOKernelBuffer = RHICreateBuffer<interlop::SSAOKernelBuffer>(FBufferCreationDesc{
         .Usage = EBufferUsage::ConstantBuffer,
         .Name = L"SSAO Kernel Buffer",
     });
@@ -22,12 +23,12 @@ FSSAOPass::FSSAOPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint
         },
         .PipelineName = L"SSAO Pipeline"
     };
-    SSAOPipelineState = GraphicsDevice->CreatePipelineState(SSAOPipelineDesc);
+    SSAOPipelineState = RHICreatePipelineState(SSAOPipelineDesc);
 }
 
-void FSSAOPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FSSAOPass::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
-    SSAOTexture = Device->CreateTexture(FTextureCreationDesc{
+    SSAOTexture = RHICreateTexture(FTextureCreationDesc{
         .Usage = ETextureUsage::UAVTexture,
         .Width = InWidth,
         .Height = InHeight,

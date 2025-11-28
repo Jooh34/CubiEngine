@@ -2,11 +2,12 @@
 #include "Scene/Scene.h"
 #include "Core/FileSystem.h"
 #include "Graphics/Resource.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "Math/CubiMath.h"
 
-FGLTFModelLoader::FGLTFModelLoader(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc)
+FGLTFModelLoader::FGLTFModelLoader(const FModelCreationDesc& ModelCreationDesc)
 	:ModelName(ModelCreationDesc.ModelName), ModelCreationDesc(ModelCreationDesc)
 {
     OverrideBaseColorValue = ModelCreationDesc.OverrideBaseColorValue;
@@ -47,33 +48,33 @@ FGLTFModelLoader::FGLTFModelLoader(const FGraphicsDevice* const GraphicsDevice, 
     ModelTransform.Set(ModelCreationDesc.Rotation, ModelCreationDesc.Scale, ModelCreationDesc.Translate);
 
     {
-        const std::jthread loadSamplerThread([&]() { LoadSamplers(GraphicsDevice, GLTFModel); });
-        const std::jthread loadMaterialThread([&]() { LoadMaterials(GraphicsDevice, GLTFModel); });
+        const std::jthread loadSamplerThread([&]() { LoadSamplers(GLTFModel); });
+        const std::jthread loadMaterialThread([&]() { LoadMaterials(GLTFModel); });
     }
     {
         const tinygltf::Scene& scene = GLTFModel.scenes[GLTFModel.defaultScene];
         const std::jthread loadMeshThread([&]() {
             for (const int& nodeIndex : scene.nodes)
             {
-                LoadNode(GraphicsDevice, ModelCreationDesc, nodeIndex, GLTFModel, ModelTransform);
+                LoadNode(ModelCreationDesc, nodeIndex, GLTFModel, ModelTransform);
             }
         });
     }
 
-    FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
+    FGraphicsContext* GraphicsContext = RHIGetCurrentGraphicsContext();
     GraphicsContext->Reset();
 
     for (const auto& Mesh : Meshes)
     {
-        Mesh->GenerateRaytracingGeometry(GraphicsDevice);
+        Mesh->GenerateRaytracingGeometry();
     }
 
     // sync gpu immediatly
-    GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
-    GraphicsDevice->GetDirectCommandQueue()->Flush();
+    RHIGetDirectCommandQueue()->ExecuteContext(GraphicsContext);
+    RHIGetDirectCommandQueue()->Flush();
 }
 
-void FGLTFModelLoader::LoadSamplers(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel)
+void FGLTFModelLoader::LoadSamplers(const tinygltf::Model& GLTFModel)
 {
     Samplers.resize(GLTFModel.samplers.size());
     
@@ -137,11 +138,11 @@ void FGLTFModelLoader::LoadSamplers(const FGraphicsDevice* const GraphicsDevice,
         Desc.SamplerDesc.MaxAnisotropy = 16;
         Desc.SamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 
-        Samplers[index++] = GraphicsDevice->CreateSampler(Desc);
+        Samplers[index++] = RHICreateSampler(Desc);
     }
 }
 
-void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice, const tinygltf::Model& GLTFModel)
+void FGLTFModelLoader::LoadMaterials(const tinygltf::Model& GLTFModel)
 {
     const auto CreateTexture = [&](const tinygltf::Image& image, FTextureCreationDesc Desc)
         {
@@ -163,7 +164,7 @@ void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice
             Desc.Height = static_cast<uint32_t>(Height);
             Desc.Usage = ETextureUsage::TextureFromData;
 
-            return GraphicsDevice->CreateTexture(Desc, (std::byte*)data);
+            return RHICreateTexture(Desc, (std::byte*)data);
         };
 
     Materials.resize(GLTFModel.materials.size());
@@ -279,7 +280,7 @@ void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice
         }
         PbrMaterial->AlphaCutoff = material.alphaCutoff;
 
-        PbrMaterial->MaterialBuffer = GraphicsDevice->CreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
+        PbrMaterial->MaterialBuffer = RHICreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
             .Usage = EBufferUsage::ConstantBuffer,
             .Name = ModelName + L"_MaterialBuffer" + std::to_wstring(index),
         });
@@ -304,7 +305,7 @@ void FGLTFModelLoader::LoadMaterials(const FGraphicsDevice* const GraphicsDevice
     }
 }
 
-void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, const FModelCreationDesc& ModelCreationDesc,
+void FGLTFModelLoader::LoadNode(const FModelCreationDesc& ModelCreationDesc,
     const uint32_t NodeIndex, const tinygltf::Model& GLTFModel, const FTransform& LocalTransform)
 {
     const tinygltf::Node& node = GLTFModel.nodes[NodeIndex];
@@ -468,35 +469,35 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
 				XMStoreFloat3(&tangent, normalizedTangentVec);
 			}
 
-			Mesh->PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+			Mesh->PositionBuffer = RHICreateBuffer<XMFLOAT3>(
 				FBufferCreationDesc{
 					.Usage = EBufferUsage::StructuredBuffer,
 					.Name = MeshName + L" position buffer",
 				},
 				Positions);
 
-			Mesh->TextureCoordsBuffer = GraphicsDevice->CreateBuffer<XMFLOAT2>(
+			Mesh->TextureCoordsBuffer = RHICreateBuffer<XMFLOAT2>(
 				FBufferCreationDesc{
 					.Usage = EBufferUsage::StructuredBuffer,
 					.Name = MeshName + L" texture coord buffer",
 				},
 				TextureCoords);
 
-			Mesh->NormalBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+			Mesh->NormalBuffer = RHICreateBuffer<XMFLOAT3>(
 				FBufferCreationDesc{
 					.Usage = EBufferUsage::StructuredBuffer,
 					.Name = MeshName + L" normal buffer",
 				},
 				Normals);
 			
-			Mesh->TangentBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>( // Add tangent buffer creation
+			Mesh->TangentBuffer = RHICreateBuffer<XMFLOAT3>( // Add tangent buffer creation
 				FBufferCreationDesc{
 					.Usage = EBufferUsage::StructuredBuffer,
 					.Name = MeshName + L" tangent buffer",
 				},
 				Tangents);
 
-			Mesh->IndexBuffer = GraphicsDevice->CreateBuffer<UINT>(
+			Mesh->IndexBuffer = RHICreateBuffer<UINT>(
 				FBufferCreationDesc{
 					.Usage = EBufferUsage::StructuredBuffer,
 					.Name = MeshName + L" index buffer",
@@ -513,6 +514,6 @@ void FGLTFModelLoader::LoadNode(const FGraphicsDevice* const GraphicsDevice, con
 
     for (const int& ChildIndex : node.children)
     {
-        LoadNode(GraphicsDevice, ModelCreationDesc, ChildIndex, GLTFModel, NodeTransform);
+        LoadNode(ModelCreationDesc, ChildIndex, GLTFModel, NodeTransform);
     }
 }

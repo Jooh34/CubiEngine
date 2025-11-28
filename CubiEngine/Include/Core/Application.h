@@ -2,7 +2,6 @@
 
 #include <string>
 #include "Core/Input.h"
-#include "Graphics/GraphicsDevice.h"
 
 class FRenderer;
 
@@ -27,8 +26,6 @@ private:
 
     bool IsRunning;
     
-    // Device Should be here because all elements of FRenderer should be released before FGraphicsDevice releases.
-    std::unique_ptr<FGraphicsDevice> GraphicsDevice;
     FRenderer* D3DRenderer;
     FInput Input;
 

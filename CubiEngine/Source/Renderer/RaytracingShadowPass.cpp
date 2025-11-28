@@ -1,22 +1,22 @@
 #include "Renderer/RaytracingShadowPass.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
 #include "Graphics/GraphicsContext.h"
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FRaytracingShadowPass::FRaytracingShadowPass(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
-	: FRenderPass(Device, InWidth, InHeight),
-    RaytracingShadowPipelineState(Device->GetDevice(), FRaytracingPipelineStateCreationDesc{
+FRaytracingShadowPass::FRaytracingShadowPass(uint32_t InWidth, uint32_t InHeight)
+	: FRenderPass(InWidth, InHeight),
+    RaytracingShadowPipelineState(FRaytracingPipelineStateCreationDesc{
       .rtShaderPath = L"Shaders/Raytracing/RaytracingShadow.hlsl",
       .EntryPointRGS = L"RayGen",
       .EntryPointCHS = L"ClosestHit",
       .EntryPointRMS = L"Miss",
     }),
-    RaytracingShadowPassSBT(Device, RaytracingShadowPipelineState.GetRTStateObjectProps())
+    RaytracingShadowPassSBT(RaytracingShadowPipelineState.GetRTStateObjectProps())
 {
 }
 
-void FRaytracingShadowPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FRaytracingShadowPass::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
     FTextureCreationDesc RaytracingShadowTextureDesc = {
         .Usage = ETextureUsage::UAVTexture,
@@ -27,7 +27,7 @@ void FRaytracingShadowPass::InitSizeDependantResource(const FGraphicsDevice* con
         .Name = L"RaytracingShadow Texture",
     };
 
-    RaytracingShadowTexture = Device->CreateTexture(RaytracingShadowTextureDesc);
+    RaytracingShadowTexture = RHICreateTexture(RaytracingShadowTextureDesc);
 }
 
 void FRaytracingShadowPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)

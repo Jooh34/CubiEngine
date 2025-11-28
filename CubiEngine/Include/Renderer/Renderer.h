@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Graphics/GraphicsDevice.h"
 #include "Scene/Scene.h"
 #include "Renderer/DeferredGPass.h"
 #include "Renderer/DebugPass.h"
@@ -23,9 +22,10 @@ struct SDL_Window;
 class FRenderer
 {
 public:
-    FRenderer(FGraphicsDevice* GraphicsDevice, SDL_Window* Window, uint32_t Width, uint32_t Height);
+    FRenderer(SDL_Window* Window, uint32_t Width, uint32_t Height);
     ~FRenderer();
 
+    void Cleanup();
     void GameTick(float DeltaTime, FInput* Input);
     void BeginFrame(FGraphicsContext* GraphicsContext,FTexture* BackBuffer);
     void CopyHistoricalTexture(FGraphicsContext* GraphicsContext);
@@ -37,15 +37,11 @@ public:
     void RenderShadow(FGraphicsContext* GraphicsContext, FSceneTexture& SceneTexture);
 
     void OnWindowResized(uint32_t InWidth, uint32_t InHeight);
-    void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
-    void InitializeSceneTexture(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight);
-
-    FGraphicsDevice* GetGraphicsDevice() { return GraphicsDevice; }
+    void InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight);
+    void InitializeSceneTexture(uint32_t InWidth, uint32_t InHeight);
 
 private:
     FSceneTexture SceneTexture;
-
-    FGraphicsDevice* GraphicsDevice;
 
     uint32_t Width{};
     uint32_t Height{};

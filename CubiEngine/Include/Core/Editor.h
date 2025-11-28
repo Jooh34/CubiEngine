@@ -1,6 +1,5 @@
 #pragma once
 
-class FGraphicsDevice;
 class FGraphicsContext;
 class FScene;
 class FInput;
@@ -8,7 +7,7 @@ class FInput;
 class FEditor
 {
 public:
-    FEditor(FGraphicsDevice* Device, SDL_Window* Window, uint32_t Width, uint32_t Height);
+    FEditor(SDL_Window* Window, uint32_t Width, uint32_t Height);
     ~FEditor();
 
 	void GameTick(float DeltaTime, FInput* Input);
@@ -25,7 +24,6 @@ public:
     void OnWindowResized(uint32_t Width, uint32_t Height);
 
 private:
-    FGraphicsDevice* Device;
     SDL_Window* Window;
 
     bool bShowUI = true;

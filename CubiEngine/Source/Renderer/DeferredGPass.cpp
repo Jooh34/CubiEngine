@@ -1,13 +1,14 @@
 #include "Renderer/DeferredGPass.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include "Graphics/Resource.h"
 #include "Graphics/Profiler.h"
 #include "Scene/Scene.h"
 #include "Renderer/ShadowDepthPass.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height)
-	: FRenderPass(Device, Width, Height)
+FDeferredGPass::FDeferredGPass(uint32_t Width, uint32_t Height)
+	: FRenderPass(Width, Height)
 {
     FGraphicsPipelineStateCreationDesc Desc{
         .ShaderModule =
@@ -26,7 +27,7 @@ FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Wid
         .PipelineName = L"Deferred GPass Pipeline",
     };
     
-    GeometryPassPipelineState = Device->CreatePipelineState(Desc);
+    GeometryPassPipelineState = RHICreatePipelineState(Desc);
     
     FGraphicsPipelineStateCreationDesc GeometryPassLightPipelineDesc{
         .ShaderModule =
@@ -44,7 +45,7 @@ FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Wid
         .RtvCount = 4,
         .PipelineName = L"Deferred GPass Cube Pipeline",
     };
-    GeometryPassLightPipelineState = Device->CreatePipelineState(GeometryPassLightPipelineDesc);
+    GeometryPassLightPipelineState = RHICreatePipelineState(GeometryPassLightPipelineDesc);
 
     FComputePipelineStateCreationDesc LightPassPipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -55,10 +56,10 @@ FDeferredGPass::FDeferredGPass(const FGraphicsDevice* const Device, uint32_t Wid
         .PipelineName = L"LightPass Pipeline"
     };
 
-    LightPassPipelineState = Device->CreatePipelineState(LightPassPipelineDesc);
+    LightPassPipelineState = RHICreatePipelineState(LightPassPipelineDesc);
 }
 
-void FDeferredGPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FDeferredGPass::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
 }
 

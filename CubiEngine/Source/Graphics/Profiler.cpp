@@ -1,25 +1,26 @@
 #include "Graphics/Profiler.h"
-#include "Graphics/GraphicsDevice.h"
 #include "Graphics/CommandQueue.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 
-FGPUEventNode::FGPUEventNode(const char* Name, FGPUEventNode* Parent, FGraphicsDevice* ParentDevice)
-    :FDeviceChild(ParentDevice), Name(Name), Parent(Parent)
+FGPUEventNode::FGPUEventNode(const char* Name, FGPUEventNode* Parent)
+    :Name(Name), Parent(Parent)
 {
 }
 
 void FGPUEventNode::StartTiming()
 {
-    FGraphicsContext* Context =  GetParentDevice()->GetCurrentGraphicsContext();
+    FGraphicsContext* Context =  RHIGetCurrentGraphicsContext();
     
-    BeginQueryLocation = GetParentDevice()->AllocateQuery(D3D12_QUERY_TYPE_TIMESTAMP);
+    BeginQueryLocation = RHIAllocateQuery(D3D12_QUERY_TYPE_TIMESTAMP);
     Context->EndQuery(BeginQueryLocation.Heap, D3D12_QUERY_TYPE_TIMESTAMP, BeginQueryLocation.Index);
 }
 
 void FGPUEventNode::StopTiming()
 {
-    FGraphicsContext* Context = GetParentDevice()->GetCurrentGraphicsContext();
+    FGraphicsContext* Context = RHIGetCurrentGraphicsContext();
 
-    EndQueryLocation = GetParentDevice()->AllocateQuery(D3D12_QUERY_TYPE_TIMESTAMP);
+    EndQueryLocation = RHIAllocateQuery(D3D12_QUERY_TYPE_TIMESTAMP);
     Context->EndQuery(EndQueryLocation.Heap, D3D12_QUERY_TYPE_TIMESTAMP, EndQueryLocation.Index);
 }
 
@@ -28,7 +29,7 @@ double FGPUEventNode::GetTiming(UINT64* ReadBackData)
     double TimingMs = 0;
 
     UINT64 GpuFrequency = 0;
-    FCommandQueue* CommandQueue = GetParentDevice()->GetDirectCommandQueue();
+    FCommandQueue* CommandQueue = RHIGetDirectCommandQueue();
     CommandQueue->GetTimestampFrequency(&GpuFrequency); // Hz (ticks per second)
 
     uint32_t Timing = 0;
@@ -44,8 +45,8 @@ double FGPUEventNode::GetTiming(UINT64* ReadBackData)
     return TimingMs;
 }
 
-FGPUProfiler::FGPUProfiler(FGraphicsDevice* GraphicsDevice)
-    :FDeviceChild(GraphicsDevice), StackDepth(0)
+FGPUProfiler::FGPUProfiler()
+    :StackDepth(0)
 {
 }
 
@@ -70,13 +71,13 @@ void FGPUProfiler::EndFrameAfterFence()
         D3D12_RANGE Range;
         Range.Begin = PendingNodes[Index]->BeginQueryLocation.Index;
         Range.End = PendingNodes[Index]->EndQueryLocation.Index;
-        GetParentDevice()->GetTimestampQueryHeap()->MapReadbackBuffer(reinterpret_cast<void**>(&ReadBackData));
+        RHIGetTimestampQueryHeap()->MapReadbackBuffer(reinterpret_cast<void**>(&ReadBackData));
 
         // traverse and clear.
         ProfileData.clear();
         TraverseNode(PendingNodes[Index], ReadBackData);
 
-        GetParentDevice()->GetTimestampQueryHeap()->UnmapReadbackBuffer();
+        RHIGetTimestampQueryHeap()->UnmapReadbackBuffer();
     }
 
     PendingNodes[Index] = RootNode;
@@ -118,14 +119,14 @@ void FGPUProfiler::PushEvent(const char* Name, bool bFrameStart)
     StackDepth++;
     if (CurrentEventNode)
     {
-        FGPUEventNode* Node = new FGPUEventNode(Name, CurrentEventNode, GetParentDevice());
+        FGPUEventNode* Node = new FGPUEventNode(Name, CurrentEventNode);
         CurrentEventNode->Children.push_back(Node);
         CurrentEventNode = CurrentEventNode->Children[CurrentEventNode->Children.size() - 1];
     }
     else
     {
         // Add a new root node to the tree
-        RootNode = new FGPUEventNode(Name, nullptr, GetParentDevice());
+        RootNode = new FGPUEventNode(Name, nullptr);
         CurrentEventNode = RootNode;
     }
 
@@ -157,26 +158,25 @@ void FGPUProfiler::PopEvent(bool bFrameEnd)
 
 void FGPUProfiler::ResolveQueryData()
 {
-    FGraphicsContext* Context = GetParentDevice()->GetCurrentGraphicsContext();
+    FGraphicsContext* Context = RHIGetCurrentGraphicsContext();
 
     uint32_t NumFrameQuery = FrameQueryEndIndex - FrameQueryStartIndex + 1;
     UINT64 destinationOffset = FrameQueryStartIndex * sizeof(UINT64);  // Readback 버퍼 내 오프셋
 
     Context->ResolveQueryData(
-        GetParentDevice()->GetTimestampQueryHeap(),
+        RHIGetTimestampQueryHeap(),
         D3D12_QUERY_TYPE_TIMESTAMP,
         FrameQueryStartIndex, NumFrameQuery,
         destinationOffset
     );
 }
 
-GPUProfileScopedObject::GPUProfileScopedObject(FGraphicsDevice* Device, const char* Name)
-    : Device(Device)
+GPUProfileScopedObject::GPUProfileScopedObject(const char* Name)
 {
-    Device->GetGPUProfiler().PushEvent(Name);
+    RHIGetGPUProfiler().PushEvent(Name);
 }
 
 GPUProfileScopedObject::~GPUProfileScopedObject()
 {
-    Device->GetGPUProfiler().PopEvent();
+    RHIGetGPUProfiler().PopEvent();
 }

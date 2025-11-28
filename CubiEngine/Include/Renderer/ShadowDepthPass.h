@@ -5,16 +5,15 @@
 #include "Graphics/PipelineState.h"
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 
-class FGraphicsDevice;
 class FGraphicsContext;
 class FScene;
 
 class FShadowDepthPass : public FRenderPass
 {
 public:
-    FShadowDepthPass(FGraphicsDevice* const Device, uint32_t Width, uint32_t Height);
+    FShadowDepthPass(uint32_t Width, uint32_t Height);
     
-	void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height) override;
+	void InitSizeDependantResource(uint32_t Width, uint32_t Height) override;
 
     void Render(FGraphicsContext* GraphicsContext, FScene* Scene);
     void AddVSMPassCS(FGraphicsContext* GraphicsContext, FScene* Scene);

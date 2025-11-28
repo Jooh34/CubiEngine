@@ -39,12 +39,12 @@ public:
     void OffsetDescriptor(FDescriptorHandle& InHandle, const uint32_t Offset = 1u) const;
     void OffsetCurrentHandle(const uint32_t Offset = 1u);
 
-    ID3D12DescriptorHeap* const GetDescriptorHeap() const { return DescriptorHeap.Get(); }
+    ID3D12DescriptorHeap* const GetD3D12DescriptorHeap() const { return D3D12DescriptorHeap.Get(); }
 
 private:
     uint32_t NumDescriptor;
 
-    wrl::ComPtr<ID3D12DescriptorHeap> DescriptorHeap{};
+    wrl::ComPtr<ID3D12DescriptorHeap> D3D12DescriptorHeap{};
     uint32_t DescriptorSize{};
 
     FDescriptorHandle DescriptorHandleFromHeapStart;

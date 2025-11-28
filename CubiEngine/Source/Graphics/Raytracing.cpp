@@ -1,11 +1,11 @@
 #include "Graphics/Raytracing.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
 #include "Graphics/GraphicsContext.h"
 #include "Graphics/Material.h"
 #include "Scene/Mesh.h"
 #include "Scene/Scene.h"
 
-FRaytracingGeometry::FRaytracingGeometry(const FGraphicsDevice* const GraphicsDevice,
+FRaytracingGeometry::FRaytracingGeometry(
     std::pair<wrl::ComPtr<ID3D12Resource>, uint32_t>& VertexBuffer,
     std::pair<wrl::ComPtr<ID3D12Resource>, uint32_t>& IndexBuffer)
 {
@@ -23,19 +23,19 @@ FRaytracingGeometry::FRaytracingGeometry(const FGraphicsDevice* const GraphicsDe
     );
 
     UINT64 scratchSize, resultSize;
-    bottomLevelASGenerator.ComputeASBufferSizes(GraphicsDevice->GetDevice(), false, &scratchSize, &resultSize);
+    bottomLevelASGenerator.ComputeASBufferSizes(RHIGetDevice(), false, &scratchSize, &resultSize);
 
-    GraphicsDevice->CreateRawBuffer(
+    RHICreateRawBuffer(
         scratch,
         scratchSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, kDefaultHeapProps
     );
-    GraphicsDevice->CreateRawBuffer(
+    RHICreateRawBuffer(
         result,
         resultSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, kDefaultHeapProps
     );
 
     bottomLevelASGenerator.Generate(
-        GraphicsDevice->GetCurrentGraphicsContext()->GetCommandList(),
+        RHIGetCurrentGraphicsContext()->GetD3D12CommandList(),
         scratch.Get(),
         result.Get(),
         false,
@@ -44,7 +44,6 @@ FRaytracingGeometry::FRaytracingGeometry(const FGraphicsDevice* const GraphicsDe
 }
 
 void FRaytracingScene::GenerateRaytracingScene(
-    const FGraphicsDevice* const GraphicsDevice,
     FGraphicsContext* const GraphicsContext,
     std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList
 )
@@ -72,41 +71,41 @@ void FRaytracingScene::GenerateRaytracingScene(
 
     UINT64 scratchSize, resultSize, instanceDescsSize;
 
-    topLevelASGenerator.ComputeASBufferSizes(GraphicsDevice->GetDevice(), true, &scratchSize,
+    topLevelASGenerator.ComputeASBufferSizes(RHIGetDevice(), true, &scratchSize,
         &resultSize, &instanceDescsSize);
 
-    GraphicsDevice->CreateRawBuffer(
+    RHICreateRawBuffer(
         pScratch,
         scratchSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
         D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         kDefaultHeapProps
     );
 
-    GraphicsDevice->CreateRawBuffer(
+    RHICreateRawBuffer(
         pResult,
         resultSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
         D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
         kDefaultHeapProps
     );
 
-    GraphicsDevice->CreateRawBuffer(
+    RHICreateRawBuffer(
         pInstanceDesc,
         instanceDescsSize, D3D12_RESOURCE_FLAG_NONE,
         D3D12_RESOURCE_STATE_GENERIC_READ, kUploadHeapProps
     );
 
-    topLevelASGenerator.Generate(GraphicsContext->GetCommandList(),
+    topLevelASGenerator.Generate(GraphicsContext->GetD3D12CommandList(),
         pScratch.Get(),
         pResult.Get(),
         pInstanceDesc.Get()
     );
 
-    CreateTopLevelASResourceView(GraphicsDevice);
+    CreateTopLevelASResourceView();
 
-    GenerateRaytracingBuffers(GraphicsDevice, GraphicsContext, RaytracingGeometryContextList);
+    GenerateRaytracingBuffers(GraphicsContext, RaytracingGeometryContextList);
 }
 
-void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const GraphicsDevice, FGraphicsContext* const GraphicsContext, std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList)
+void FRaytracingScene::GenerateRaytracingBuffers(FGraphicsContext* const GraphicsContext, std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList)
 {
     // Update Buffers
     uint32_t vtxOffset = 0;
@@ -164,19 +163,19 @@ void FRaytracingScene::GenerateRaytracingBuffers(const FGraphicsDevice* const Gr
     }
 
     GeometryInfoBuffer =
-        GraphicsDevice->CreateBuffer<interlop::FRaytracingGeometryInfo>(FBufferCreationDesc{
+        RHICreateBuffer<interlop::FRaytracingGeometryInfo>(FBufferCreationDesc{
             .Usage = EBufferUsage::StructuredBuffer,
             .Name = L" Raytracing Geometry Buffer",
         }, GeometryInfoList);
 
     MaterialBuffer =
-        GraphicsDevice->CreateBuffer<interlop::FRaytracingMaterial>(FBufferCreationDesc{
+        RHICreateBuffer<interlop::FRaytracingMaterial>(FBufferCreationDesc{
             .Usage = EBufferUsage::StructuredBuffer,
             .Name = L" Raytracing Material Buffer",
             }, MaterialList);
 }
 
-void FRaytracingScene::CreateTopLevelASResourceView(const FGraphicsDevice* const GraphicsDevice)
+void FRaytracingScene::CreateTopLevelASResourceView()
 {
     FSrvCreationDesc SrvCreationDesc = {
         .SrvDesc = {
@@ -189,7 +188,7 @@ void FRaytracingScene::CreateTopLevelASResourceView(const FGraphicsDevice* const
         }
     };
 
-    SrvIndex = GraphicsDevice->CreateSrv(SrvCreationDesc, nullptr);
+    SrvIndex = RHICreateSrv(SrvCreationDesc, nullptr);
     GPUVirtualAddress = pResult->GetGPUVirtualAddress();
 }
 

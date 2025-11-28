@@ -21,7 +21,7 @@ public:
     void Render(const FGraphicsContext* const GraphicsContext,
          interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource) const;
 
-    void GenerateRaytracingGeometry(const FGraphicsDevice* const GraphicsDevice);
+    void GenerateRaytracingGeometry();
 
     void GatherRaytracingGeometry(std::vector<FRaytracingGeometryContext>& RaytracingGeometryContextList);
 

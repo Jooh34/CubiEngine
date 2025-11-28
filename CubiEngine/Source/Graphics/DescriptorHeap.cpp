@@ -17,15 +17,15 @@ FDescriptorHeap::FDescriptorHeap(ID3D12Device* const device, const D3D12_DESCRIP
 
     NumDescriptor = descriptorCount;
 
-    ThrowIfFailed(device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&DescriptorHeap)));
-    DescriptorHeap->SetName(descriptorHeapName.data());
+    ThrowIfFailed(device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&D3D12DescriptorHeap)));
+    D3D12DescriptorHeap->SetName(descriptorHeapName.data());
 
     DescriptorSize = device->GetDescriptorHandleIncrementSize(descriptorHeapType);
 
     DescriptorHandleFromHeapStart = {
-        .CpuDescriptorHandle = DescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+        .CpuDescriptorHandle = D3D12DescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
         .GpuDescriptorHandle = (descriptorHeapFlags == D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
-                                   ? DescriptorHeap->GetGPUDescriptorHandleForHeapStart()
+                                   ? D3D12DescriptorHeap->GetGPUDescriptorHandleForHeapStart()
                                    : CD3DX12_GPU_DESCRIPTOR_HANDLE{},
         .DescriptorSize = DescriptorSize,
     };

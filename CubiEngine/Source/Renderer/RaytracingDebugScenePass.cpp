@@ -1,22 +1,22 @@
 #include "Renderer/RaytracingDebugScenePass.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
 #include "Graphics/GraphicsContext.h"
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FRaytracingDebugScenePass::FRaytracingDebugScenePass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height)
-    : FRenderPass(Device, Width, Height),
-        RaytracingDebugScenePassPipelineState(Device->GetDevice(), FRaytracingPipelineStateCreationDesc{
+FRaytracingDebugScenePass::FRaytracingDebugScenePass(uint32_t Width, uint32_t Height)
+    : FRenderPass(Width, Height),
+        RaytracingDebugScenePassPipelineState(FRaytracingPipelineStateCreationDesc{
        .rtShaderPath = L"Shaders/Raytracing/DebugScene.hlsl",
        .EntryPointRGS = L"RayGen",
        .EntryPointCHS = L"ClosestHit",
        .EntryPointRMS = L"Miss",
         }),
-        RaytracingDebugScenePassSBT(Device, RaytracingDebugScenePassPipelineState.GetRTStateObjectProps())
+        RaytracingDebugScenePassSBT(RaytracingDebugScenePassPipelineState.GetRTStateObjectProps())
 {
 }
 
-void FRaytracingDebugScenePass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FRaytracingDebugScenePass::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
     FTextureCreationDesc RaytracingDebugSceneTextureDesc = {
         .Usage = ETextureUsage::UAVTexture,
@@ -26,7 +26,7 @@ void FRaytracingDebugScenePass::InitSizeDependantResource(const FGraphicsDevice*
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"RaytracingDebugScene Texture",
     };
-    RaytracingDebugSceneTexture = Device->CreateTexture(RaytracingDebugSceneTextureDesc);
+    RaytracingDebugSceneTexture = RHICreateTexture(RaytracingDebugSceneTextureDesc);
 }
 
 void FRaytracingDebugScenePass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene)

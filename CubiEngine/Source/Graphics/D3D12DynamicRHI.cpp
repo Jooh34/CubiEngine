@@ -1,4 +1,6 @@
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
+#include "Graphics/MipmapGenerator.h"
 #include "Graphics/PipelineState.h"
 #include "Graphics/RaytracingPipelineState.h"
 #include "Graphics/MemoryAllocator.h"
@@ -8,21 +10,16 @@
 #include "ShaderInterlop/RenderResources.hlsli"
 #include <DirectXTex.h>
 
-std::map<std::string, FTexture*> FGraphicsDevice::DebugTextureMap{};
+FD3D12DynamicRHI* GD3D12RHI = nullptr;
 
-FGraphicsDevice::FGraphicsDevice(const uint32_t Width, const uint32_t Height,
-    const DXGI_FORMAT SwapchainFormat, const HWND WindowHandle)
-    : SwapchainFormat(SwapchainFormat), WindowHandle(WindowHandle), GPUProfiler(this)
+std::map<std::string, FTexture*> FD3D12DynamicRHI::DebugTextureMap{};
+
+FD3D12DynamicRHI::FD3D12DynamicRHI()
 {
-    InitDeviceResources();
-    InitSwapchainResources(Width, Height);
-
-    MipmapGenerator = std::make_unique<FMipmapGenerator>(this);
-
-    TimeStampQueryHeap = std::make_unique<FQueryHeap>(this, D3D12_QUERY_TYPE_TIMESTAMP, D3D12_QUERY_HEAP_TYPE_TIMESTAMP);
+    assert(GD3D12RHI == nullptr);
 }
 
-FGraphicsDevice::~FGraphicsDevice()
+FD3D12DynamicRHI::~FD3D12DynamicRHI()
 {
     FlushAllQueue();
 
@@ -33,12 +30,185 @@ FGraphicsDevice::~FGraphicsDevice()
     //}
 }
 
-void FGraphicsDevice::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
+void FD3D12DynamicRHI::Init(
+    const uint32_t InWidth, const uint32_t InHeight, 
+    const DXGI_FORMAT InSwapchainFormat, const HWND InWindowHandle)
 {
-    ResizeSwapchainResources(InWidth, InHeight);
+    SwapchainFormat = InSwapchainFormat;
+    WindowHandle = InWindowHandle;
+
+    // Todo : seperate Swapchain class from D3D12DynamicRHI
+    InitDeviceResources();
+    InitSwapchainResources(InWidth, InHeight);
+
+    MipmapGenerator = std::make_unique<FMipmapGenerator>();
+
+    TimeStampQueryHeap = std::make_unique<FQueryHeap>(D3D12_QUERY_TYPE_TIMESTAMP, D3D12_QUERY_HEAP_TYPE_TIMESTAMP);
 }
 
-FSampler FGraphicsDevice::CreateSampler(const FSamplerCreationDesc& Desc) const
+void CreateRHI(const uint32_t Width, const uint32_t Height, const DXGI_FORMAT SwapchainFormat, const HWND WindowHandle)
+{
+    assert(GD3D12RHI == nullptr);
+    GD3D12RHI = new FD3D12DynamicRHI();
+    GD3D12RHI->Init(Width, Height, SwapchainFormat, WindowHandle);
+}
+
+ID3D12Device5* RHIGetDevice()
+{
+    return GD3D12RHI->GetDevice();
+}
+
+FDescriptorHandle RHIGetCurrentCbvSrvUavDescriptorHandle()
+{
+    return GD3D12RHI->GetCbvSrvUavDescriptorHeap()->GetCurrentDescriptorHandle();
+}
+
+IDXGIAdapter* RHIGetAdapter()
+{
+    return GD3D12RHI->GetAdapter();
+}
+
+IDXGIAdapter1* RHIGetAdapter1()
+{
+    return GD3D12RHI->GetAdapter1();
+}
+
+FCommandQueue* RHIGetDirectCommandQueue()
+{
+    return GD3D12RHI->GetDirectCommandQueue();
+}
+
+FPipelineState RHICreatePipelineState(const FGraphicsPipelineStateCreationDesc& Desc)
+{
+    return GD3D12RHI->CreatePipelineState(Desc);
+}
+
+FPipelineState RHICreatePipelineState(const FComputePipelineStateCreationDesc& Desc)
+{
+    return GD3D12RHI->CreatePipelineState(Desc);
+}
+
+DXGI_FORMAT RHIGetSwapChainFormat()
+{
+    return GD3D12RHI->GetSwapChainFormat();
+}
+
+FGraphicsContext* RHIGetCurrentGraphicsContext()
+{
+    return GD3D12RHI->GetCurrentGraphicsContext();
+}
+
+std::unique_ptr<FComputeContext> RHIGetComputeContext()
+{
+    return std::move(GD3D12RHI->GetComputeContext());
+}
+
+FDescriptorHeap* RHIGetCbvSrvUavDescriptorHeap()
+{
+    return GD3D12RHI->GetCbvSrvUavDescriptorHeap();
+}
+
+FDescriptorHeap* RHIGetRtvDescriptorHeap()
+{
+    return GD3D12RHI->GetRtvDescriptorHeap();
+}
+
+FDescriptorHeap* RHIGetDsvDescriptorHeap()
+{
+    return GD3D12RHI->GetDsvDescriptorHeap();
+}
+
+FDescriptorHeap* RHIGetSamplerDescriptorHeap()
+{
+    return GD3D12RHI->GetSamplerDescriptorHeap();
+}
+
+uint32_t RHICreateSrv(const FSrvCreationDesc& SrvCreationDesc, ID3D12Resource* const Resource)
+{
+    return GD3D12RHI->CreateSrv(SrvCreationDesc, Resource);
+}
+
+FSampler RHICreateSampler(const FSamplerCreationDesc& Desc)
+{
+    return GD3D12RHI->CreateSampler(Desc);
+}
+
+FGPUProfiler& RHIGetGPUProfiler()
+{
+    return GD3D12RHI->GetGPUProfiler();
+}
+
+FQueryLocation RHIAllocateQuery(D3D12_QUERY_TYPE Type)
+{
+    return GD3D12RHI->AllocateQuery(Type);
+}
+
+FQueryHeap* RHIGetTimestampQueryHeap()
+{
+    return GD3D12RHI->GetTimestampQueryHeap();
+}
+
+void RHICreateRawBuffer(
+    ComPtr<ID3D12Resource>& outBuffer,
+    uint64_t size,
+    D3D12_RESOURCE_FLAGS flags,
+    D3D12_RESOURCE_STATES initState,
+    const D3D12_HEAP_PROPERTIES& heapProps)
+{
+    GD3D12RHI->CreateRawBuffer(outBuffer, size, flags, initState, heapProps);
+}
+
+std::unique_ptr<FTexture> RHICreateTexture(const FTextureCreationDesc& InTextureCreationDesc, const void* Data)
+{
+    return std::move(GD3D12RHI->CreateTexture(InTextureCreationDesc, Data));
+}
+
+FBuffer RHICreateBuffer(const FBufferCreationDesc& BufferCreationDesc, size_t TotalBytes)
+{
+    return GD3D12RHI->CreateBuffer(BufferCreationDesc, TotalBytes);
+}
+
+
+#define RHI_CREATE_BUFFER_TEMPLATE_FUNC(TYPE) \
+    template FBuffer RHICreateBuffer<TYPE>( \
+        const FBufferCreationDesc& BufferCreationDesc, const std::span<const TYPE> Data) const; \
+
+FTexture* RHIGetCurrentBackBuffer()
+{
+    return GD3D12RHI->GetCurrentBackBuffer();
+}
+
+void RHIBeginFrame()
+{
+    GD3D12RHI->BeginFrame();
+}
+
+void RHIEndFrame()
+{
+    GD3D12RHI->EndFrame();
+}
+
+void RHIResizeSwapchainResources(uint32_t InWidth, uint32_t InHeight)
+{
+    GD3D12RHI->ResizeSwapchainResources(InWidth, InHeight);
+}
+
+void RHIPresent()
+{
+    GD3D12RHI->Present();
+}
+
+void RHIExecuteAndFlushComputeContext(std::unique_ptr<FComputeContext>&& ComputeContext)
+{
+    GD3D12RHI->ExecuteAndFlushComputeContext(std::move(ComputeContext));
+}
+
+void RHIFlushAllQueue()
+{
+	GD3D12RHI->FlushAllQueue();
+}
+
+FSampler FD3D12DynamicRHI::CreateSampler(const FSamplerCreationDesc& Desc) const
 {
     FSampler Sampler{};
 
@@ -52,7 +222,7 @@ FSampler FGraphicsDevice::CreateSampler(const FSamplerCreationDesc& Desc) const
     return Sampler;
 }
 
-std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationDesc& InTextureCreationDesc, const void* Data) const
+std::unique_ptr<FTexture> FD3D12DynamicRHI::CreateTexture(const FTextureCreationDesc& InTextureCreationDesc, const void* Data) const
 {
     FTextureCreationDesc TextureCreationDesc = InTextureCreationDesc;
 
@@ -74,11 +244,11 @@ std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationD
 
     float* HdrTextureData{ nullptr };
 
-	DirectX::ScratchImage scratchImage;
+    DirectX::ScratchImage scratchImage;
 
     if (TextureCreationDesc.Usage == ETextureUsage::HDRTextureFromPath)
     {
-		int32_t Width, Height;
+        int32_t Width, Height;
 
         int ComponentCount = 4;
         std::string FullPath = FFileSystem::GetFullPath(wStringToString(TextureCreationDesc.Path));
@@ -93,22 +263,22 @@ std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationD
 
         TextureCreationDesc.Width = Width;
         TextureCreationDesc.Height = Height;
-	}
-	else if (TextureCreationDesc.Usage == ETextureUsage::TextureFromPath)
-	{
-		int32_t Width, Height, Channels;
-		std::string FullPath = FFileSystem::GetFullPath(wStringToString(TextureCreationDesc.Path));
-		TextureData = stbi_load(FullPath.c_str(), &Width, &Height, &Channels, 0);
+    }
+    else if (TextureCreationDesc.Usage == ETextureUsage::TextureFromPath)
+    {
+        int32_t Width, Height, Channels;
+        std::string FullPath = FFileSystem::GetFullPath(wStringToString(TextureCreationDesc.Path));
+        TextureData = stbi_load(FullPath.c_str(), &Width, &Height, &Channels, 0);
 
-		if (!TextureData)
-		{
-			FatalError(
-				std::format("Failed to load texture from path : {}.", wStringToString(TextureCreationDesc.Path)));
-		}
+        if (!TextureData)
+        {
+            FatalError(
+                std::format("Failed to load texture from path : {}.", wStringToString(TextureCreationDesc.Path)));
+        }
 
-		TextureCreationDesc.Width = Width;
-		TextureCreationDesc.Height = Height;
-	}
+        TextureCreationDesc.Width = Width;
+        TextureCreationDesc.Height = Height;
+    }
     else if (TextureCreationDesc.Usage == ETextureUsage::DDSTextureFromPath)
     {
         std::string FullPath = FFileSystem::GetFullPath(wStringToString(TextureCreationDesc.Path));
@@ -121,15 +291,15 @@ std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationD
         }
         const DirectX::TexMetadata& metadata = scratchImage.GetMetadata();
 
-		TextureCreationDesc.Width = static_cast<uint32_t>(metadata.width);
-		TextureCreationDesc.Height = static_cast<uint32_t>(metadata.height);
-		TextureCreationDesc.DepthOrArraySize = static_cast<uint32_t>(metadata.arraySize);
-		TextureCreationDesc.MipLevels = static_cast<uint32_t>(metadata.mipLevels);
-		TextureCreationDesc.Format = metadata.format;
+        TextureCreationDesc.Width = static_cast<uint32_t>(metadata.width);
+        TextureCreationDesc.Height = static_cast<uint32_t>(metadata.height);
+        TextureCreationDesc.DepthOrArraySize = static_cast<uint32_t>(metadata.arraySize);
+        TextureCreationDesc.MipLevels = static_cast<uint32_t>(metadata.mipLevels);
+        TextureCreationDesc.Format = metadata.format;
         TextureCreationDesc.InitialState = D3D12_RESOURCE_STATE_COPY_DEST;
     }
-    
-	bool bUAVAllowed = FTexture::IsUAVAllowed(TextureCreationDesc.Usage, TextureCreationDesc.Format);
+
+    bool bUAVAllowed = FTexture::IsUAVAllowed(TextureCreationDesc.Usage, TextureCreationDesc.Format);
 
     std::unique_ptr<FTexture> Texture = std::make_unique<FTexture>();
     // GPU only memory
@@ -141,7 +311,7 @@ std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationD
     Texture->Usage = TextureCreationDesc.Usage;
     Texture->Format = TextureCreationDesc.Format;
     Texture->DebugName = TextureCreationDesc.Name;
-    
+
     if (TextureData || HdrTextureData || TextureCreationDesc.Usage == ETextureUsage::DDSTextureFromPath) // Upload Texture Buffer
     {
         std::vector<D3D12_SUBRESOURCE_DATA> TextureSubresourceData;
@@ -161,7 +331,7 @@ std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationD
                 .pData = HdrTextureData,
                 .RowPitch = TextureCreationDesc.Width * BytesPerPixel,
                 .SlicePitch = TextureCreationDesc.Width * TextureCreationDesc.Height * BytesPerPixel,
-            });
+                });
         }
         else // TexureUsage:: TextureFromPath or TextureFromData (non HDR).
         {
@@ -169,9 +339,9 @@ std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationD
                 .pData = TextureData,
                 .RowPitch = TextureCreationDesc.Width * BytesPerPixel,
                 .SlicePitch = TextureCreationDesc.Width * TextureCreationDesc.Height * BytesPerPixel,
-            });
+                });
         }
-        
+
         // Create upload buffer.
         const FBufferCreationDesc UploadBufferCreationDesc = {
             .Usage = EBufferUsage::UploadBuffer,
@@ -189,7 +359,7 @@ std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationD
 
         CopyContext->Reset();
 
-        UpdateSubresources(CopyContext->GetCommandList(), Texture->Allocation.Resource.Get(),
+        UpdateSubresources(CopyContext->GetD3D12CommandList(), Texture->Allocation.Resource.Get(),
             UploadAllocation.Resource.Get(), 0u, 0u, TextureSubresourceData.size(), TextureSubresourceData.data());
 
         CopyCommandQueue->ExecuteContext(CopyContext.get());
@@ -197,7 +367,7 @@ std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationD
 
         UploadAllocation.Reset();
     }
-    
+
     {
         // create SRV
         FSrvCreationDesc SrvCreationDesc{};
@@ -288,7 +458,7 @@ std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationD
                                 },
                             },
                     };
-                    
+
                     uint32_t UavIndex = CreateUav(UavCreationDesc, Texture->Allocation.Resource.Get());
                     if (i == 0)
                     {
@@ -324,10 +494,10 @@ std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationD
 
     if (bUAVAllowed && !FTexture::IsCompressedFormat(TextureCreationDesc.Format))
     {
-		MipmapGenerator->GenerateMipmap(Texture.get());
+        MipmapGenerator->GenerateMipmap(Texture.get());
     }
 
-	std::string TextureName = wStringToString(InTextureCreationDesc.Name);
+    std::string TextureName = wStringToString(InTextureCreationDesc.Name);
     if (Texture->Usage == ETextureUsage::DepthStencil ||
         Texture->Usage == ETextureUsage::RenderTarget ||
         Texture->Usage == ETextureUsage::UAVTexture)
@@ -338,19 +508,19 @@ std::unique_ptr<FTexture> FGraphicsDevice::CreateTexture(const FTextureCreationD
     return Texture;
 }
 
-FPipelineState FGraphicsDevice::CreatePipelineState(const FGraphicsPipelineStateCreationDesc Desc) const
+FPipelineState FD3D12DynamicRHI::CreatePipelineState(const FGraphicsPipelineStateCreationDesc& Desc) const
 {
     FPipelineState PipelineState(Device.Get(), Desc);
     return PipelineState;
 }
 
-FPipelineState FGraphicsDevice::CreatePipelineState(const FComputePipelineStateCreationDesc Desc) const
+FPipelineState FD3D12DynamicRHI::CreatePipelineState(const FComputePipelineStateCreationDesc& Desc) const
 {
     FPipelineState PipelineState(Device.Get(), Desc);
     return PipelineState;
 }
 
-void FGraphicsDevice::ExecuteAndFlushComputeContext(std::unique_ptr<FComputeContext>&& ComputeContext)
+void FD3D12DynamicRHI::ExecuteAndFlushComputeContext(std::unique_ptr<FComputeContext>&& ComputeContext)
 {
     // Execute compute context and push to the queue.
     ComputeCommandQueue->ExecuteContext(ComputeContext.get());
@@ -359,7 +529,7 @@ void FGraphicsDevice::ExecuteAndFlushComputeContext(std::unique_ptr<FComputeCont
     ComputeContextQueue.emplace(std::move(ComputeContext));
 }
 
-void FGraphicsDevice::CreateRawBuffer(ComPtr<ID3D12Resource>& outBuffer, uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps) const
+void FD3D12DynamicRHI::CreateRawBuffer(ComPtr<ID3D12Resource>& outBuffer, uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps) const
 {
     assert(outBuffer.Get() == nullptr);
 
@@ -387,11 +557,11 @@ void FGraphicsDevice::CreateRawBuffer(ComPtr<ID3D12Resource>& outBuffer, uint64_
         initState, nullptr, IID_PPV_ARGS(&outBuffer)));
 }
 
-std::unique_ptr<FComputeContext> FGraphicsDevice::GetComputeContext()
+std::unique_ptr<FComputeContext> FD3D12DynamicRHI::GetComputeContext()
 {
     if (ComputeContextQueue.empty())
     {
-        std::unique_ptr<FComputeContext> Context = std::make_unique<FComputeContext>(this);
+        std::unique_ptr<FComputeContext> Context = std::make_unique<FComputeContext>();
         return Context;
     }
     else
@@ -402,17 +572,17 @@ std::unique_ptr<FComputeContext> FGraphicsDevice::GetComputeContext()
     }
 }
 
-void FGraphicsDevice::GenerateMipmap(FTexture* Texture)
+void FD3D12DynamicRHI::GenerateMipmap(FTexture* Texture)
 {
     MipmapGenerator->GenerateMipmap(Texture);
 }
 
-void FGraphicsDevice::MaintainQueryHeap()
+void FD3D12DynamicRHI::MaintainQueryHeap()
 {
     TimeStampQueryHeap->Maintain();
 }
 
-FQueryLocation FGraphicsDevice::AllocateQuery(D3D12_QUERY_TYPE Type)
+FQueryLocation FD3D12DynamicRHI::AllocateQuery(D3D12_QUERY_TYPE Type)
 {
     uint32_t Index = TimeStampQueryHeap->AllocateQuery();
 
@@ -423,7 +593,7 @@ FQueryLocation FGraphicsDevice::AllocateQuery(D3D12_QUERY_TYPE Type)
     );
 }
 
-void FGraphicsDevice::InitDeviceResources()
+void FD3D12DynamicRHI::InitDeviceResources()
 {
     InitD3D12Core();
     InitCommandQueues();
@@ -433,7 +603,7 @@ void FGraphicsDevice::InitDeviceResources()
     InitBindlessRootSignature();
 }
 
-void FGraphicsDevice::InitSwapchainResources(const uint32_t Width, const uint32_t Height)
+void FD3D12DynamicRHI::InitSwapchainResources(const uint32_t Width, const uint32_t Height)
 {
     const DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {
         .Width = Width,
@@ -453,7 +623,7 @@ void FGraphicsDevice::InitSwapchainResources(const uint32_t Width, const uint32_
     };
 
     wrl::ComPtr<IDXGISwapChain1> swapChain1;
-    ThrowIfFailed(Factory->CreateSwapChainForHwnd(DirectCommandQueue->GetCommandQueue(), WindowHandle,
+    ThrowIfFailed(Factory->CreateSwapChainForHwnd(DirectCommandQueue->GetD3D12CommandQueue(), WindowHandle,
         &swapChainDesc, nullptr, nullptr, &swapChain1));
 
     // Prevent DXGI from switching to full screen state automatically while using ALT + ENTER combination.
@@ -466,7 +636,7 @@ void FGraphicsDevice::InitSwapchainResources(const uint32_t Width, const uint32_
     CreateBackBufferRTVs();
 }
 
-void FGraphicsDevice::ResizeSwapchainResources(uint32_t InWidth, uint32_t InHeight)
+void FD3D12DynamicRHI::ResizeSwapchainResources(uint32_t InWidth, uint32_t InHeight)
 {
     // Wait all GPU works to finished
     FlushAllQueue();
@@ -476,7 +646,7 @@ void FGraphicsDevice::ResizeSwapchainResources(uint32_t InWidth, uint32_t InHeig
         BackBuffers[i]->Allocation.Reset();
         BackBuffers[i] = nullptr; // Release
     }
-    
+
     // Resize the swap chain buffers
     DXGI_SWAP_CHAIN_DESC swapChainDesc;
     SwapChain->GetDesc(&swapChainDesc);
@@ -495,7 +665,7 @@ void FGraphicsDevice::ResizeSwapchainResources(uint32_t InWidth, uint32_t InHeig
     CreateBackBufferRTVs();
 }
 
-void FGraphicsDevice::InitD3D12Core()
+void FD3D12DynamicRHI::InitD3D12Core()
 {
     if constexpr (DEBUG_MODE)
     {
@@ -527,7 +697,7 @@ void FGraphicsDevice::InitD3D12Core()
     {
         FatalError("Failed to find D3D12 compatible adapter1");
     }
-    
+
     DXGI_ADAPTER_DESC AdapterDesc{};
     ThrowIfFailed(Adapter->GetDesc(&AdapterDesc));
     Log(std::format(L"Chosen adapter : {}.", AdapterDesc.Description));
@@ -537,7 +707,7 @@ void FGraphicsDevice::InitD3D12Core()
     Device->SetName(L"D3D12 Device");
 }
 
-void FGraphicsDevice::InitCommandQueues()
+void FD3D12DynamicRHI::InitCommandQueues()
 {
     DirectCommandQueue =
         std::make_unique<FCommandQueue>(Device.Get(), D3D12_COMMAND_LIST_TYPE_DIRECT, L"Direct Command Queue");
@@ -549,7 +719,7 @@ void FGraphicsDevice::InitCommandQueues()
         std::make_unique<FCommandQueue>(Device.Get(), D3D12_COMMAND_LIST_TYPE_COMPUTE, L"Compute Command Queue");
 }
 
-void FGraphicsDevice::InitDescriptorHeaps()
+void FD3D12DynamicRHI::InitDescriptorHeaps()
 {
     // Create descriptor heaps.
     CbvSrvUavDescriptorHeap = std::make_unique<FDescriptorHeap>(
@@ -565,30 +735,30 @@ void FGraphicsDevice::InitDescriptorHeaps()
         GNumSamplerDescriptorHeap, L"Sampler Descriptor Heap");
 }
 
-void FGraphicsDevice::InitMemoryAllocator()
+void FD3D12DynamicRHI::InitMemoryAllocator()
 {
     MemoryAllocator = std::make_unique<FMemoryAllocator>(Device.Get(), Adapter.Get());
 }
 
-void FGraphicsDevice::InitContexts()
+void FD3D12DynamicRHI::InitContexts()
 {
     // Create graphics contexts (one per frame in flight).
     for (const uint32_t i : std::views::iota(0u, FRAMES_IN_FLIGHT))
     {
-        PerFrameGraphicsContexts[i] = std::make_unique<FGraphicsContext>(this);
+        PerFrameGraphicsContexts[i] = std::make_unique<FGraphicsContext>();
     }
 
-    CopyContext = std::make_unique<FCopyContext>(this);
+    CopyContext = std::make_unique<FCopyContext>();
 }
 
-void FGraphicsDevice::InitBindlessRootSignature()
+void FD3D12DynamicRHI::InitBindlessRootSignature()
 {
     // Setup bindless root signature.
     FPipelineState::CreateBindlessRootSignature(Device.Get(), L"Shaders/Triangle.hlsl");
     FRaytracingPipelineState::CreateRaytracingRootSignature(Device.Get());
 }
 
-uint32_t FGraphicsDevice::CreateCbv(const FCbvCreationDesc& CbvCreationDesc) const
+uint32_t FD3D12DynamicRHI::CreateCbv(const FCbvCreationDesc& CbvCreationDesc) const
 {
     const uint32_t Index = CbvSrvUavDescriptorHeap->GetCurrentDescriptorIndex();
 
@@ -599,7 +769,7 @@ uint32_t FGraphicsDevice::CreateCbv(const FCbvCreationDesc& CbvCreationDesc) con
     return Index;
 }
 
-uint32_t FGraphicsDevice::CreateSrv(const FSrvCreationDesc& SrvCreationDesc, ID3D12Resource* const Resource) const
+uint32_t FD3D12DynamicRHI::CreateSrv(const FSrvCreationDesc& SrvCreationDesc, ID3D12Resource* const Resource) const
 {
     const uint32_t Index = CbvSrvUavDescriptorHeap->GetCurrentDescriptorIndex();
 
@@ -610,7 +780,7 @@ uint32_t FGraphicsDevice::CreateSrv(const FSrvCreationDesc& SrvCreationDesc, ID3
     return Index;
 }
 
-uint32_t FGraphicsDevice::CreateUav(const FUavCreationDesc& UavCreationDesc, ID3D12Resource* const Resource) const
+uint32_t FD3D12DynamicRHI::CreateUav(const FUavCreationDesc& UavCreationDesc, ID3D12Resource* const Resource) const
 {
     const uint32_t Index = CbvSrvUavDescriptorHeap->GetCurrentDescriptorIndex();
 
@@ -621,7 +791,7 @@ uint32_t FGraphicsDevice::CreateUav(const FUavCreationDesc& UavCreationDesc, ID3
     return Index;
 }
 
-uint32_t FGraphicsDevice::CreateDsv(const FDsvCreationDesc& DsvCreationDesc, ID3D12Resource* const Resource) const
+uint32_t FD3D12DynamicRHI::CreateDsv(const FDsvCreationDesc& DsvCreationDesc, ID3D12Resource* const Resource) const
 {
     const uint32_t Index = DsvDescriptorHeap->GetCurrentDescriptorIndex();
 
@@ -632,7 +802,7 @@ uint32_t FGraphicsDevice::CreateDsv(const FDsvCreationDesc& DsvCreationDesc, ID3
     return Index;
 }
 
-uint32_t FGraphicsDevice::CreateRtv(const FRtvCreationDesc& RtvCreationDesc, ID3D12Resource* const Resource) const
+uint32_t FD3D12DynamicRHI::CreateRtv(const FRtvCreationDesc& RtvCreationDesc, ID3D12Resource* const Resource) const
 {
     const uint32_t Index = RtvDescriptorHeap->GetCurrentDescriptorIndex();
 
@@ -644,7 +814,7 @@ uint32_t FGraphicsDevice::CreateRtv(const FRtvCreationDesc& RtvCreationDesc, ID3
 }
 
 template<typename T>
-FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationDesc, const std::span<const T> Data) const
+FBuffer FD3D12DynamicRHI::CreateBuffer(const FBufferCreationDesc& BufferCreationDesc, const std::span<const T> Data) const
 {
     FBuffer Buffer{};
 
@@ -677,7 +847,7 @@ FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationD
             .Usage = EBufferUsage::UploadBuffer,
             .Name = L"Upload buffer - " + std::wstring(BufferCreationDesc.Name),
         };
-        
+
         FResourceCreationDesc UploadResourceCreationDesc =
             FResourceCreationDesc::CreateBufferResourceCreationDesc(SizeInBytes);
 
@@ -689,7 +859,7 @@ FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationD
         CopyContext->Reset();
 
         // Get a copy command and list and execute copy resource functions on the command queue.
-        CopyContext->GetCommandList()->CopyResource(Buffer.Allocation.Resource.Get(), UploadAllocation.Resource.Get()); 
+        CopyContext->GetD3D12CommandList()->CopyResource(Buffer.Allocation.Resource.Get(), UploadAllocation.Resource.Get());
 
         CopyCommandQueue->ExecuteContext(CopyContext.get());
         CopyCommandQueue->Flush();
@@ -754,7 +924,7 @@ FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationD
     return Buffer;
 }
 
-FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationDesc, size_t TotalBytes) const
+FBuffer FD3D12DynamicRHI::CreateBuffer(const FBufferCreationDesc& BufferCreationDesc, size_t TotalBytes) const
 {
     FBuffer Buffer{};
 
@@ -830,7 +1000,7 @@ FBuffer FGraphicsDevice::CreateBuffer(const FBufferCreationDesc& BufferCreationD
 }
 
 #define CREATE_BUFFER_TEMPLATE_FUNC(TYPE) \
-    template FBuffer FGraphicsDevice::CreateBuffer<TYPE>( \
+    template FBuffer FD3D12DynamicRHI::CreateBuffer<TYPE>( \
         const FBufferCreationDesc& BufferCreationDesc, const std::span<const TYPE> Data) const; \
 
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::MaterialBuffer)
@@ -848,7 +1018,7 @@ CREATE_BUFFER_TEMPLATE_FUNC(interlop::FRaytracingGeometryInfo)
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::FRaytracingMaterial)
 CREATE_BUFFER_TEMPLATE_FUNC(interlop::MeshVertex)
 
-void FGraphicsDevice::CreateBackBufferRTVs()
+void FD3D12DynamicRHI::CreateBackBufferRTVs()
 {
     FDescriptorHandle RtvHandle = RtvDescriptorHeap->GetDescriptorHandleFromStart();
     //FDescriptorHandle RtvHandle = RtvDescriptorHeap->GetCurrentDescriptorHandle();
@@ -858,10 +1028,10 @@ void FGraphicsDevice::CreateBackBufferRTVs()
     {
         wrl::ComPtr<ID3D12Resource> BackBuffer{};
         ThrowIfFailed(SwapChain->GetBuffer(i, IID_PPV_ARGS(&BackBuffer)));
-        
+
         Device->CreateRenderTargetView(BackBuffer.Get(), nullptr, RtvHandle.CpuDescriptorHandle);
 
-		BackBuffers[i] = std::make_unique<FTexture>();
+        BackBuffers[i] = std::make_unique<FTexture>();
         BackBuffers[i]->Allocation.Resource = BackBuffer;
         BackBuffers[i]->Allocation.Resource->SetName(L"SwapChain BackBuffer");
         BackBuffers[i]->RtvIndex = RtvDescriptorHeap->GetDescriptorIndex(RtvHandle);
@@ -877,18 +1047,18 @@ void FGraphicsDevice::CreateBackBufferRTVs()
     }
 }
 
-void FGraphicsDevice::BeginFrame()
+void FD3D12DynamicRHI::BeginFrame()
 {
     MaintainQueryHeap();
     PerFrameGraphicsContexts[CurrentFrameIndex]->Reset();
 }
 
-void FGraphicsDevice::Present()
+void FD3D12DynamicRHI::Present()
 {
     ThrowIfFailed(SwapChain->Present(1u, 0u));
 }
 
-void FGraphicsDevice::EndFrame()
+void FD3D12DynamicRHI::EndFrame()
 {
     FenceValues[CurrentFrameIndex].DirectQueueFenceValue = DirectCommandQueue->Signal();
 
@@ -897,10 +1067,9 @@ void FGraphicsDevice::EndFrame()
     DirectCommandQueue->WaitForFenceValue(FenceValues[CurrentFrameIndex].DirectQueueFenceValue);
 }
 
-void FGraphicsDevice::FlushAllQueue()
+void FD3D12DynamicRHI::FlushAllQueue()
 {
     DirectCommandQueue->Flush(); // flush GPU works
     CopyCommandQueue->Flush();
     ComputeCommandQueue->Flush();
 }
-

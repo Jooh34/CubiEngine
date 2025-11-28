@@ -10,9 +10,9 @@ class FGraphicsContext;
 class FRaytracingDebugScenePass : public FRenderPass
 {
 public:
-    FRaytracingDebugScenePass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height);
+    FRaytracingDebugScenePass(uint32_t Width, uint32_t Height);
 
-    void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight) override;
+    void InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight) override;
 
     void AddPass(FGraphicsContext* GraphicsContext, FScene* Scene);
 

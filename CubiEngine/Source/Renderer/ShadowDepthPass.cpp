@@ -1,10 +1,11 @@
 #include "Renderer/ShadowDepthPass.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FShadowDepthPass::FShadowDepthPass(FGraphicsDevice* const Device, uint32_t Width, uint32_t Height)
-	: FRenderPass(Device, Width, Height)
+FShadowDepthPass::FShadowDepthPass(uint32_t Width, uint32_t Height)
+	: FRenderPass(Width, Height)
 {
     FTextureCreationDesc ShadowDepthTextureDesc{
         .Usage = ETextureUsage::DepthStencil,
@@ -15,7 +16,7 @@ FShadowDepthPass::FShadowDepthPass(FGraphicsDevice* const Device, uint32_t Width
         .Name = L"ShadowDepth Texture",
     };
 
-    ShadowDepthTexture = Device->CreateTexture(ShadowDepthTextureDesc);
+    ShadowDepthTexture = RHICreateTexture(ShadowDepthTextureDesc);
     
     FTextureCreationDesc MomentTextureDesc{
         .Usage = ETextureUsage::RenderTarget,
@@ -26,7 +27,7 @@ FShadowDepthPass::FShadowDepthPass(FGraphicsDevice* const Device, uint32_t Width
         .Name = L"VSM Moment Texture",
     };
 
-    MomentTexture = Device->CreateTexture(MomentTextureDesc);
+    MomentTexture = RHICreateTexture(MomentTextureDesc);
 
     FGraphicsPipelineStateCreationDesc ShadowDepthPassPipelineStateDesc{
         .ShaderModule =
@@ -39,7 +40,7 @@ FShadowDepthPass::FShadowDepthPass(FGraphicsDevice* const Device, uint32_t Width
         .PipelineName = L"ShadowDepthPass Pipeline",
     };
 
-    ShadowDepthPassPipelineState = Device->CreatePipelineState(ShadowDepthPassPipelineStateDesc);
+    ShadowDepthPassPipelineState = RHICreatePipelineState(ShadowDepthPassPipelineStateDesc);
     
 
     FGraphicsPipelineStateCreationDesc VSMShadowDepthPassPipelineStateDesc{
@@ -53,7 +54,7 @@ FShadowDepthPass::FShadowDepthPass(FGraphicsDevice* const Device, uint32_t Width
         .PipelineName = L"VSMShadowDepthPass Pipeline",
     };
 
-    VSMShadowDepthPassPipelineState = Device->CreatePipelineState(VSMShadowDepthPassPipelineStateDesc);
+    VSMShadowDepthPassPipelineState = RHICreatePipelineState(VSMShadowDepthPassPipelineStateDesc);
 
     FComputePipelineStateCreationDesc MomentPassPipelineStateDesc{
         .ShaderModule =
@@ -63,10 +64,10 @@ FShadowDepthPass::FShadowDepthPass(FGraphicsDevice* const Device, uint32_t Width
         .PipelineName = L"VSM Moment Pipeline"
     };
 
-    MomentPassPipelineState = Device->CreatePipelineState(MomentPassPipelineStateDesc);
+    MomentPassPipelineState = RHICreatePipelineState(MomentPassPipelineStateDesc);
 }
 
-void FShadowDepthPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height)
+void FShadowDepthPass::InitSizeDependantResource(uint32_t Width, uint32_t Height)
 {
 }
 

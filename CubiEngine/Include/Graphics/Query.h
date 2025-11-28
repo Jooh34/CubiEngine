@@ -1,6 +1,5 @@
 #pragma once
 
-class FGraphicsDevice;
 class FQueryHeap;
 
 struct FQueryLocation
@@ -28,7 +27,7 @@ class FQueryHeap
     static constexpr uint32_t MaxHeapSize = 65536;
 
 public:
-    FQueryHeap(FGraphicsDevice* Device, D3D12_QUERY_TYPE QueryType, D3D12_QUERY_HEAP_TYPE HeapType);
+    FQueryHeap(D3D12_QUERY_TYPE QueryType, D3D12_QUERY_HEAP_TYPE HeapType);
 
     // The byte size of a result for a single query
     uint32_t GetResultSize() const
@@ -73,7 +72,6 @@ public:
     }
 
 private:
-    FGraphicsDevice* const GraphicsDevice;
     D3D12_QUERY_TYPE const QueryType;
     D3D12_QUERY_HEAP_TYPE const HeapType;
     uint32_t const NumQueries;

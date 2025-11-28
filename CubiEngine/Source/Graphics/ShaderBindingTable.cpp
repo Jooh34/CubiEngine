@@ -1,9 +1,9 @@
 #include "Graphics/ShaderBindingTable.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
 
-FShaderBindingTable::FShaderBindingTable(const FGraphicsDevice* const GraphicsDevice, ComPtr<ID3D12StateObjectProperties>& RTStateObjectProps)
+FShaderBindingTable::FShaderBindingTable(ComPtr<ID3D12StateObjectProperties>& RTStateObjectProps)
 {
-    void* heapPointer = reinterpret_cast<void*>(GraphicsDevice->GetCbvSrvUavDescriptorHeap()->GetDescriptorHandleFromStart().GpuDescriptorHandle.ptr);
+    void* heapPointer = reinterpret_cast<void*>(RHIGetCbvSrvUavDescriptorHeap()->GetDescriptorHandleFromStart().GpuDescriptorHandle.ptr);
 
     sbtGenerator.AddRayGenerationProgram(L"RayGen", { heapPointer });
     sbtGenerator.AddMissProgram(L"Miss", {});
@@ -13,7 +13,7 @@ FShaderBindingTable::FShaderBindingTable(const FGraphicsDevice* const GraphicsDe
 
     uint32_t sbtSize = sbtGenerator.ComputeSBTSize();
     
-    GraphicsDevice->CreateRawBuffer(
+    RHICreateRawBuffer(
         SbtResource, sbtSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, kUploadHeapProps);
 
     if (!SbtResource)

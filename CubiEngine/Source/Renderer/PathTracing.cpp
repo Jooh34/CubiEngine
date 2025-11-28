@@ -1,23 +1,23 @@
 #include "Renderer/PathTracing.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
 #include "Graphics/GraphicsContext.h"
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FPathTracingPass::FPathTracingPass(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
-    : FRenderPass(Device, InWidth, InHeight),
-    PathTracingPassPipelineState(Device->GetDevice(), FRaytracingPipelineStateCreationDesc{
+FPathTracingPass::FPathTracingPass(uint32_t InWidth, uint32_t InHeight)
+    : FRenderPass(InWidth, InHeight),
+    PathTracingPassPipelineState(FRaytracingPipelineStateCreationDesc{
       .rtShaderPath = L"Shaders/Raytracing/PathTracing.hlsl",
       .EntryPointRGS = L"RayGen",
       .EntryPointCHS = L"ClosestHit",
       .EntryPointRMS = L"Miss",
       .EntryPointAHS = L"AnyHit",
 	}),
-    PathTracingPassSBT(Device, PathTracingPassPipelineState.GetRTStateObjectProps())
+    PathTracingPassSBT(PathTracingPassPipelineState.GetRTStateObjectProps())
 {
 }
 
-void FPathTracingPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FPathTracingPass::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
     FTextureCreationDesc PathTracingSceneTextureDesc = {
         .Usage = ETextureUsage::UAVTexture,
@@ -55,11 +55,11 @@ void FPathTracingPass::InitSizeDependantResource(const FGraphicsDevice* const De
         .Name = L"PathTracing Normal",
     };
 
-    PathTracingSceneTexture = Device->CreateTexture(PathTracingSceneTextureDesc);
-    FrameAccumulatedTexture = Device->CreateTexture(FrameAccumulatedDesc);
+    PathTracingSceneTexture = RHICreateTexture(PathTracingSceneTextureDesc);
+    FrameAccumulatedTexture = RHICreateTexture(FrameAccumulatedDesc);
 
-    PathTracingAlbedoTexture = Device->CreateTexture(PathTracingAlbedoTextureDesc);
-    PathTracingNormalTexture = Device->CreateTexture(PathTracingNormalTextureDesc);
+    PathTracingAlbedoTexture = RHICreateTexture(PathTracingAlbedoTextureDesc);
+    PathTracingNormalTexture = RHICreateTexture(PathTracingNormalTextureDesc);
 }
 
 void FPathTracingPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene)

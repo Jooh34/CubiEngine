@@ -1,7 +1,9 @@
 #include "Scene/SphereMesh.h"
 #include "Graphics/Material.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 
-FSphereMesh::FSphereMesh(const FGraphicsDevice* const GraphicsDevice, FMeshCreationDesc MeshCreationDesc)
+FSphereMesh::FSphereMesh(FMeshCreationDesc MeshCreationDesc)
 {
     assert(MeshCreationDesc.BaseColorValue.x >= 0.f);
     assert(MeshCreationDesc.EmissiveValue.x >= 0.f);
@@ -59,35 +61,35 @@ FSphereMesh::FSphereMesh(const FGraphicsDevice* const GraphicsDevice, FMeshCreat
         }
     }
 
-    PositionBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+    PositionBuffer = RHICreateBuffer<XMFLOAT3>(
         FBufferCreationDesc{
             .Usage = EBufferUsage::StructuredBuffer,
             .Name = Name + L" position buffer",
         },
         Positions);
 
-    TextureCoordsBuffer = GraphicsDevice->CreateBuffer<XMFLOAT2>(
+    TextureCoordsBuffer = RHICreateBuffer<XMFLOAT2>(
         FBufferCreationDesc{
             .Usage = EBufferUsage::StructuredBuffer,
             .Name = Name + L" texture coord buffer",
         },
         TextureCoords);
 
-    NormalBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>(
+    NormalBuffer = RHICreateBuffer<XMFLOAT3>(
         FBufferCreationDesc{
             .Usage = EBufferUsage::StructuredBuffer,
             .Name = Name + L" normal buffer",
         },
         Normals);
 
-    TangentBuffer = GraphicsDevice->CreateBuffer<XMFLOAT3>( // Add tangent buffer creation
+    TangentBuffer = RHICreateBuffer<XMFLOAT3>( // Add tangent buffer creation
         FBufferCreationDesc{
             .Usage = EBufferUsage::StructuredBuffer,
             .Name = Name + L" tangent buffer",
         },
         Tangents);
 
-    IndexBuffer = GraphicsDevice->CreateBuffer<UINT>(
+    IndexBuffer = RHICreateBuffer<UINT>(
         FBufferCreationDesc{
             .Usage = EBufferUsage::StructuredBuffer,
             .Name = Name + L" index buffer",
@@ -97,7 +99,7 @@ FSphereMesh::FSphereMesh(const FGraphicsDevice* const GraphicsDevice, FMeshCreat
     IndicesCount = static_cast<uint32_t>(Indice.size());
 
     Material = std::make_shared<FPBRMaterial>();
-    Material->MaterialBuffer = GraphicsDevice->CreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
+    Material->MaterialBuffer = RHICreateBuffer<interlop::MaterialBuffer>(FBufferCreationDesc{
         .Usage = EBufferUsage::ConstantBuffer,
         .Name = Name + L"_MaterialBuffer",
         });
@@ -113,11 +115,11 @@ FSphereMesh::FSphereMesh(const FGraphicsDevice* const GraphicsDevice, FMeshCreat
 
     Material->MaterialBuffer.Update(&Material->MaterialBufferData);
 
-    FGraphicsContext* GraphicsContext = GraphicsDevice->GetCurrentGraphicsContext();
+    FGraphicsContext* GraphicsContext = RHIGetCurrentGraphicsContext();
     GraphicsContext->Reset();
-    GenerateRaytracingGeometry(GraphicsDevice);
+    GenerateRaytracingGeometry();
 
     // sync gpu immediatly
-    GraphicsDevice->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
-    GraphicsDevice->GetDirectCommandQueue()->Flush();
+    RHIGetDirectCommandQueue()->ExecuteContext(GraphicsContext);
+    RHIGetDirectCommandQueue()->Flush();
 }

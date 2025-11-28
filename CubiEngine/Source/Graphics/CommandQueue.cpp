@@ -12,8 +12,8 @@ FCommandQueue::FCommandQueue(ID3D12Device5* const device, const D3D12_COMMAND_LI
         .NodeMask = 0u,
     };
 
-    ThrowIfFailed(device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&CommandQueue)));
-    CommandQueue->SetName(name.data());
+    ThrowIfFailed(device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&D3D12CommandQueue)));
+    D3D12CommandQueue->SetName(name.data());
 
     // Create the fence (used for synchronization of CPU and GPU).
     ThrowIfFailed(device->CreateFence(0u, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&Fence)));
@@ -23,7 +23,7 @@ FCommandQueue::FCommandQueue(ID3D12Device5* const device, const D3D12_COMMAND_LI
 uint64_t FCommandQueue::Signal()
 {
     CommandQueueFenceValue++;
-    ThrowIfFailed(CommandQueue->Signal(Fence.Get(), CommandQueueFenceValue));
+    ThrowIfFailed(D3D12CommandQueue->Signal(Fence.Get(), CommandQueueFenceValue));
 
     return CommandQueueFenceValue;
 }
@@ -47,17 +47,17 @@ void FCommandQueue::WaitForFenceValue(const uint64_t InFenceValue)
 
 void FCommandQueue::GetTimestampFrequency(UINT64* GpuFrequency)
 {
-    CommandQueue->GetTimestampFrequency(GpuFrequency);
+    D3D12CommandQueue->GetTimestampFrequency(GpuFrequency);
 }
 
 void FCommandQueue::ExecuteContext(FContext* Context)
 {
     std::vector<ID3D12CommandList*> CommandLists{};
 
-    ThrowIfFailed(Context->GetCommandList()->Close());
-    CommandLists.emplace_back(Context->GetCommandList());
+    ThrowIfFailed(Context->GetD3D12CommandList()->Close());
+    CommandLists.emplace_back(Context->GetD3D12CommandList());
 
-    CommandQueue->ExecuteCommandLists(CommandLists.size(), CommandLists.data());
+    D3D12CommandQueue->ExecuteCommandLists(CommandLists.size(), CommandLists.data());
 }
 
 void FCommandQueue::Flush()

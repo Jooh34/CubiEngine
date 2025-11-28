@@ -6,13 +6,13 @@ void FContext::CopyTextureRegion(
     UINT DstX, UINT DstY, UINT DstZ,
     const D3D12_TEXTURE_COPY_LOCATION* pSrc, const D3D12_BOX* pSrcBox)
 {
-    CommandList->CopyTextureRegion(pDst, DstX, DstY, DstZ, pSrc, pSrcBox);
+    D3D12CommandList->CopyTextureRegion(pDst, DstX, DstY, DstZ, pSrc, pSrcBox);
 }
 
 void FContext::Reset()
 {
-    ThrowIfFailed(CommandAllocator->Reset());
-    ThrowIfFailed(CommandList->Reset(CommandAllocator.Get(), nullptr));
+    ThrowIfFailed(D3D12CommandAllocator->Reset());
+    ThrowIfFailed(D3D12CommandList->Reset(D3D12CommandAllocator.Get(), nullptr));
 }
 
 void FContext::AddResourceBarrier(ID3D12Resource* const Resource, const D3D12_RESOURCE_STATES PreviousState,
@@ -48,16 +48,16 @@ void FContext::ExecuteResourceBarriers()
 {
     if (ResourceBarriers.size() == 0) return;
 
-    CommandList->ResourceBarrier(static_cast<UINT>(ResourceBarriers.size()), ResourceBarriers.data());
+    D3D12CommandList->ResourceBarrier(static_cast<UINT>(ResourceBarriers.size()), ResourceBarriers.data());
     ResourceBarriers.clear();
 }
 
 void FContext::BeginEvent(const char* Name)
 {
-    PIXBeginEvent(CommandList.Get(), PIX_COLOR(255, 255, 255), Name);
+    PIXBeginEvent(D3D12CommandList.Get(), PIX_COLOR(255, 255, 255), Name);
 }
 
 void FContext::EndEvent(const char* Name)
 {
-    PIXEndEvent(CommandList.Get());
+    PIXEndEvent(D3D12CommandList.Get());
 }

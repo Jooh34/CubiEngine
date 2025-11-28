@@ -1,6 +1,7 @@
 #include "Core/Application.h"
 #include "Core/FileSystem.h"
 #include "Renderer/Renderer.h"
+#include "Graphics/D3D12DynamicRHI.h"
 
 #include <imgui_impl_sdl2.h>
 
@@ -50,9 +51,9 @@ bool Application::Init(uint32_t Width, uint32_t Height)
     WindowHandle = wmInfo.info.win.window;
 
     // Initialize renderer
-    GraphicsDevice = std::make_unique<FGraphicsDevice>(
-        Width, Height, DXGI_FORMAT_R10G10B10A2_UNORM, WindowHandle);
-    D3DRenderer = new FRenderer(GraphicsDevice.get(), Window, Width, Height);
+    CreateRHI(Width, Height, DXGI_FORMAT_R10G10B10A2_UNORM, WindowHandle);
+
+    D3DRenderer = new FRenderer(Window, Width, Height);
 
     IsRunning = true;
     return true;
@@ -87,13 +88,8 @@ void Application::Cleanup()
     SDL_DestroyWindow(Window);
     SDL_Quit();
 
-    // flush before clearing D3DRenderer
-    if (GraphicsDevice)
-    {
-        GraphicsDevice->FlushAllQueue();
-    }
-
     if (D3DRenderer) {
+		D3DRenderer->Cleanup();
         delete D3DRenderer;
     }
 }

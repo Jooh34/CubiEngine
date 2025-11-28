@@ -10,8 +10,8 @@ class FGraphicsContext;
 class FPathTracingPass : public FRenderPass
 {
 public:
-    FPathTracingPass(const FGraphicsDevice* const Device, uint32_t Width, uint32_t Height);
-    void InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight) override;
+    FPathTracingPass(uint32_t Width, uint32_t Height);
+    void InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight) override;
 
     void AddPass(FGraphicsContext* GraphicsContext, FScene* Scene);
 

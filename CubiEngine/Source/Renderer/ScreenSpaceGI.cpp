@@ -1,12 +1,13 @@
 #include "Renderer/ScreenSpaceGI.h"
 #include "Graphics/Profiler.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/GraphicsContext.h"
 #include "Scene/Scene.h"
 #include "Math/CubiMath.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
-FScreenSpaceGIPass::FScreenSpaceGIPass(FGraphicsDevice* const GraphicsDevice, uint32_t Width, uint32_t Height)
-	: FRenderPass(GraphicsDevice, Width, Height),
+FScreenSpaceGIPass::FScreenSpaceGIPass(uint32_t Width, uint32_t Height)
+	: FRenderPass(Width, Height),
 	HistoryFrameCount(0)
 {
     FComputePipelineStateCreationDesc GenerateStochasticNormalPipelineDesc = FComputePipelineStateCreationDesc
@@ -18,7 +19,7 @@ FScreenSpaceGIPass::FScreenSpaceGIPass(FGraphicsDevice* const GraphicsDevice, ui
         .PipelineName = L"Generate Stochastic Normal Pipeline"
     };
 
-    GenerateStochasticNormalPipelineState = GraphicsDevice->CreatePipelineState(GenerateStochasticNormalPipelineDesc);
+    GenerateStochasticNormalPipelineState = RHICreatePipelineState(GenerateStochasticNormalPipelineDesc);
 
     FComputePipelineStateCreationDesc RaycastDiffusePipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -29,7 +30,7 @@ FScreenSpaceGIPass::FScreenSpaceGIPass(FGraphicsDevice* const GraphicsDevice, ui
         .PipelineName = L"RaycastDiffuse Pipeline"
     };
 
-    RaycastDiffusePipelineState = GraphicsDevice->CreatePipelineState(RaycastDiffusePipelineDesc);
+    RaycastDiffusePipelineState = RHICreatePipelineState(RaycastDiffusePipelineDesc);
 
     FComputePipelineStateCreationDesc CompositionSSGIPipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -40,7 +41,7 @@ FScreenSpaceGIPass::FScreenSpaceGIPass(FGraphicsDevice* const GraphicsDevice, ui
         .PipelineName = L"CompositionSSGI Pipeline"
     };
     
-    CompositionSSGIPipelineState = GraphicsDevice->CreatePipelineState(CompositionSSGIPipelineDesc);
+    CompositionSSGIPipelineState = RHICreatePipelineState(CompositionSSGIPipelineDesc);
 
     FComputePipelineStateCreationDesc SSGIDownSamplePipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -50,7 +51,7 @@ FScreenSpaceGIPass::FScreenSpaceGIPass(FGraphicsDevice* const GraphicsDevice, ui
         },
         .PipelineName = L"SSGI DownSample Pipeline"
     };
-    SSGIDownSamplePipelineState = GraphicsDevice->CreatePipelineState(SSGIDownSamplePipelineDesc);
+    SSGIDownSamplePipelineState = RHICreatePipelineState(SSGIDownSamplePipelineDesc);
 
     FComputePipelineStateCreationDesc SSGIUpSamplePipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -60,7 +61,7 @@ FScreenSpaceGIPass::FScreenSpaceGIPass(FGraphicsDevice* const GraphicsDevice, ui
         },
         .PipelineName = L"SSGI UpSample Pipeline"
     };
-    SSGIUpSamplePipelineState = GraphicsDevice->CreatePipelineState(SSGIUpSamplePipelineDesc);
+    SSGIUpSamplePipelineState = RHICreatePipelineState(SSGIUpSamplePipelineDesc);
 
     FComputePipelineStateCreationDesc SSGIResolvePipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -70,7 +71,7 @@ FScreenSpaceGIPass::FScreenSpaceGIPass(FGraphicsDevice* const GraphicsDevice, ui
         },
         .PipelineName = L"SSGIResolve Pipeline"
     };
-    SSGIResolvePipelineState = GraphicsDevice->CreatePipelineState(SSGIResolvePipelineDesc);
+    SSGIResolvePipelineState = RHICreatePipelineState(SSGIResolvePipelineDesc);
 
     FComputePipelineStateCreationDesc SSGIUpdateHistoryPipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -80,7 +81,7 @@ FScreenSpaceGIPass::FScreenSpaceGIPass(FGraphicsDevice* const GraphicsDevice, ui
         },
         .PipelineName = L"SSGIUpdateHistory Pipeline"
     };
-    SSGIUpdateHistoryPipelineState = GraphicsDevice->CreatePipelineState(SSGIUpdateHistoryPipelineDesc);
+    SSGIUpdateHistoryPipelineState = RHICreatePipelineState(SSGIUpdateHistoryPipelineDesc);
 
     FComputePipelineStateCreationDesc SSGIGaussianBlurWPipelineDesc = FComputePipelineStateCreationDesc
     {
@@ -90,10 +91,10 @@ FScreenSpaceGIPass::FScreenSpaceGIPass(FGraphicsDevice* const GraphicsDevice, ui
         },
         .PipelineName = L"SSGI GaussianBlur Pipeline"
     };
-    SSGIGaussianBlurWPipelineState = GraphicsDevice->CreatePipelineState(SSGIGaussianBlurWPipelineDesc);
+    SSGIGaussianBlurWPipelineState = RHICreatePipelineState(SSGIGaussianBlurWPipelineDesc);
 }
 
-void FScreenSpaceGIPass::InitSizeDependantResource(const FGraphicsDevice* const Device, uint32_t InWidth, uint32_t InHeight)
+void FScreenSpaceGIPass::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
     FTextureCreationDesc StochasticNormalDesc {
        .Usage = ETextureUsage::RenderTarget,
@@ -104,7 +105,7 @@ void FScreenSpaceGIPass::InitSizeDependantResource(const FGraphicsDevice* const 
        .Name = L"SSGI Stochastic Normal",
     };
 
-    StochasticNormalTexture = Device->CreateTexture(StochasticNormalDesc);
+    StochasticNormalTexture = RHICreateTexture(StochasticNormalDesc);
 
     FTextureCreationDesc HistoryTextureDesc{
         .Usage = ETextureUsage::RenderTarget,
@@ -115,17 +116,17 @@ void FScreenSpaceGIPass::InitSizeDependantResource(const FGraphicsDevice* const 
         .Name = L"SSGI History Texture",
     };
 
-    HistoryTexture = Device->CreateTexture(HistoryTextureDesc);
+    HistoryTexture = RHICreateTexture(HistoryTextureDesc);
     {
         // initialize history texture as black
-        FGraphicsContext* GraphicsContext = Device->GetCurrentGraphicsContext();
+        FGraphicsContext* GraphicsContext = RHIGetCurrentGraphicsContext();
         GraphicsContext->Reset();
         GraphicsContext->ClearRenderTargetView(HistoryTexture.get(), std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-        Device->GetDirectCommandQueue()->ExecuteContext(GraphicsContext);
+        RHIGetDirectCommandQueue()->ExecuteContext(GraphicsContext);
         
         // wait immediately
-        uint64_t FenceValue = Device->GetDirectCommandQueue()->Signal();
-        Device->GetDirectCommandQueue()->WaitForFenceValue(FenceValue);
+        uint64_t FenceValue = RHIGetDirectCommandQueue()->Signal();
+        RHIGetDirectCommandQueue()->WaitForFenceValue(FenceValue);
     }
 
     FTextureCreationDesc HistroyNumFrameAccumulatedDesc{
@@ -137,7 +138,7 @@ void FScreenSpaceGIPass::InitSizeDependantResource(const FGraphicsDevice* const 
         .Name = L"SSGI HistroyNumFrameAccumulated Texture",
     };
 
-    HistroyNumFrameAccumulated = Device->CreateTexture(HistroyNumFrameAccumulatedDesc);
+    HistroyNumFrameAccumulated = RHICreateTexture(HistroyNumFrameAccumulatedDesc);
    
     FTextureCreationDesc ScreenSpaceGIDesc {
        .Usage = ETextureUsage::UAVTexture,
@@ -147,7 +148,7 @@ void FScreenSpaceGIPass::InitSizeDependantResource(const FGraphicsDevice* const 
        .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
        .Name = L"ScreenSpaceGI Texture",
     };
-    ScreenSpaceGITexture = Device->CreateTexture(ScreenSpaceGIDesc);
+    ScreenSpaceGITexture = RHICreateTexture(ScreenSpaceGIDesc);
     
     FTextureCreationDesc DenoisedScreenSpaceGIDesc{
        .Usage = ETextureUsage::UAVTexture,
@@ -157,7 +158,7 @@ void FScreenSpaceGIPass::InitSizeDependantResource(const FGraphicsDevice* const 
        .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
        .Name = L"DenoisedScreenSpaceGI Texture",
     };
-    DenoisedScreenSpaceGITexture = Device->CreateTexture(DenoisedScreenSpaceGIDesc);
+    DenoisedScreenSpaceGITexture = RHICreateTexture(DenoisedScreenSpaceGIDesc);
 
     FTextureCreationDesc ResolveTextureDesc{
         .Usage = ETextureUsage::UAVTexture,
@@ -167,7 +168,7 @@ void FScreenSpaceGIPass::InitSizeDependantResource(const FGraphicsDevice* const 
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"SSGI Resolve Texture",
     };
-    ResolveTexture = Device->CreateTexture(ResolveTextureDesc);
+    ResolveTexture = RHICreateTexture(ResolveTextureDesc);
 
     FTextureCreationDesc HalfTextureDesc{
         .Usage = ETextureUsage::UAVTexture,
@@ -177,7 +178,7 @@ void FScreenSpaceGIPass::InitSizeDependantResource(const FGraphicsDevice* const 
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"SSGI Resolve Half Texture",
     };
-    HalfTexture = Device->CreateTexture(HalfTextureDesc);
+    HalfTexture = RHICreateTexture(HalfTextureDesc);
 
     FTextureCreationDesc QuarterTextureDesc{
         .Usage = ETextureUsage::UAVTexture,
@@ -187,7 +188,7 @@ void FScreenSpaceGIPass::InitSizeDependantResource(const FGraphicsDevice* const 
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"SSGI Resolve Quater Texture",
     };
-    QuarterTexture = Device->CreateTexture(QuarterTextureDesc);
+    QuarterTexture = RHICreateTexture(QuarterTextureDesc);
 
     FTextureCreationDesc BlurXTextureDesc{
         .Usage = ETextureUsage::UAVTexture,
@@ -197,7 +198,7 @@ void FScreenSpaceGIPass::InitSizeDependantResource(const FGraphicsDevice* const 
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"SSGI BlurX Texture",
     };
-    BlurXTexture = Device->CreateTexture(BlurXTextureDesc);
+    BlurXTexture = RHICreateTexture(BlurXTextureDesc);
     
 }
 

@@ -1,5 +1,5 @@
+#include "Graphics/D3D12DynamicRHI.h"
 #include "Core/Editor.h"
-#include "Graphics/GraphicsDevice.h"
 #include "Graphics/GraphicsContext.h"
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "Scene/Scene.h"
@@ -12,8 +12,8 @@
 #include <sstream>
 #include <iomanip>
 
-FEditor::FEditor(FGraphicsDevice* Device, SDL_Window* Window, uint32_t Width, uint32_t Height)
-    :Device(Device), Window(Window)
+FEditor::FEditor(SDL_Window* Window, uint32_t Width, uint32_t Height)
+    :Window(Window)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -26,15 +26,18 @@ FEditor::FEditor(FGraphicsDevice* Device, SDL_Window* Window, uint32_t Width, ui
     std::string ini = relativeIniFilePath.string();
     io.IniFilename = ini.c_str();
 
-    FDescriptorHandle FontDescriptorHandle = Device->GetCbvSrvUavDescriptorHeap()->GetCurrentDescriptorHandle();
+    FDescriptorHeap* DescriptorHeap = RHIGetCbvSrvUavDescriptorHeap();
+    FDescriptorHandle FontDescriptorHandle = DescriptorHeap->GetCurrentDescriptorHandle();
 
     ImGui_ImplSDL2_InitForD3D(Window);
-    ImGui_ImplDX12_Init(Device->GetDevice(), FRAMES_IN_FLIGHT,
-        Device->GetSwapChainFormat(),
-        Device->GetCbvSrvUavDescriptorHeap()->GetDescriptorHeap(),
-        FontDescriptorHandle.CpuDescriptorHandle, FontDescriptorHandle.GpuDescriptorHandle);
+    ImGui_ImplDX12_Init(RHIGetDevice(), FRAMES_IN_FLIGHT,
+        RHIGetSwapChainFormat(),
+        DescriptorHeap->GetD3D12DescriptorHeap(),
+        FontDescriptorHandle.CpuDescriptorHandle,
+        FontDescriptorHandle.GpuDescriptorHandle
+    );
 
-    Device->GetCbvSrvUavDescriptorHeap()->OffsetCurrentHandle();
+    DescriptorHeap->OffsetCurrentHandle();
 }
 
 FEditor::~FEditor()
@@ -78,7 +81,7 @@ void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
     RenderProfileProperties(Scene);
 
     ImGui::Render();
-    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), GraphicsContext->GetCommandList());
+    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), GraphicsContext->GetD3D12CommandList());
 }
 
 void AddCombo(const char* Name, const char* Items[], int ItemSize, int& Value)
@@ -123,10 +126,10 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     ImGui::Begin("Debug Properties");
     
     std::vector<std::string> KeyList = { "None" };
-	Device->AppendDebugTextureKeyList(KeyList);
+	//Device->AppendDebugTextureKeyList(KeyList);
 
     AddCombo("Debug Visualize", KeyList, KeyList.size(), Scene->SelectedTextureIndex);
-	Scene->SelectedDebugTexture = Device->GetDebugTexture(KeyList[Scene->SelectedTextureIndex]);
+	//Scene->SelectedDebugTexture = Device->GetDebugTexture(KeyList[Scene->SelectedTextureIndex]);
 
     ImGui::SliderFloat("VisDebugMin", &Scene->VisualizeDebugMin, 0.f, 1.f);
     ImGui::SliderFloat("VisDebugMax", &Scene->VisualizeDebugMax, 0.f, 1.f);
@@ -300,7 +303,7 @@ void FEditor::RenderPostProcessProperties(FScene* Scene)
 
 void FEditor::RenderGPUProfileData()
 {
-    std::vector<FProfileData>& GPUProfileData = Device->GetGPUProfiler().GetProfileData();
+    std::vector<FProfileData>& GPUProfileData = RHIGetGPUProfiler().GetProfileData();
 
     int Depth = 0;
     for (const FProfileData& Data : GPUProfileData)

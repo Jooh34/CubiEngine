@@ -1,13 +1,13 @@
 #include "Graphics/CopyContext.h"
-#include "Graphics/GraphicsDevice.h"
+#include "Graphics/D3D12DynamicRHI.h"
 
-FCopyContext::FCopyContext(FGraphicsDevice* const Device)
+FCopyContext::FCopyContext()
 {
-    ThrowIfFailed(Device->GetDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY,
-        IID_PPV_ARGS(&CommandAllocator)));
+    ThrowIfFailed(RHIGetDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY,
+        IID_PPV_ARGS(&D3D12CommandAllocator)));
 
-    ThrowIfFailed(Device->GetDevice()->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_COPY, CommandAllocator.Get(),
-        nullptr, IID_PPV_ARGS(&CommandList)));
+    ThrowIfFailed(RHIGetDevice()->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_COPY, D3D12CommandAllocator.Get(),
+        nullptr, IID_PPV_ARGS(&D3D12CommandList)));
 
-    ThrowIfFailed(CommandList->Close());
+    ThrowIfFailed(D3D12CommandList->Close());
 }
