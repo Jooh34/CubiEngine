@@ -5,6 +5,7 @@
 #include "Scene/Scene.h"
 #include "Core/FileSystem.h"
 #include "Renderer/PostProcess.h"
+#include "Graphics/TextureManager.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx12.h>
@@ -125,11 +126,10 @@ void FEditor::RenderDebugProperties(FScene* Scene)
 
     ImGui::Begin("Debug Properties");
     
-    std::vector<std::string> KeyList = { "None" };
-	//Device->AppendDebugTextureKeyList(KeyList);
-
+    FTextureManager* TextureManager = RHIGetTextureManager();
+    std::vector<std::string> KeyList = TextureManager->GetDebugTextureKeyList(true);
     AddCombo("Debug Visualize", KeyList, KeyList.size(), Scene->SelectedTextureIndex);
-	//Scene->SelectedDebugTexture = Device->GetDebugTexture(KeyList[Scene->SelectedTextureIndex]);
+	Scene->SelectedDebugTexture = TextureManager->GetDebugTexture(KeyList[Scene->SelectedTextureIndex]);
 
     ImGui::SliderFloat("VisDebugMin", &Scene->VisualizeDebugMin, 0.f, 1.f);
     ImGui::SliderFloat("VisDebugMax", &Scene->VisualizeDebugMax, 0.f, 1.f);

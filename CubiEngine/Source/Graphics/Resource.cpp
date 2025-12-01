@@ -1,5 +1,6 @@
 #include "Graphics/Resource.h"
 #include "Graphics/D3D12DynamicRHI.h"
+#include "Graphics/TextureManager.h"
 
 void FAllocation::Update(const void* Data, const size_t Size)
 {
@@ -164,5 +165,10 @@ bool FTexture::IsUAVAllowed(ETextureUsage Usage, DXGI_FORMAT Format)
 FTexture::~FTexture()
 {
 	std::string TextureName = wStringToString(DebugName);
-	//FGraphicsDevice::RemoveDebugTexture(TextureName, this);
+
+    FTextureManager* TextureManager = RHIGetTextureManager();
+    if (TextureManager)
+    {
+        TextureManager->RemoveDebugTexture(TextureName, this);
+    }
 }

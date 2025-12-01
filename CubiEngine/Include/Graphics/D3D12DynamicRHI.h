@@ -14,6 +14,7 @@ class FCopyContext;
 class FGraphicsContext;
 class FMipmapGenerator;
 class FD3D12DynamicRHI;
+class FTextureManager;
 
 struct FFenceValues
 {
@@ -32,6 +33,7 @@ void CreateRHI(
     const uint32_t Width, const uint32_t Height,
     const DXGI_FORMAT SwapchainFormat, const HWND WindowHandle
 );
+void ReleaseRHI();
 
 ID3D12Device5* RHIGetDevice();
 
@@ -87,6 +89,8 @@ void RHIPresent();
 
 void RHIExecuteAndFlushComputeContext(std::unique_ptr<FComputeContext>&& ComputeContext);
 void RHIFlushAllQueue();
+
+FTextureManager* RHIGetTextureManager();
 
 class FD3D12DynamicRHI
 {
@@ -152,54 +156,7 @@ public:
         return CbvSrvUavDescriptorHeap->GetDescriptorHandleFromIndex(Index);
     }
 
-    static void AppendDebugTextureKeyList(std::vector<std::string>& Keys)
-    {
-        Keys.reserve(Keys.size() + DebugTextureMap.size());
-        for (auto& kv : DebugTextureMap) {
-            if (!kv.first.empty()) {
-                Keys.push_back(kv.first);
-            }
-        }
-    }
-
-    static FTexture* GetDebugTexture(const std::string& Name)
-    {
-        auto it = DebugTextureMap.find(Name);
-        if (it != DebugTextureMap.end())
-        {
-            return it->second;
-        }
-        return nullptr;
-    }
-
-    static bool AddDebugTexture(const std::string& Name, FTexture* Texture)
-    {
-        if (Name.empty() || !Texture) {
-            return false;
-        }
-
-        DebugTextureMap[Name] = Texture;
-        return true;
-    }
-
-    static bool RemoveDebugTexture(const std::string& Name, const FTexture* Texture)
-    {
-        if (Name.empty() || !Texture) {
-            return false;
-        }
-
-        auto it = DebugTextureMap.find(Name);
-        if (it == DebugTextureMap.end()) {
-            return false;
-        }
-
-        if (it->second != Texture) {
-            return false;
-        }
-
-        DebugTextureMap.erase(it);
-        return true;
-    }
+    FTextureManager* GetTextureManager() { return TextureManager.get(); }
 
 private:
     bool bInitialized = false;
@@ -218,7 +175,6 @@ private:
     uint32_t CreateDsv(const FDsvCreationDesc& DsvCreationDesc, ID3D12Resource* const Resource) const;
     uint32_t CreateRtv(const FRtvCreationDesc& RtvCreationDesc, ID3D12Resource* const Resource) const;
 
-
     HWND WindowHandle;
 
     wrl::ComPtr<ID3D12Debug3> DebugInterface{};
@@ -229,7 +185,7 @@ private:
     wrl::ComPtr<IDXGIAdapter> Adapter{};
     wrl::ComPtr<IDXGIAdapter1> Adapter1{};
 
-    DXGI_FORMAT SwapchainFormat;
+    DXGI_FORMAT SwapchainFormat{};
     uint64_t CurrentFrameIndex{};
     std::array<FFenceValues, FRAMES_IN_FLIGHT> FenceValues{}; // Signal for Command Queue
     std::array<std::unique_ptr<FTexture>, FRAMES_IN_FLIGHT> BackBuffers{};
@@ -252,11 +208,10 @@ private:
 
     std::unique_ptr<FMipmapGenerator> MipmapGenerator{};
 
-    FGPUProfiler GPUProfiler;
+    FGPUProfiler GPUProfiler{};
 
     std::unique_ptr<FQueryHeap> TimeStampQueryHeap;
-
-    static std::map<std::string, FTexture*> DebugTextureMap;
+    std::unique_ptr<FTextureManager> TextureManager;
 };
 
 template<typename T>

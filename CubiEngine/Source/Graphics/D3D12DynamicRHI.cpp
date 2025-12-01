@@ -5,6 +5,7 @@
 #include "Graphics/RaytracingPipelineState.h"
 #include "Graphics/MemoryAllocator.h"
 #include "Graphics/CopyContext.h"
+#include "Graphics/TextureManager.h"
 #include "Core/FileSystem.h"
 #include "ShaderInterlop/ConstantBuffers.hlsli"
 #include "ShaderInterlop/RenderResources.hlsli"
@@ -12,11 +13,11 @@
 
 FD3D12DynamicRHI* GD3D12RHI = nullptr;
 
-std::map<std::string, FTexture*> FD3D12DynamicRHI::DebugTextureMap{};
-
 FD3D12DynamicRHI::FD3D12DynamicRHI()
 {
     assert(GD3D12RHI == nullptr);
+
+    TextureManager = std::make_unique<FTextureManager>();
 }
 
 FD3D12DynamicRHI::~FD3D12DynamicRHI()
@@ -51,6 +52,12 @@ void CreateRHI(const uint32_t Width, const uint32_t Height, const DXGI_FORMAT Sw
     assert(GD3D12RHI == nullptr);
     GD3D12RHI = new FD3D12DynamicRHI();
     GD3D12RHI->Init(Width, Height, SwapchainFormat, WindowHandle);
+}
+
+void ReleaseRHI()
+{
+	delete GD3D12RHI;
+	GD3D12RHI = nullptr;
 }
 
 ID3D12Device5* RHIGetDevice()
@@ -206,6 +213,11 @@ void RHIExecuteAndFlushComputeContext(std::unique_ptr<FComputeContext>&& Compute
 void RHIFlushAllQueue()
 {
 	GD3D12RHI->FlushAllQueue();
+}
+
+FTextureManager* RHIGetTextureManager()
+{
+    return GD3D12RHI->GetTextureManager();
 }
 
 FSampler FD3D12DynamicRHI::CreateSampler(const FSamplerCreationDesc& Desc) const
@@ -502,7 +514,10 @@ std::unique_ptr<FTexture> FD3D12DynamicRHI::CreateTexture(const FTextureCreation
         Texture->Usage == ETextureUsage::RenderTarget ||
         Texture->Usage == ETextureUsage::UAVTexture)
     {
-        AddDebugTexture(TextureName, Texture.get());
+        if (TextureManager)
+        {
+			TextureManager->AddDebugTexture(TextureName, Texture.get());
+        }
     }
 
     return Texture;

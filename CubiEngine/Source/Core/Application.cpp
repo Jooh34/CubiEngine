@@ -92,6 +92,8 @@ void Application::Cleanup()
 		D3DRenderer->Cleanup();
         delete D3DRenderer;
     }
+
+    ReleaseRHI();
 }
 
 void Application::HandleEvents()
