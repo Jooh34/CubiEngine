@@ -13,6 +13,9 @@
 #include <sstream>
 #include <iomanip>
 
+void RenderRenderingProperties(FScene* Scene);
+void RenderPathTracingProperties(FScene* Scene);
+
 FEditor::FEditor(SDL_Window* Window, uint32_t Width, uint32_t Height)
     :Window(Window)
 {
@@ -73,13 +76,68 @@ void FEditor::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
 
         ImGui::EndMainMenuBar();
     }
-    
-    RenderDebugProperties(Scene);
-    RenderCameraProperties(Scene);
-    RenderGIProperties(Scene);
-    RenderLightProperties(Scene);
-    RenderPostProcessProperties(Scene);
-    RenderProfileProperties(Scene);
+
+    ImGuiViewport* Viewport = ImGui::GetMainViewport();
+    ImVec2 TopRight = ImVec2(Viewport->WorkPos.x + Viewport->WorkSize.x, Viewport->WorkPos.y);
+    ImGui::SetNextWindowPos(TopRight, ImGuiCond_Once, ImVec2(1.0f, 0.0f));
+    ImGui::SetNextWindowSize(ImVec2(540, 780), ImGuiCond_Once);
+    ImGui::SetNextWindowBgAlpha(0.5f);
+    ImGui::Begin("Cubi Editor");
+
+    if (ImGui::BeginTabBar("EditorTabs"))
+    {
+        if (ImGui::BeginTabItem("Rendering"))
+        {
+            RenderRenderingProperties(Scene);
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Debug"))
+        {
+            RenderDebugProperties(Scene);
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Camera"))
+        {
+            RenderCameraProperties(Scene);
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("GI"))
+        {
+            RenderGIProperties(Scene);
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Lighting"))
+        {
+            RenderLightProperties(Scene);
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Post"))
+        {
+            RenderPostProcessProperties(Scene);
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Path Tracing"))
+        {
+            RenderPathTracingProperties(Scene);
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Profile"))
+        {
+            RenderProfileProperties(Scene);
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
+    }
+
+    ImGui::End();
 
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), GraphicsContext->GetD3D12CommandList());
@@ -119,14 +177,38 @@ void AddCombo(const char* Name, const std::vector<std::string> Items, int ItemSi
     }
 }
 
-void FEditor::RenderDebugProperties(FScene* Scene)
+void RenderRenderingProperties(FScene* Scene)
 {
     FSceneRenderSettings& Settings = Scene->GetRenderSettings();
 
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
+    const char* renderingModeItems[] = { "Rasterize", "Debug Raytracing", "PathTrace"};
+    AddCombo("Rendering Mode", renderingModeItems, IM_ARRAYSIZE(renderingModeItems), Settings.RenderingMode);
 
-    ImGui::Begin("Debug Properties");
+    ImGui::SliderInt("Max FPS", &Settings.MaxFPS, 30, 144);
+
+    ImGui::Checkbox("Enable Diffuse", &Settings.bEnableDiffuse);
+    ImGui::Checkbox("Enable Specular", &Settings.bEnableSpecular);
+    ImGui::Checkbox("Energy Compensation", &Settings.bUseEnergyCompensation);
+
+    const char* diffuseItems[] = { "Lambertian", "Disney_Burley"};
+    AddCombo("Diffuse Model", diffuseItems, IM_ARRAYSIZE(diffuseItems), Settings.DiffuseMethod);
+
+    const char* wfItems[] = { "Off", "Sampling", "IBL", "Albedo only"};
+    AddCombo("White Furnace Method", wfItems, IM_ARRAYSIZE(wfItems), Settings.WhiteFurnaceMethod);
+}
+
+void RenderPathTracingProperties(FScene* Scene)
+{
+    FSceneRenderSettings& Settings = Scene->GetRenderSettings();
+
+    ImGui::Checkbox("Enable Denoiser", &Settings.bEnablePathTracingDenoiser);
+    ImGui::Checkbox("Use Albedo/Normal", &Settings.bDenoiserAlbedoNormal);
+    ImGui::SliderInt("Samples Per Pixel", &Settings.PathTracingSamplePerPixel, 1, 64);
+}
+
+void FEditor::RenderDebugProperties(FScene* Scene)
+{
+    FSceneRenderSettings& Settings = Scene->GetRenderSettings();
     
     FTextureManager* TextureManager = RHIGetTextureManager();
     std::vector<std::string> KeyList = TextureManager->GetDebugTextureKeyList(true);
@@ -135,105 +217,47 @@ void FEditor::RenderDebugProperties(FScene* Scene)
 
     ImGui::SliderFloat("VisDebugMin", &Settings.VisualizeDebugMin, 0.f, 1.f);
     ImGui::SliderFloat("VisDebugMax", &Settings.VisualizeDebugMax, 0.f, 1.f);
-
-	ImGui::Checkbox("Enable Diffuse", &Settings.bEnableDiffuse);
-	ImGui::Checkbox("Enable Specular", &Settings.bEnableSpecular);
-    ImGui::Checkbox("Energy Compensation", &Settings.bUseEnergyCompensation);
-
-    const char* diffuseItems[] = { "Lambertian", "Disney_Burley"};
-    AddCombo("Diffuse Model", diffuseItems, IM_ARRAYSIZE(diffuseItems), Settings.DiffuseMethod);
-
-    const char* renderingModeItems[] = { "Rasterize", "Debug Raytracing", "PathTrace"};
-    AddCombo("Rendering Mode", renderingModeItems, IM_ARRAYSIZE(renderingModeItems), Settings.RenderingMode);
-
-    ImGui::Checkbox("PathTracing Enable Denoiser", &Settings.bEnablePathTracingDenoiser);
-    ImGui::Checkbox("PathTracing Denoiser Use Albedo,Normal", &Settings.bDenoiserAlbedoNormal);
-    ImGui::SliderInt("PathTracing SamplePerPixel", &Settings.PathTracingSamplePerPixel, 1, 64);
-
-    ImGui::SliderInt("Max FPS", &Settings.MaxFPS, 30, 144);
-
-    const char* wfItems[] = { "Off", "Sampling", "IBL", "Albedo only"};
-    AddCombo("White Furnace Method", wfItems, IM_ARRAYSIZE(wfItems), Settings.WhiteFurnaceMethod);
-
-    ImGui::End();
 }
 
 void FEditor::RenderCameraProperties(FScene* Scene)
 {
     FSceneRenderSettings& Settings = Scene->GetRenderSettings();
-
-    ImGui::SetNextWindowPos(ImVec2(0, 200));
-    ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
-
-    ImGui::Begin("Camera Properties");
     
-    if (ImGui::TreeNode("Auto Exposure"))
-    {
-        ImGui::Checkbox("Enable Auto Exposure", &Settings.bUseEyeAdaptation);
-        ImGui::SliderFloat("HistogramLogMin", &Settings.HistogramLogMin, -10.f, 0.f);
-        ImGui::SliderFloat("HistogramLogMax", &Settings.HistogramLogMax, 0.f, 10.f);
-        ImGui::SliderFloat("Time Coeff", &Settings.TimeCoeff, 0.0f, 1.0f);
-        ImGui::TreePop();
-    }
-
-    if (ImGui::TreeNode("Camera"))
-    {
-        ImGui::InputFloat3("Camera Position", &Scene->GetCamera().GetCameraPosition().x);
-        ImGui::SliderFloat("Fov", &Scene->GetCamera().FovY, 30.0f, 120.0f);
-        ImGui::SliderFloat("Far Clip Distance", &Scene->GetCamera().FarZ, 1000.0f, 10000.0f);
-        ImGui::TreePop();
-    }
-
-    ImGui::End();
+    ImGui::InputFloat3("Camera Position", &Scene->GetCamera().GetCameraPosition().x);
+    ImGui::SliderFloat("Fov", &Scene->GetCamera().FovY, 30.0f, 120.0f);
+    ImGui::SliderFloat("Far Clip Distance", &Scene->GetCamera().FarZ, 1000.0f, 10000.0f);
 }
 
 void FEditor::RenderGIProperties(FScene* Scene)
 {
     FSceneRenderSettings& Settings = Scene->GetRenderSettings();
 
-    ImGui::SetNextWindowPos(ImVec2(0, 400));
-    ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
-    ImGui::Begin("GI Properties");
+    ImGui::Checkbox("Use SSAO", &Settings.bUseSSAO);
+    ImGui::SliderInt("SSAO Kernel Size", &Settings.SSAOKernelSize, 8, 64);
+    ImGui::SliderFloat("SSAO Kernel Radius", &Settings.SSAOKernelRadius, 1e-3f, 1e-2f);
+    ImGui::InputFloat("SSAO Depth Bias", &Settings.SSAODepthBias, 1e-6, 1e-5, "%.6f");
+    ImGui::Checkbox("SSAO Range Check", &Settings.SSAOUseRangeCheck);
 
-    if (ImGui::TreeNode("SSAO"))
-    {
-        ImGui::Checkbox("Use SSAO", &Settings.bUseSSAO);
-        ImGui::SliderInt("SSAO Kernel Size", &Settings.SSAOKernelSize, 8, 64);
-        ImGui::SliderFloat("SSAO Kernel Radius", &Settings.SSAOKernelRadius, 1e-3f, 1e-2f);
-        ImGui::InputFloat("SSAO Depth Bias", &Settings.SSAODepthBias, 1e-6, 1e-5, "%.6f");
-        ImGui::Checkbox("SSAO Range Check", &Settings.SSAOUseRangeCheck);
-        ImGui::TreePop();
-    }
+    ImGui::Separator();
 
-    if (ImGui::TreeNode("SSGI"))
-    {
-        const char* giItems[] = { "Off", "SSGI" };
-        AddCombo("GI Method", giItems, IM_ARRAYSIZE(giItems), Settings.GIMethod);
-        ImGui::SliderFloat("SSGI Intensity", &Settings.SSGIIntensity, 0.0f, 20.0f);
-        ImGui::SliderFloat("SSGI RayLength", &Settings.SSGIRayLength, 0.0f, 3.0f);
-        ImGui::SliderInt("SSGI NumSteps", &Settings.SSGINumSteps, 1, 256);
-        ImGui::SliderFloat("SSGI CompareToleranceScale", &Settings.CompareToleranceScale, 1.f, 30.f);
-        ImGui::SliderInt("SSGI NumSamples", &Settings.SSGINumSamples, 1, 16);
+    const char* giItems[] = { "Off", "SSGI" };
+    AddCombo("GI Method", giItems, IM_ARRAYSIZE(giItems), Settings.GIMethod);
+    ImGui::SliderFloat("SSGI Intensity", &Settings.SSGIIntensity, 0.0f, 20.0f);
+    ImGui::SliderFloat("SSGI RayLength", &Settings.SSGIRayLength, 0.0f, 3.0f);
+    ImGui::SliderInt("SSGI NumSteps", &Settings.SSGINumSteps, 1, 256);
+    ImGui::SliderFloat("SSGI CompareToleranceScale", &Settings.CompareToleranceScale, 1.f, 30.f);
+    ImGui::SliderInt("SSGI NumSamples", &Settings.SSGINumSamples, 1, 16);
 
-        ImGui::SliderInt("SSGI GaussianKernelSize", &Settings.SSGIGaussianKernelSize, 1, 32);
-        ImGui::SliderFloat("SSGI GaussianStdDev", &Settings.SSGIGaussianStdDev, 0.1f, 20.0f);
+    ImGui::SliderInt("SSGI GaussianKernelSize", &Settings.SSGIGaussianKernelSize, 1, 32);
+    ImGui::SliderFloat("SSGI GaussianStdDev", &Settings.SSGIGaussianStdDev, 0.1f, 20.0f);
 
-        const char* sampleingMethodItems[] = { "UniformSampleHemisphere", "ImportanceSampleCosDir", "ConcentricSampleDisk", "ConcentricSampleDiskUE5"};
-        AddCombo("Sampling Method", sampleingMethodItems, IM_ARRAYSIZE(sampleingMethodItems), Settings.StochasticNormalSamplingMethod);
-        ImGui::TreePop();
-    }
-    
-    ImGui::End();
+    const char* sampleingMethodItems[] = { "UniformSampleHemisphere", "ImportanceSampleCosDir", "ConcentricSampleDisk", "ConcentricSampleDiskUE5"};
+    AddCombo("Sampling Method", sampleingMethodItems, IM_ARRAYSIZE(sampleingMethodItems), Settings.StochasticNormalSamplingMethod);
 }
 
 void FEditor::RenderLightProperties(FScene* Scene)
 {
     FSceneRenderSettings& Settings = Scene->GetRenderSettings();
-
-    ImGui::SetNextWindowPos(ImVec2(0, 600));
-    ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
-
-    ImGui::Begin("Light Properties");
     interlop::LightBuffer& LightBuffer = Scene->Light.LightBufferData;
 
     ImGui::SliderFloat("Envmap Intensity", &Settings.EnvmapIntensity, 0.f, 100.f);
@@ -289,17 +313,11 @@ void FEditor::RenderLightProperties(FScene* Scene)
 
         ImGui::TreePop();
     }
-
-    ImGui::End();
 }
 
 void FEditor::RenderPostProcessProperties(FScene* Scene)
 {
     FSceneRenderSettings& Settings = Scene->GetRenderSettings();
-
-    ImGui::SetNextWindowPos(ImVec2(0, 800));
-    ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
-    ImGui::Begin("PostProcess Properties");
 
     const char* toneMappingItems[] = { "Off", "Reinhard", "ReinhardModifed", "ACES" };
     AddCombo("Tone Mapping Method", toneMappingItems, IM_ARRAYSIZE(toneMappingItems), Settings.ToneMappingMethod);
@@ -308,7 +326,14 @@ void FEditor::RenderPostProcessProperties(FScene* Scene)
     ImGui::Checkbox("Bloom", &Settings.bUseBloom);
     ImGui::InputFloat4("Bloom Tint", &Settings.BloomTint[0], "%.4f");
 
-    ImGui::End();
+    if (ImGui::TreeNode("Auto Exposure"))
+    {
+        ImGui::Checkbox("Enable Auto Exposure", &Settings.bUseEyeAdaptation);
+        ImGui::SliderFloat("HistogramLogMin", &Settings.HistogramLogMin, -10.f, 0.f);
+        ImGui::SliderFloat("HistogramLogMax", &Settings.HistogramLogMax, 0.f, 10.f);
+        ImGui::SliderFloat("Time Coeff", &Settings.TimeCoeff, 0.0f, 1.0f);
+        ImGui::TreePop();
+    }
 }
 
 void FEditor::RenderGPUProfileData()
@@ -354,15 +379,6 @@ void FEditor::RenderGPUProfileData()
 
 void FEditor::RenderProfileProperties(FScene* Scene)
 {
-    ImGuiIO& io = ImGui::GetIO();
-
-    float W = 300.0f;
-    float H = 200.0f;
-
-    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - W, 600));
-    ImGui::SetNextWindowSize(ImVec2(W, H), ImGuiCond_Once);
-    
-    ImGui::Begin("Profile");
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(2) << Scene->CPUFrameMsTime;
     std::string durationStr = oss.str();
@@ -370,7 +386,6 @@ void FEditor::RenderProfileProperties(FScene* Scene)
     ImGui::Text(NameString.c_str());
 
     RenderGPUProfileData();
-    ImGui::End();
 }
 
 void FEditor::OnWindowResized(uint32_t Width, uint32_t Height)
