@@ -163,10 +163,10 @@ void FBloomPass::AddBloomPass(FGraphicsContext* GraphicsContext, FScene* Scene, 
         };
         for (int i = 0; i < MAX_GAUSSIAN_KERNEL_SIZE/4; i++)
         {
-            RenderResourcesY.weights[i] = XMFLOAT4(GaussianBlurWeight[i * 4] * Scene->BloomTint[BloomIndex],
-                GaussianBlurWeight[i * 4+1] * Scene->BloomTint[BloomIndex],
-                GaussianBlurWeight[i * 4+2] * Scene->BloomTint[BloomIndex],
-                GaussianBlurWeight[i * 4+3] * Scene->BloomTint[BloomIndex]
+            RenderResourcesY.weights[i] = XMFLOAT4(GaussianBlurWeight[i * 4] * Scene->GetRenderSettings().BloomTint[BloomIndex],
+                GaussianBlurWeight[i * 4+1] * Scene->GetRenderSettings().BloomTint[BloomIndex],
+                GaussianBlurWeight[i * 4+2] * Scene->GetRenderSettings().BloomTint[BloomIndex],
+                GaussianBlurWeight[i * 4+3] * Scene->GetRenderSettings().BloomTint[BloomIndex]
             );
         }
 

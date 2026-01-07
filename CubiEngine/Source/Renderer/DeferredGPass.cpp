@@ -130,18 +130,18 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
         .envMipCount = Scene->GetEnvironmentMap()->GetMipCount(),
         .shadowDepthTextureIndex = ShadowDepthPass->GetShadowDepthTexture()->SrvIndex,
         .rtShadowDepthTextureIndex = RaytracingShadowTexture ? RaytracingShadowTexture->SrvIndex : INVALID_INDEX_U32,
-        .vsmMomentTextureIndex = Scene->bUseVSM ? ShadowDepthPass->GetMomentTexture()->SrvIndex : INVALID_INDEX_U32,
+        .vsmMomentTextureIndex = Scene->GetRenderSettings().bUseVSM ? ShadowDepthPass->GetMomentTexture()->SrvIndex : INVALID_INDEX_U32,
         .ssaoTextureIndex = SSAOTexture ? SSAOTexture->SrvIndex : INVALID_INDEX_U32,
         .outputTextureIndex = SceneTexture.HDRTexture->UavIndex,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .lightBufferIndex = Scene->GetLightBuffer().CbvIndex,
         .shadowBufferIndex = Scene->GetShadowBuffer().CbvIndex,
         .debugBufferIndex = Scene->GetDebugBuffer().CbvIndex,
-        .EnvmapIntensity = Scene->EnvmapIntensity,
-        .bUseEnergyCompensation = Scene->bUseEnergyCompensation ? 1u : 0u,
-        .WhiteFurnaceMethod = uint(Scene->WhiteFurnaceMethod),
-        .bCSMDebug = Scene->bCSMDebug ? 1u : 0u,
-        .diffuseMethod = uint(Scene->DiffuseMethod),
+        .EnvmapIntensity = Scene->GetRenderSettings().EnvmapIntensity,
+        .bUseEnergyCompensation = Scene->GetRenderSettings().bUseEnergyCompensation ? 1u : 0u,
+        .WhiteFurnaceMethod = uint(Scene->GetRenderSettings().WhiteFurnaceMethod),
+        .bCSMDebug = Scene->GetRenderSettings().bCSMDebug ? 1u : 0u,
+        .diffuseMethod = uint(Scene->GetRenderSettings().DiffuseMethod),
         .sampleBias = GFrameCount,
     };
 
@@ -156,7 +156,7 @@ void FDeferredGPass::RenderLightPass(FScene* const Scene, FGraphicsContext* cons
     {
         GraphicsContext->AddResourceBarrier(SSAOTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     }
-    if (Scene->bUseVSM)
+    if (Scene->GetRenderSettings().bUseVSM)
     {
         GraphicsContext->AddResourceBarrier(ShadowDepthPass->GetMomentTexture(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     }

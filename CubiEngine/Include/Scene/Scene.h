@@ -18,48 +18,8 @@ enum class ERenderingMode
     PathTracing
 };
 
-class FScene
+struct FSceneRenderSettings
 {
-public:
-    FScene(uint32_t Width, uint32_t Height);
-    ~FScene();
-
-    void GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height);
-    void HandleMaxTickRate();
-
-    void UpdateBuffers();
-    void AddModel(const FModelCreationDesc& Desc);
-	void AddMesh(FMesh* Mesh);
-    void AddLight(float Position[4], float Color[4], float Intensity = 1.f) { Light.AddLight(Position, Color, Intensity); }
-
-    void RenderModels(FGraphicsContext* const GraphicsContext,
-        interlop::UnlitPassRenderResources& UnlitRenderResources);
-    void RenderModels(FGraphicsContext* const GraphicsContext,
-        interlop::DeferredGPassRenderResources& DeferredGRenderResources);
-    void RenderModels(FGraphicsContext* const GraphicsContext,
-        interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource);
-
-    void RenderLightsDeferred(FGraphicsContext* const GraphicsContext,
-        interlop::DeferredGPassCubeRenderResources);
-
-    FBuffer& GetSceneBuffer() { return SceneBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
-    FBuffer& GetLightBuffer() { return LightBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
-    FBuffer& GetShadowBuffer() { return ShadowBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
-    FBuffer& GetDebugBuffer() { return DebugBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
-    FCamera& GetCamera() { return Camera; }
-    FCubeMap* GetEnvironmentMap() { return (WhiteFurnaceMethod == 0 || WhiteFurnaceMethod == 3) ? EnviromentMap.get() : WhiteFurnaceMap.get(); }
-    void RenderEnvironmentMap(FGraphicsContext* const GraphicsContext, FSceneTexture& SceneTexture);
-
-    void GenerateRaytracingScene(FGraphicsContext* const GraphicsContext);
-
-    FRaytracingScene& GetRaytracingScene() { return RaytracingScene; }
-
-    FLight Light;
-    float CPUFrameMsTime = 0;
-
-    inline ERenderingMode GetRenderingMode() const { return (ERenderingMode)RenderingMode; };
-
-    // UI control
     // Debug
     int SelectedTextureIndex = 0;
     FTexture* SelectedDebugTexture = nullptr;
@@ -67,26 +27,24 @@ public:
     float VisualizeDebugMax = 1.f;
 
     int WhiteFurnaceMethod = 0;
-
     bool bUseEnergyCompensation = true;
 
     int DiffuseMethod = 0;
-    
     int MaxFPS = 60;
 
     int RenderingMode = 0;
-	int PathTracingSamplePerPixel = 16;
+    int PathTracingSamplePerPixel = 16;
     bool bEnablePathTracingDenoiser = true;
     bool bDenoiserAlbedoNormal = true;
 
     bool bEnableDiffuse = true;
     bool bEnableSpecular = true;
-    
+
     // Light
     bool bLightDanceDebug = false;
     float bLightDanceSpeed = 0.3f;
 
-	float EnvmapIntensity = 1.f;
+    float EnvmapIntensity = 1.f;
 
     // Shadow
     int ShadowMethod = 1;
@@ -94,7 +52,7 @@ public:
     bool bCSMDebug = false;
     float CSMExponentialFactor = 0.8f;
     float ShadowBias = 1e-4f;
-    
+
     // SSAO
     bool bUseSSAO = true;
     int SSAOKernelSize = 64;
@@ -125,11 +83,56 @@ public:
     bool bUseBloom = true;
     float BloomTint[4] = { 0.1f, 0.040f, 0.020f, 0.010f };
 
-    // auto exposure
+    // Auto exposure
     bool bUseEyeAdaptation = true;
     float HistogramLogMin = -2.f;
     float HistogramLogMax = 2.f;
     float TimeCoeff = 0.5f;
+};
+
+class FScene
+{
+public:
+    FScene(uint32_t Width, uint32_t Height);
+    ~FScene();
+
+    void GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t Height);
+    void HandleMaxTickRate();
+
+    void UpdateBuffers();
+    void AddModel(const FModelCreationDesc& Desc);
+	void AddMesh(FMesh* Mesh);
+    void AddLight(float Position[4], float Color[4], float Intensity = 1.f) { Light.AddLight(Position, Color, Intensity); }
+
+    void RenderModels(FGraphicsContext* const GraphicsContext,
+        interlop::UnlitPassRenderResources& UnlitRenderResources);
+    void RenderModels(FGraphicsContext* const GraphicsContext,
+        interlop::DeferredGPassRenderResources& DeferredGRenderResources);
+    void RenderModels(FGraphicsContext* const GraphicsContext,
+        interlop::ShadowDepthPassRenderResource& ShadowDepthPassRenderResource);
+
+    void RenderLightsDeferred(FGraphicsContext* const GraphicsContext,
+        interlop::DeferredGPassCubeRenderResources);
+
+    FBuffer& GetSceneBuffer() { return SceneBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
+    FBuffer& GetLightBuffer() { return LightBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
+    FBuffer& GetShadowBuffer() { return ShadowBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
+    FBuffer& GetDebugBuffer() { return DebugBuffer[GFrameCount % FRAMES_IN_FLIGHT]; }
+    FCamera& GetCamera() { return Camera; }
+    FCubeMap* GetEnvironmentMap() { return (RenderSettings.WhiteFurnaceMethod == 0 || RenderSettings.WhiteFurnaceMethod == 3) ? EnviromentMap.get() : WhiteFurnaceMap.get(); }
+    void RenderEnvironmentMap(FGraphicsContext* const GraphicsContext, FSceneTexture& SceneTexture);
+
+    void GenerateRaytracingScene(FGraphicsContext* const GraphicsContext);
+
+    FRaytracingScene& GetRaytracingScene() { return RaytracingScene; }
+
+    FLight Light;
+    float CPUFrameMsTime = 0;
+
+    inline ERenderingMode GetRenderingMode() const { return (ERenderingMode)RenderSettings.RenderingMode; };
+
+    FSceneRenderSettings& GetRenderSettings() { return RenderSettings; }
+    const FSceneRenderSettings& GetRenderSettings() const { return RenderSettings; }
 
     std::unique_ptr<FCubeMap> EnviromentMap{};
 
@@ -151,4 +154,6 @@ private:
     std::chrono::high_resolution_clock::time_point PrevTime;
 
     FRaytracingScene RaytracingScene;
+
+    FSceneRenderSettings RenderSettings{};
 };

@@ -121,6 +121,8 @@ void AddCombo(const char* Name, const std::vector<std::string> Items, int ItemSi
 
 void FEditor::RenderDebugProperties(FScene* Scene)
 {
+    FSceneRenderSettings& Settings = Scene->GetRenderSettings();
+
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
 
@@ -128,36 +130,38 @@ void FEditor::RenderDebugProperties(FScene* Scene)
     
     FTextureManager* TextureManager = RHIGetTextureManager();
     std::vector<std::string> KeyList = TextureManager->GetDebugTextureKeyList(true);
-    AddCombo("Debug Visualize", KeyList, KeyList.size(), Scene->SelectedTextureIndex);
-	Scene->SelectedDebugTexture = TextureManager->GetDebugTexture(KeyList[Scene->SelectedTextureIndex]);
+    AddCombo("Debug Visualize", KeyList, KeyList.size(), Settings.SelectedTextureIndex);
+	Settings.SelectedDebugTexture = TextureManager->GetDebugTexture(KeyList[Settings.SelectedTextureIndex]);
 
-    ImGui::SliderFloat("VisDebugMin", &Scene->VisualizeDebugMin, 0.f, 1.f);
-    ImGui::SliderFloat("VisDebugMax", &Scene->VisualizeDebugMax, 0.f, 1.f);
+    ImGui::SliderFloat("VisDebugMin", &Settings.VisualizeDebugMin, 0.f, 1.f);
+    ImGui::SliderFloat("VisDebugMax", &Settings.VisualizeDebugMax, 0.f, 1.f);
 
-	ImGui::Checkbox("Enable Diffuse", &Scene->bEnableDiffuse);
-	ImGui::Checkbox("Enable Specular", &Scene->bEnableSpecular);
-    ImGui::Checkbox("Energy Compensation", &Scene->bUseEnergyCompensation);
+	ImGui::Checkbox("Enable Diffuse", &Settings.bEnableDiffuse);
+	ImGui::Checkbox("Enable Specular", &Settings.bEnableSpecular);
+    ImGui::Checkbox("Energy Compensation", &Settings.bUseEnergyCompensation);
 
     const char* diffuseItems[] = { "Lambertian", "Disney_Burley"};
-    AddCombo("Diffuse Model", diffuseItems, IM_ARRAYSIZE(diffuseItems), Scene->DiffuseMethod);
+    AddCombo("Diffuse Model", diffuseItems, IM_ARRAYSIZE(diffuseItems), Settings.DiffuseMethod);
 
     const char* renderingModeItems[] = { "Rasterize", "Debug Raytracing", "PathTrace"};
-    AddCombo("Rendering Mode", renderingModeItems, IM_ARRAYSIZE(renderingModeItems), Scene->RenderingMode);
+    AddCombo("Rendering Mode", renderingModeItems, IM_ARRAYSIZE(renderingModeItems), Settings.RenderingMode);
 
-    ImGui::Checkbox("PathTracing Enable Denoiser", &Scene->bEnablePathTracingDenoiser);
-    ImGui::Checkbox("PathTracing Denoiser Use Albedo,Normal", &Scene->bDenoiserAlbedoNormal);
-    ImGui::SliderInt("PathTracing SamplePerPixel", &Scene->PathTracingSamplePerPixel, 1, 64);
+    ImGui::Checkbox("PathTracing Enable Denoiser", &Settings.bEnablePathTracingDenoiser);
+    ImGui::Checkbox("PathTracing Denoiser Use Albedo,Normal", &Settings.bDenoiserAlbedoNormal);
+    ImGui::SliderInt("PathTracing SamplePerPixel", &Settings.PathTracingSamplePerPixel, 1, 64);
 
-    ImGui::SliderInt("Max FPS", &Scene->MaxFPS, 30, 144);
+    ImGui::SliderInt("Max FPS", &Settings.MaxFPS, 30, 144);
 
     const char* wfItems[] = { "Off", "Sampling", "IBL", "Albedo only"};
-    AddCombo("White Furnace Method", wfItems, IM_ARRAYSIZE(wfItems), Scene->WhiteFurnaceMethod);
+    AddCombo("White Furnace Method", wfItems, IM_ARRAYSIZE(wfItems), Settings.WhiteFurnaceMethod);
 
     ImGui::End();
 }
 
 void FEditor::RenderCameraProperties(FScene* Scene)
 {
+    FSceneRenderSettings& Settings = Scene->GetRenderSettings();
+
     ImGui::SetNextWindowPos(ImVec2(0, 200));
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
 
@@ -165,10 +169,10 @@ void FEditor::RenderCameraProperties(FScene* Scene)
     
     if (ImGui::TreeNode("Auto Exposure"))
     {
-        ImGui::Checkbox("Enable Auto Exposure", &Scene->bUseEyeAdaptation);
-        ImGui::SliderFloat("HistogramLogMin", &Scene->HistogramLogMin, -10.f, 0.f);
-        ImGui::SliderFloat("HistogramLogMax", &Scene->HistogramLogMax, 0.f, 10.f);
-        ImGui::SliderFloat("Time Coeff", &Scene->TimeCoeff, 0.0f, 1.0f);
+        ImGui::Checkbox("Enable Auto Exposure", &Settings.bUseEyeAdaptation);
+        ImGui::SliderFloat("HistogramLogMin", &Settings.HistogramLogMin, -10.f, 0.f);
+        ImGui::SliderFloat("HistogramLogMax", &Settings.HistogramLogMax, 0.f, 10.f);
+        ImGui::SliderFloat("Time Coeff", &Settings.TimeCoeff, 0.0f, 1.0f);
         ImGui::TreePop();
     }
 
@@ -185,35 +189,37 @@ void FEditor::RenderCameraProperties(FScene* Scene)
 
 void FEditor::RenderGIProperties(FScene* Scene)
 {
+    FSceneRenderSettings& Settings = Scene->GetRenderSettings();
+
     ImGui::SetNextWindowPos(ImVec2(0, 400));
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
     ImGui::Begin("GI Properties");
 
     if (ImGui::TreeNode("SSAO"))
     {
-        ImGui::Checkbox("Use SSAO", &Scene->bUseSSAO);
-        ImGui::SliderInt("SSAO Kernel Size", &Scene->SSAOKernelSize, 8, 64);
-        ImGui::SliderFloat("SSAO Kernel Radius", &Scene->SSAOKernelRadius, 1e-3f, 1e-2f);
-        ImGui::InputFloat("SSAO Depth Bias", &Scene->SSAODepthBias, 1e-6, 1e-5, "%.6f");
-        ImGui::Checkbox("SSAO Range Check", &Scene->SSAOUseRangeCheck);
+        ImGui::Checkbox("Use SSAO", &Settings.bUseSSAO);
+        ImGui::SliderInt("SSAO Kernel Size", &Settings.SSAOKernelSize, 8, 64);
+        ImGui::SliderFloat("SSAO Kernel Radius", &Settings.SSAOKernelRadius, 1e-3f, 1e-2f);
+        ImGui::InputFloat("SSAO Depth Bias", &Settings.SSAODepthBias, 1e-6, 1e-5, "%.6f");
+        ImGui::Checkbox("SSAO Range Check", &Settings.SSAOUseRangeCheck);
         ImGui::TreePop();
     }
 
     if (ImGui::TreeNode("SSGI"))
     {
         const char* giItems[] = { "Off", "SSGI" };
-        AddCombo("GI Method", giItems, IM_ARRAYSIZE(giItems), Scene->GIMethod);
-        ImGui::SliderFloat("SSGI Intensity", &Scene->SSGIIntensity, 0.0f, 20.0f);
-        ImGui::SliderFloat("SSGI RayLength", &Scene->SSGIRayLength, 0.0f, 3.0f);
-        ImGui::SliderInt("SSGI NumSteps", &Scene->SSGINumSteps, 1, 256);
-        ImGui::SliderFloat("SSGI CompareToleranceScale", &Scene->CompareToleranceScale, 1.f, 30.f);
-        ImGui::SliderInt("SSGI NumSamples", &Scene->SSGINumSamples, 1, 16);
+        AddCombo("GI Method", giItems, IM_ARRAYSIZE(giItems), Settings.GIMethod);
+        ImGui::SliderFloat("SSGI Intensity", &Settings.SSGIIntensity, 0.0f, 20.0f);
+        ImGui::SliderFloat("SSGI RayLength", &Settings.SSGIRayLength, 0.0f, 3.0f);
+        ImGui::SliderInt("SSGI NumSteps", &Settings.SSGINumSteps, 1, 256);
+        ImGui::SliderFloat("SSGI CompareToleranceScale", &Settings.CompareToleranceScale, 1.f, 30.f);
+        ImGui::SliderInt("SSGI NumSamples", &Settings.SSGINumSamples, 1, 16);
 
-        ImGui::SliderInt("SSGI GaussianKernelSize", &Scene->SSGIGaussianKernelSize, 1, 32);
-        ImGui::SliderFloat("SSGI GaussianStdDev", &Scene->SSGIGaussianStdDev, 0.1f, 20.0f);
+        ImGui::SliderInt("SSGI GaussianKernelSize", &Settings.SSGIGaussianKernelSize, 1, 32);
+        ImGui::SliderFloat("SSGI GaussianStdDev", &Settings.SSGIGaussianStdDev, 0.1f, 20.0f);
 
         const char* sampleingMethodItems[] = { "UniformSampleHemisphere", "ImportanceSampleCosDir", "ConcentricSampleDisk", "ConcentricSampleDiskUE5"};
-        AddCombo("Sampling Method", sampleingMethodItems, IM_ARRAYSIZE(sampleingMethodItems), Scene->StochasticNormalSamplingMethod);
+        AddCombo("Sampling Method", sampleingMethodItems, IM_ARRAYSIZE(sampleingMethodItems), Settings.StochasticNormalSamplingMethod);
         ImGui::TreePop();
     }
     
@@ -222,16 +228,18 @@ void FEditor::RenderGIProperties(FScene* Scene)
 
 void FEditor::RenderLightProperties(FScene* Scene)
 {
+    FSceneRenderSettings& Settings = Scene->GetRenderSettings();
+
     ImGui::SetNextWindowPos(ImVec2(0, 600));
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
 
     ImGui::Begin("Light Properties");
     interlop::LightBuffer& LightBuffer = Scene->Light.LightBufferData;
 
-    ImGui::SliderFloat("Envmap Intensity", &Scene->EnvmapIntensity, 0.f, 100.f);
+    ImGui::SliderFloat("Envmap Intensity", &Settings.EnvmapIntensity, 0.f, 100.f);
 
-    ImGui::Checkbox("Light Dance Debug", &Scene->bLightDanceDebug);
-    ImGui::SliderFloat("Light Dance Speed", &Scene->bLightDanceSpeed, 0.1f, 10.0f);
+    ImGui::Checkbox("Light Dance Debug", &Settings.bLightDanceDebug);
+    ImGui::SliderFloat("Light Dance Speed", &Settings.bLightDanceSpeed, 0.1f, 10.0f);
 
     if (ImGui::TreeNode("Directional Light"))
     {
@@ -272,12 +280,12 @@ void FEditor::RenderLightProperties(FScene* Scene)
     if (ImGui::TreeNode("Shadow"))
     {
         const char* shadowMethodItems[] = { "None", "ShadowMapping", "Raytracing Shadow" };
-        AddCombo("Shadow Method", shadowMethodItems, IM_ARRAYSIZE(shadowMethodItems), Scene->ShadowMethod);
+        AddCombo("Shadow Method", shadowMethodItems, IM_ARRAYSIZE(shadowMethodItems), Settings.ShadowMethod);
 
-        ImGui::Checkbox("Use Variance Shadow Map", &Scene->bUseVSM);
-        ImGui::Checkbox("CSM Debug", &Scene->bCSMDebug);
-        ImGui::InputFloat("Shadow Bias", &Scene->ShadowBias, 0.00001, 0.0001, "%.5f");
-        ImGui::InputFloat("CSM Exponential Factor", &Scene->CSMExponentialFactor, 0.01, 0.1);
+        ImGui::Checkbox("Use Variance Shadow Map", &Settings.bUseVSM);
+        ImGui::Checkbox("CSM Debug", &Settings.bCSMDebug);
+        ImGui::InputFloat("Shadow Bias", &Settings.ShadowBias, 0.00001, 0.0001, "%.5f");
+        ImGui::InputFloat("CSM Exponential Factor", &Settings.CSMExponentialFactor, 0.01, 0.1);
 
         ImGui::TreePop();
     }
@@ -287,16 +295,18 @@ void FEditor::RenderLightProperties(FScene* Scene)
 
 void FEditor::RenderPostProcessProperties(FScene* Scene)
 {
+    FSceneRenderSettings& Settings = Scene->GetRenderSettings();
+
     ImGui::SetNextWindowPos(ImVec2(0, 800));
     ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Once);
     ImGui::Begin("PostProcess Properties");
 
     const char* toneMappingItems[] = { "Off", "Reinhard", "ReinhardModifed", "ACES" };
-    AddCombo("Tone Mapping Method", toneMappingItems, IM_ARRAYSIZE(toneMappingItems), Scene->ToneMappingMethod);
-    ImGui::Checkbox("TAA", &Scene->bUseTaa);
-    ImGui::Checkbox("Gamma Correction", &Scene->bGammaCorrection);
-    ImGui::Checkbox("Bloom", &Scene->bUseBloom);
-    ImGui::InputFloat4("Bloom Tint", &Scene->BloomTint[0], "%.4f");
+    AddCombo("Tone Mapping Method", toneMappingItems, IM_ARRAYSIZE(toneMappingItems), Settings.ToneMappingMethod);
+    ImGui::Checkbox("TAA", &Settings.bUseTaa);
+    ImGui::Checkbox("Gamma Correction", &Settings.bGammaCorrection);
+    ImGui::Checkbox("Bloom", &Settings.bUseBloom);
+    ImGui::InputFloat4("Bloom Tint", &Settings.BloomTint[0], "%.4f");
 
     ImGui::End();
 }

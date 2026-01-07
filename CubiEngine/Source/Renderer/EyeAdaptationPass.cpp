@@ -66,12 +66,12 @@ void FEyeAdaptationPass::GenerateHistogram(FGraphicsContext* GraphicsContext, FS
     GraphicsContext->AddResourceBarrier(HDR, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     GraphicsContext->ExecuteResourceBarriers();
     
-    float inverseLogLuminanceRange = 1.f / (Scene->HistogramLogMax - Scene->HistogramLogMin);
+    float inverseLogLuminanceRange = 1.f / (Scene->GetRenderSettings().HistogramLogMax - Scene->GetRenderSettings().HistogramLogMin);
 
     interlop::GenerateHistogramRenderResource RenderResources = {
         .sceneTextureIndex = HDR->SrvIndex,
         .histogramBufferIndex = HistogramBuffer.UavIndex,
-        .minLogLuminance = Scene->HistogramLogMin,
+        .minLogLuminance = Scene->GetRenderSettings().HistogramLogMin,
         .inverseLogLuminanceRange = inverseLogLuminanceRange,
     };
 
@@ -92,14 +92,14 @@ void FEyeAdaptationPass::CalculateAverageLuminance(FGraphicsContext* GraphicsCon
 {
     SCOPED_NAMED_EVENT(GraphicsContext, CalculateAverageLuminance);
     
-    float logLuminanceRange = Scene->HistogramLogMax - Scene->HistogramLogMin;
+    float logLuminanceRange = Scene->GetRenderSettings().HistogramLogMax - Scene->GetRenderSettings().HistogramLogMin;
 
     interlop::CalculateAverageLuminanceRenderResource RenderResources = {
         .histogramBufferIndex = HistogramBuffer.UavIndex,
         .averageLuminanceBufferIndex = AverageLuminanceBuffer.UavIndex,
-        .minLogLuminance = Scene->HistogramLogMin,
+        .minLogLuminance = Scene->GetRenderSettings().HistogramLogMin,
         .logLumRange = logLuminanceRange,
-        .timeCoeff = Scene->TimeCoeff,
+        .timeCoeff = Scene->GetRenderSettings().TimeCoeff,
         .numPixels = Width * Height,
     };
 
@@ -129,9 +129,9 @@ void FEyeAdaptationPass::ToneMapping(FGraphicsContext* GraphicsContext, FScene* 
         .bloomTextureIndex = BloomTexture ? BloomTexture->SrvIndex : INVALID_INDEX_U32,
         .width = LDRTexture->Width,
         .height = LDRTexture->Height,
-        .toneMappingMethod = (uint)Scene->ToneMappingMethod,
-        .bGammaCorrection = Scene->bGammaCorrection,
-        .averageLuminanceBufferIndex = Scene->bUseEyeAdaptation ? AverageLuminanceBuffer.SrvIndex : INVALID_INDEX_U32,
+        .toneMappingMethod = (uint)Scene->GetRenderSettings().ToneMappingMethod,
+        .bGammaCorrection = Scene->GetRenderSettings().bGammaCorrection,
+        .averageLuminanceBufferIndex = Scene->GetRenderSettings().bUseEyeAdaptation ? AverageLuminanceBuffer.SrvIndex : INVALID_INDEX_U32,
     };
 
     GraphicsContext->SetComputePipelineState(EyeAdaptationTonemappingPipelineState);

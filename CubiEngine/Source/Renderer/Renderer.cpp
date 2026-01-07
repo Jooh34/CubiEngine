@@ -121,7 +121,7 @@ void FRenderer::Render()
     {
         SCOPED_NAMED_EVENT(GraphicsContext, DebugVisualize);
         SCOPED_GPU_EVENT(DebugVisualize);
-        FTexture* SelectedTexture = Scene->SelectedDebugTexture;
+        FTexture* SelectedTexture = Scene->GetRenderSettings().SelectedDebugTexture;
         if (SelectedTexture != nullptr)
         {
             PostProcess->DebugVisualize(GraphicsContext, Scene.get(), SelectedTexture, LDR, Width, Height);
@@ -185,7 +185,7 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
     // ----- Shadow Depth pass -----
 
     // ----- Screen Space Ambient Occlusion -----
-    if (Scene->bUseSSAO)
+    if (Scene->GetRenderSettings().bUseSSAO)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, SSAO);
         SCOPED_GPU_EVENT(SSAO);
@@ -200,14 +200,14 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
         SCOPED_NAMED_EVENT(GraphicsContext, LightPass);
         SCOPED_GPU_EVENT(LightPass);
 
-        FTexture* SSAOTexture = Scene->bUseSSAO ? SSAOPass->SSAOTexture.get() : nullptr;
+        FTexture* SSAOTexture = Scene->GetRenderSettings().bUseSSAO ? SSAOPass->SSAOTexture.get() : nullptr;
         DeferredGPass->RenderLightPass(Scene.get(), GraphicsContext,
             ShadowDepthPass.get(), SceneTexture, SSAOTexture, RaytracingShadowPass->GetRaytracingShadowTexture()
         );
     }
     // ----- Deferred Lighting Pass -----
 
-    if (Scene->GIMethod == GI_METHOD_SSGI)
+    if (Scene->GetRenderSettings().GIMethod == GI_METHOD_SSGI)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, ScreenSpaceGI);
         SCOPED_GPU_EVENT(ScreenSpaceGI);
@@ -223,7 +223,7 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
         FTexture* HDR = SceneTexture.HDRTexture.get();
         Output = SceneTexture.LDRTexture.get();
 
-        if (Scene.get()->bUseTaa)
+        if (Scene.get()->GetRenderSettings().bUseTaa)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, TemporalAA);
             SCOPED_GPU_EVENT(TemporalAA);
@@ -234,7 +234,7 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
             TemporalAA->UpdateHistory(GraphicsContext, Scene.get());
         }
 
-        if (Scene.get()->bUseEyeAdaptation)
+        if (Scene.get()->GetRenderSettings().bUseEyeAdaptation)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, EyeAdaptation);
             SCOPED_GPU_EVENT(EyeAdaptation);
@@ -243,7 +243,7 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
             EyeAdaptationPass->CalculateAverageLuminance(GraphicsContext, Scene.get(), Width, Height);
         }
 
-        if (Scene->bUseBloom)
+        if (Scene->GetRenderSettings().bUseBloom)
         {
             SCOPED_NAMED_EVENT(GraphicsContext, Bloom);
             SCOPED_GPU_EVENT(Bloom);
@@ -254,7 +254,7 @@ FTexture* FRenderer::RenderDeferredShading(FGraphicsContext* GraphicsContext)
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
             SCOPED_GPU_EVENT(ToneMapping);
             EyeAdaptationPass->ToneMapping(GraphicsContext, Scene.get(), HDR, Output,
-                Scene->bUseBloom ? BloomPass->BloomResultTexture.get() : nullptr);
+                Scene->GetRenderSettings().bUseBloom ? BloomPass->BloomResultTexture.get() : nullptr);
         }
 
         // PostProcess->Tonemapping(GraphicsContext, Scene.get(), *HDR, Width, Height);
@@ -313,9 +313,9 @@ FTexture* FRenderer::RenderPathTracingScene(FGraphicsContext* GraphicsContext)
         SCOPED_GPU_EVENT(PostProcess);
 
         FTexture* HDR = PathTracingPass->GetPathTracingSceneTexture();
-        if (Scene->bEnablePathTracingDenoiser)
+        if (Scene->GetRenderSettings().bEnablePathTracingDenoiser)
         {
-            if (Scene->bDenoiserAlbedoNormal)
+            if (Scene->GetRenderSettings().bDenoiserAlbedoNormal)
             {
 				HDR = DenoisePass->AddPass(GraphicsContext, Scene.get(), HDR,
                     PathTracingPass->GetPathTracingAlbedo(), PathTracingPass->GetPathTracingNormal()
@@ -341,7 +341,7 @@ FTexture* FRenderer::RenderPathTracingScene(FGraphicsContext* GraphicsContext)
 
 void FRenderer::RenderShadow(FGraphicsContext* GraphicsContext, FSceneTexture& SceneTexture)
 {
-    if (Scene->ShadowMethod == (int)EShadowMethod::ShadowMap)
+    if (Scene->GetRenderSettings().ShadowMethod == (int)EShadowMethod::ShadowMap)
     {
         if (ShadowDepthPass)
         {
@@ -350,7 +350,7 @@ void FRenderer::RenderShadow(FGraphicsContext* GraphicsContext, FSceneTexture& S
             ShadowDepthPass->Render(GraphicsContext, Scene.get());
         }
     }
-    else if (Scene->ShadowMethod == (int)EShadowMethod::Raytracing)
+    else if (Scene->GetRenderSettings().ShadowMethod == (int)EShadowMethod::Raytracing)
     {
         if (RaytracingShadowPass)
         {

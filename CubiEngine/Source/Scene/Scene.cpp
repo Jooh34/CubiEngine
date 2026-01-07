@@ -55,21 +55,21 @@ void FScene::GameTick(float DeltaTime, FInput* Input, uint32_t Width, uint32_t H
     
     HandleMaxTickRate();
 
-	bool bRasterizeMode = (RenderingMode == (int)ERenderingMode::Rasterize);
-    bool bApplyJitter = bUseTaa && bRasterizeMode;
+	bool bRasterizeMode = (RenderSettings.RenderingMode == (int)ERenderingMode::Rasterize);
+    bool bApplyJitter = RenderSettings.bUseTaa && bRasterizeMode;
 
-    Camera.Update(DeltaTime, Input, Width, Height, bApplyJitter, CSMExponentialFactor);
+    Camera.Update(DeltaTime, Input, Width, Height, bApplyJitter, RenderSettings.CSMExponentialFactor);
 
     UpdateBuffers();
 
-    if (bLightDanceDebug)
+    if (RenderSettings.bLightDanceDebug)
     {
-        Light.LightBufferData.lightPosition[0].z = sinf(bLightDanceSpeed * GFrameCount / 100.f);
+        Light.LightBufferData.lightPosition[0].z = sinf(RenderSettings.bLightDanceSpeed * GFrameCount / 100.f);
 
         if (Light.LightBufferData.numLight > 1)
         {
-            Light.LightBufferData.lightPosition[1].x = 500.f * sinf(bLightDanceSpeed * GFrameCount / 100.f);
-            Light.LightBufferData.lightPosition[1].z = 500.f * cosf(bLightDanceSpeed * GFrameCount / 100.f);
+            Light.LightBufferData.lightPosition[1].x = 500.f * sinf(RenderSettings.bLightDanceSpeed * GFrameCount / 100.f);
+            Light.LightBufferData.lightPosition[1].z = 500.f * cosf(RenderSettings.bLightDanceSpeed * GFrameCount / 100.f);
         }
     }
 }
@@ -81,7 +81,7 @@ void FScene::HandleMaxTickRate()
 
     const float DeltaTime = std::chrono::duration<double, std::milli>(CurTime - PrevTime).count();
     
-    float MsMax = (1000.f / MaxFPS);
+    float MsMax = (1000.f / RenderSettings.MaxFPS);
     if (DeltaTime < MsMax)
     {
         float MilliSleep = (MsMax - DeltaTime);
@@ -121,14 +121,14 @@ void FScene::UpdateBuffers()
     GetLightBuffer().Update(&LightBufferData);
 
     interlop::ShadowBuffer ShadowBufferData = Light.GetShadowBuffer(this);
-    ShadowBufferData.shadowBias = ShadowBias;
+    ShadowBufferData.shadowBias = RenderSettings.ShadowBias;
     GetShadowBuffer().Update(&ShadowBufferData);
     
     const interlop::DebugBuffer DebugBufferData = {
-        .bUseTaa = bUseTaa ? 1u : 0u,
-        .ShadowMethod = (uint32_t)ShadowMethod,
-        .bEnableDiffuse = (uint32_t)bEnableDiffuse,
-        .bEnableSpecular = (uint32_t)bEnableSpecular
+        .bUseTaa = RenderSettings.bUseTaa ? 1u : 0u,
+        .ShadowMethod = (uint32_t)RenderSettings.ShadowMethod,
+        .bEnableDiffuse = (uint32_t)RenderSettings.bEnableDiffuse,
+        .bEnableSpecular = (uint32_t)RenderSettings.bEnableSpecular
     };
 
     GetDebugBuffer().Update(&DebugBufferData);

@@ -231,13 +231,13 @@ void FScreenSpaceGIPass::RaycastDiffuse(FGraphicsContext* const GraphicsContext,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .width = SceneTexture.Size.Width,
         .height = SceneTexture.Size.Height,
-        .rayLength = Scene->SSGIRayLength,
-        .numSteps = (uint32_t)Scene->SSGINumSteps,
-        .ssgiIntensity = Scene->SSGIIntensity,
-        .compareToleranceScale = Scene->CompareToleranceScale,
+        .rayLength = Scene->GetRenderSettings().SSGIRayLength,
+        .numSteps = (uint32_t)Scene->GetRenderSettings().SSGINumSteps,
+        .ssgiIntensity = Scene->GetRenderSettings().SSGIIntensity,
+        .compareToleranceScale = Scene->GetRenderSettings().CompareToleranceScale,
         .frameCount = GFrameCount,
-        .stochasticNormalSamplingMethod = (uint32_t)Scene->StochasticNormalSamplingMethod,
-        .numSamples = (uint32_t)Scene->SSGINumSamples,
+        .stochasticNormalSamplingMethod = (uint32_t)Scene->GetRenderSettings().StochasticNormalSamplingMethod,
+        .numSamples = (uint32_t)Scene->GetRenderSettings().SSGINumSamples,
     };
 
     GraphicsContext->SetComputePipelineState(RaycastDiffusePipelineState);
@@ -324,8 +324,8 @@ void FScreenSpaceGIPass::DenoiseGaussianBlur(FGraphicsContext* const GraphicsCon
     SCOPED_NAMED_EVENT(GraphicsContext, DenoiseGaussianBlur);
 
     float GaussianBlurWeight[MAX_GAUSSIAN_KERNEL_SIZE];
-    int KernelSize = Scene->SSGIGaussianKernelSize;
-    float StdDev = Scene->SSGIGaussianStdDev;
+    int KernelSize = Scene->GetRenderSettings().SSGIGaussianKernelSize;
+    float StdDev = Scene->GetRenderSettings().SSGIGaussianStdDev;
 
     CreateGaussianBlurWeight(GaussianBlurWeight, KernelSize, StdDev);
 
@@ -415,7 +415,7 @@ void FScreenSpaceGIPass::Resolve(FGraphicsContext* const GraphicsContext, FScene
         .numFramesAccumulatedTextureIndex = HistroyNumFrameAccumulated->UavIndex,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .dstTexelSize = {1.0f / ResolveTexture->Width, 1.0f / ResolveTexture->Height},
-        .maxHistoryFrame = (uint)Scene->MaxHistoryFrame,
+        .maxHistoryFrame = (uint)Scene->GetRenderSettings().MaxHistoryFrame,
     };
 
     GraphicsContext->SetComputePipelineState(SSGIResolvePipelineState);

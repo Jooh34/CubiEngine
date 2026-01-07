@@ -85,10 +85,10 @@ void FSSAOPass::AddSSAOPass(FGraphicsContext* GraphicsContext, FScene* Scene, FS
         .SSAOKernelBufferIndex = SSAOKernelBuffer.CbvIndex,
         .sceneBufferIndex = Scene->GetSceneBuffer().CbvIndex,
         .frameCount = GFrameCount,
-        .kernelSize = (uint)Scene->SSAOKernelSize,
-        .kernelRadius = Scene->SSAOKernelRadius,
-        .depthBias = Scene->SSAODepthBias,
-        .bUseRangeCheck = Scene->SSAOUseRangeCheck ? 1u : 0u,
+        .kernelSize = (uint)Scene->GetRenderSettings().SSAOKernelSize,
+        .kernelRadius = Scene->GetRenderSettings().SSAOKernelRadius,
+        .depthBias = Scene->GetRenderSettings().SSAODepthBias,
+        .bUseRangeCheck = Scene->GetRenderSettings().SSAOUseRangeCheck ? 1u : 0u,
     };
 
     GraphicsContext->SetComputePipelineState(SSAOPipelineState);

@@ -75,20 +75,20 @@ void FShadowDepthPass::Render(FGraphicsContext* GraphicsContext, FScene* Scene)
 {
     // todo : shader permutation to use vsm or not.
     GraphicsContext->AddResourceBarrier(ShadowDepthTexture.get(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
-    if (Scene->bUseVSM)
+    if (Scene->GetRenderSettings().bUseVSM)
     {
         GraphicsContext->AddResourceBarrier(MomentTexture.get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
     }
     GraphicsContext->ExecuteResourceBarriers();
     GraphicsContext->ClearDepthStencilView(ShadowDepthTexture.get());
 
-    if (Scene->bUseVSM)
+    if (Scene->GetRenderSettings().bUseVSM)
     {
         GraphicsContext->ClearRenderTargetView(MomentTexture.get(), std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
     }
     
 
-    if (Scene->bUseVSM)
+    if (Scene->GetRenderSettings().bUseVSM)
     {
         GraphicsContext->SetRenderTarget(MomentTexture.get(), ShadowDepthTexture.get());
         GraphicsContext->SetGraphicsPipelineState(VSMShadowDepthPassPipelineState);
@@ -193,3 +193,4 @@ void FShadowDepthPass::AddVSMPassCS(FGraphicsContext* GraphicsContext, FScene* S
         max((uint32_t)std::ceil(MomentTexture->Height / 8.0f), 1u),
     1);
 }
+

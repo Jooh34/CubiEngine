@@ -79,8 +79,8 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene)
             };
 
             // use envmap
-            Scene->GIMethod = 0;
-            Scene->EnvmapIntensity = 1.f;
+            Scene->GetRenderSettings().GIMethod = 0;
+            Scene->GetRenderSettings().EnvmapIntensity = 1.f;
 
             // Directional Light
             float LightPosition[4] = { -0.5, -1, -0.4, 0 };
@@ -99,8 +99,8 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene)
             };
 
             // use envmap
-            Scene->GIMethod = 0;
-            Scene->EnvmapIntensity = 1.f;
+            Scene->GetRenderSettings().GIMethod = 0;
+            Scene->GetRenderSettings().EnvmapIntensity = 1.f;
 
             // Directional Light
             float LightPosition[4] = { -0.5, -1, -0.4, 0 };
@@ -119,8 +119,8 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene)
             };
 
             // use envmap
-            Scene->GIMethod = 0;
-            Scene->EnvmapIntensity = 1.f;
+            Scene->GetRenderSettings().GIMethod = 0;
+            Scene->GetRenderSettings().EnvmapIntensity = 1.f;
 
             // Directional Light
             float LightPosition[4] = { -0.5, -1, -0.4, 0 };
@@ -145,12 +145,12 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene)
             Scene->AddModel(Desc);
 
             // use envmap
-            Scene->GIMethod = 0;
-            Scene->EnvmapIntensity = 0.05f;
+            Scene->GetRenderSettings().GIMethod = 0;
+            Scene->GetRenderSettings().EnvmapIntensity = 0.05f;
 
             // exterior
-            Scene->HistogramLogMin = -5.f;
-            Scene->HistogramLogMax = 5.f;
+            Scene->GetRenderSettings().HistogramLogMin = -5.f;
+            Scene->GetRenderSettings().HistogramLogMax = 5.f;
 
             // Camera
             Scene->GetCamera().FarZ = 10000.f;
@@ -171,8 +171,8 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene)
             Scene->AddModel(Desc);
 
             // use envmap
-            Scene->GIMethod = 0;
-            //Scene->EnvmapIntensity = 1.f;
+            Scene->GetRenderSettings().GIMethod = 0;
+            //Scene->GetRenderSettings().EnvmapIntensity = 1.f;
 
             // Camera
             Scene->GetCamera().NearZ = 0.01f;
@@ -187,7 +187,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene)
         }
         case ESceneType::CornellBox:
         {
-            Scene->EnvmapIntensity = 0.f;
+            Scene->GetRenderSettings().EnvmapIntensity = 0.f;
 
             static constexpr float Size = 1.f;
             static constexpr float EPS = 1e-6;
@@ -292,7 +292,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene)
         }
         case ESceneType::CustomCornellBox:
         {
-            Scene->EnvmapIntensity = 0.f;
+            Scene->GetRenderSettings().EnvmapIntensity = 0.f;
 
             static constexpr float Size = 1.f;
             static constexpr float EPS = 1e-6;

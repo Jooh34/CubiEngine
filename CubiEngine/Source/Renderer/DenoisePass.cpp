@@ -36,8 +36,8 @@ FTexture* FDenoisePass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene
 {
     if (bRefeshResource)
     {
-		ID3D12Resource* AlbedoResource = Scene->bDenoiserAlbedoNormal ? Albedo->GetResource() : nullptr;
-		ID3D12Resource* NormalResource = Scene->bDenoiserAlbedoNormal ? Normal->GetResource() : nullptr;
+		ID3D12Resource* AlbedoResource = Scene->GetRenderSettings().bDenoiserAlbedoNormal ? Albedo->GetResource() : nullptr;
+		ID3D12Resource* NormalResource = Scene->GetRenderSettings().bDenoiserAlbedoNormal ? Normal->GetResource() : nullptr;
 
 		OIDenoiser->RefreshBuffers(HDR->GetResource(), AlbedoResource, NormalResource, DenoisedOutput->GetResource());
         bRefeshResource = false;

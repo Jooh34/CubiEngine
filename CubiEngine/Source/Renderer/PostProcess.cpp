@@ -58,8 +58,8 @@ void FPostProcess::Tonemapping(FGraphicsContext* const GraphicsContext, FScene* 
         .bloomTextureIndex = INVALID_INDEX_U32,
         .width = Width,
         .height = Height,
-        .toneMappingMethod = (uint)Scene->ToneMappingMethod,
-        .bGammaCorrection = Scene->bGammaCorrection,
+        .toneMappingMethod = (uint)Scene->GetRenderSettings().ToneMappingMethod,
+        .bGammaCorrection = Scene->GetRenderSettings().bGammaCorrection,
         .averageLuminanceBufferIndex = INVALID_INDEX_U32,
     };
 
@@ -85,8 +85,8 @@ void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FScen
         interlop::DebugVisualizeDepthRenderResources RenderResources = {
             .srcTextureIndex = SrcTexture->SrvIndex,
             .dstTextureIndex = TargetTexture->UavIndex,
-            .visDebugMin = Scene->VisualizeDebugMin,
-            .visDebugMax = Scene->VisualizeDebugMax,
+            .visDebugMin = Scene->GetRenderSettings().VisualizeDebugMin,
+            .visDebugMax = Scene->GetRenderSettings().VisualizeDebugMax,
         };
 
         GraphicsContext->SetComputePipelineState(DebugVisualizeDepthPipeline);
@@ -102,8 +102,8 @@ void FPostProcess::DebugVisualize(FGraphicsContext* const GraphicsContext, FScen
         interlop::DebugVisualizeRenderResources RenderResources = {
             .srcTextureIndex = SrcTexture->SrvIndex,
             .dstTextureIndex = TargetTexture->UavIndex,
-            .visDebugMin = Scene->VisualizeDebugMin,
-            .visDebugMax = Scene->VisualizeDebugMax,
+            .visDebugMin = Scene->GetRenderSettings().VisualizeDebugMin,
+            .visDebugMax = Scene->GetRenderSettings().VisualizeDebugMax,
         };
 
         GraphicsContext->SetComputePipelineState(DebugVisualizePipeline);
