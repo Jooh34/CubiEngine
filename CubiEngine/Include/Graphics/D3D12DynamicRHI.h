@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <mutex>
 #include <string>
 #include "Graphics/DescriptorHeap.h"
 #include "Graphics/CommandQueue.h"

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include "Graphics/Resource.h"
 
 class FMemoryAllocator

@@ -38,6 +38,7 @@
 Build/*
 External/DirectXAgilitySDK
 External/DirectXShaderCompiler
+External/WinPixEventRuntime
 out/
 *.zip
 

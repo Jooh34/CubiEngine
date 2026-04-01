@@ -36,6 +36,18 @@ if exist out\build\x64-Debug\Bin\Debug\ (
     xcopy External\DirectXShaderCompiler\bin\x64\* out\build\x64-Release\Bin\Release\
 )
 
+if exist ThirdParty\PIX\lib\WinPixEventRuntime.lib (
+    echo Already downloaded WinPixEventRuntime
+) else (
+    echo Downloading WinPixEventRuntime ...
+
+    powershell -Command "Invoke-WebRequest -Uri https://www.nuget.org/api/v2/package/WinPixEventRuntime/1.0.240308001 -OutFile pix.zip"
+    powershell -Command "& {Expand-Archive pix.zip External/WinPixEventRuntime}"
+    if not exist ThirdParty\PIX\lib mkdir ThirdParty\PIX\lib
+    copy External\WinPixEventRuntime\bin\x64\WinPixEventRuntime.dll ThirdParty\PIX\lib\
+    copy External\WinPixEventRuntime\bin\x64\WinPixEventRuntime.lib ThirdParty\PIX\lib\
+)
+
 @REM download and extract the bistro model
 
 if exist Assets\Models\Bistro\ (
