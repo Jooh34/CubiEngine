@@ -96,6 +96,8 @@ FScreenSpaceGIPass::FScreenSpaceGIPass(uint32_t Width, uint32_t Height)
 
 void FScreenSpaceGIPass::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
+    HistoryFrameCount = 0;
+
     FTextureCreationDesc StochasticNormalDesc {
        .Usage = ETextureUsage::RenderTarget,
        .Width = InWidth,
@@ -117,17 +119,6 @@ void FScreenSpaceGIPass::InitSizeDependantResource(uint32_t InWidth, uint32_t In
     };
 
     HistoryTexture = RHICreateTexture(HistoryTextureDesc);
-    {
-        // initialize history texture as black
-        FGraphicsContext* GraphicsContext = RHIGetCurrentGraphicsContext();
-        GraphicsContext->Reset();
-        GraphicsContext->ClearRenderTargetView(HistoryTexture.get(), std::array<float, 4u>{0.0f, 0.0f, 0.0f, 1.0f});
-        RHIGetDirectCommandQueue()->ExecuteContext(GraphicsContext);
-        
-        // wait immediately
-        uint64_t FenceValue = RHIGetDirectCommandQueue()->Signal();
-        RHIGetDirectCommandQueue()->WaitForFenceValue(FenceValue);
-    }
 
     FTextureCreationDesc HistroyNumFrameAccumulatedDesc{
         .Usage = ETextureUsage::UAVTexture,
@@ -172,8 +163,8 @@ void FScreenSpaceGIPass::InitSizeDependantResource(uint32_t InWidth, uint32_t In
 
     FTextureCreationDesc HalfTextureDesc{
         .Usage = ETextureUsage::UAVTexture,
-        .Width = uint32_t(InWidth/2.f),
-        .Height = uint32_t(InHeight/2.f),
+        .Width = max(InWidth / 2u, 1u),
+        .Height = max(InHeight / 2u, 1u),
         .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"SSGI Resolve Half Texture",
@@ -182,8 +173,8 @@ void FScreenSpaceGIPass::InitSizeDependantResource(uint32_t InWidth, uint32_t In
 
     FTextureCreationDesc QuarterTextureDesc{
         .Usage = ETextureUsage::UAVTexture,
-        .Width = uint32_t(InWidth / 4.f),
-        .Height = uint32_t(InHeight / 4.f),
+        .Width = max(InWidth / 4u, 1u),
+        .Height = max(InHeight / 4u, 1u),
         .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"SSGI Resolve Quater Texture",
@@ -192,14 +183,23 @@ void FScreenSpaceGIPass::InitSizeDependantResource(uint32_t InWidth, uint32_t In
 
     FTextureCreationDesc BlurXTextureDesc{
         .Usage = ETextureUsage::UAVTexture,
-        .Width = uint32_t(InWidth / 4.f),
-        .Height = uint32_t(InHeight / 4.f),
+        .Width = max(InWidth / 4u, 1u),
+        .Height = max(InHeight / 4u, 1u),
         .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
         .InitialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         .Name = L"SSGI BlurX Texture",
     };
     BlurXTexture = RHICreateTexture(BlurXTextureDesc);
-    
+
+    // Both temporal resources must start from a known state after construction
+    // and every resize; otherwise old accumulation weights leak into the result.
+    FGraphicsContext* GraphicsContext = RHIGetCurrentGraphicsContext();
+    GraphicsContext->Reset();
+    constexpr std::array<float, 4u> ClearColor{ 0.0f, 0.0f, 0.0f, 0.0f };
+    GraphicsContext->ClearRenderTargetView(HistoryTexture.get(), ClearColor);
+    GraphicsContext->ClearUnorderedAccessViewFloat(HistroyNumFrameAccumulated.get(), ClearColor);
+    RHIGetDirectCommandQueue()->ExecuteContext(GraphicsContext);
+    RHIGetDirectCommandQueue()->Flush();
 }
 
 void FScreenSpaceGIPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene, FSceneTexture& SceneTexture)

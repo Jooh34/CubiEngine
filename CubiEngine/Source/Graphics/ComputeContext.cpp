@@ -44,11 +44,6 @@ void FComputeContext::SetComputeRootSignatureAndPipeline(const FPipelineState& P
     D3D12CommandList->SetPipelineState(PipelineState.PipelineStateObject.Get());
 }
 
-void FComputeContext::Set32BitComputeConstants(const void* RenderResources) const
-{
-    D3D12CommandList->SetComputeRoot32BitConstants(0u, NUMBER_32_BIT_CONSTANTS, RenderResources, 0u);
-}
-
 void FComputeContext::Dispatch(const uint32_t ThreadGroupX, const uint32_t ThreadGroupY, const uint32_t ThreadGroupZ) const
 {
     D3D12CommandList->Dispatch(ThreadGroupX, ThreadGroupY, ThreadGroupZ);

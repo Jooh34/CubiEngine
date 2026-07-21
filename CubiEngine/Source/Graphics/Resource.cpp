@@ -166,9 +166,39 @@ FTexture::~FTexture()
 {
 	std::string TextureName = wStringToString(DebugName);
 
-    FTextureManager* TextureManager = RHIGetTextureManager();
+    FTextureManager* TextureManager = GD3D12RHI ? RHIGetTextureManager() : nullptr;
     if (TextureManager)
     {
         TextureManager->RemoveDebugTexture(TextureName, this);
+    }
+
+    if (!GD3D12RHI)
+    {
+        return;
+    }
+
+    FDescriptorHeap* CbvSrvUavHeap = RHIGetCbvSrvUavDescriptorHeap();
+    if (SrvIndex != INVALID_INDEX_U32)
+    {
+        CbvSrvUavHeap->FreeDescriptor(SrvIndex);
+    }
+    if (!MipUavIndex.empty())
+    {
+        for (const uint32_t Index : MipUavIndex)
+        {
+            CbvSrvUavHeap->FreeDescriptor(Index);
+        }
+    }
+    else if (UavIndex != INVALID_INDEX_U32)
+    {
+        CbvSrvUavHeap->FreeDescriptor(UavIndex);
+    }
+    if (DsvIndex != INVALID_INDEX_U32)
+    {
+        RHIGetDsvDescriptorHeap()->FreeDescriptor(DsvIndex);
+    }
+    if (RtvIndex != INVALID_INDEX_U32)
+    {
+        RHIGetRtvDescriptorHeap()->FreeDescriptor(RtvIndex);
     }
 }

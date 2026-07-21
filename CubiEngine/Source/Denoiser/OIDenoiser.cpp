@@ -11,7 +11,7 @@ static void OidnCheck(OIDNDevice Dev, const char* Where)
 		char Buf[1024];
 		std::snprintf(Buf, sizeof(Buf), "OIDN error at %s: %s", Where ? Where : "?", Msg ? Msg : "unknown");
 		OutputDebugStringA(Buf); OutputDebugStringA("\n");
-		assert(false);
+		FatalError(Buf);
 	}
 }
 
@@ -47,7 +47,7 @@ void FOIDenoiser::Initialize(const FCreateDesc& InCreateDesc)
 	return;
 }
 
-FSharedLinearImage FOIDenoiser::CreateLinearImageForTexture(ID3D12Resource* SrcTexture)
+FSharedLinearImage FOIDenoiser::CreateLinearImageForTexture(ID3D12Resource* SrcTexture, D3D12_RESOURCE_STATES InitialState)
 {
 	FSharedLinearImage Img{};
 	const auto TexDesc = SrcTexture->GetDesc();
@@ -61,7 +61,7 @@ FSharedLinearImage FOIDenoiser::CreateLinearImageForTexture(ID3D12Resource* SrcT
 		&HeapProps,
 		D3D12_HEAP_FLAG_SHARED,
 		&BufDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
+		InitialState,
 		nullptr,
 		IID_PPV_ARGS(&Img.Buffer));
 
@@ -90,15 +90,22 @@ void FOIDenoiser::BindImages(FSharedLinearImage& Color, FSharedLinearImage* Albe
 	oidnSetFilterImage(OidnFilter, "color", Color.OidnBuffer, OIDN_FORMAT_HALF3, W, H, 0, PxStride, Color.Footprint.Footprint.RowPitch);
 	if (Albedo)
 		oidnSetFilterImage(OidnFilter, "albedo", Albedo->OidnBuffer, OIDN_FORMAT_HALF3, W, H, 0, PxStride, Albedo->Footprint.Footprint.RowPitch);
+	else if (bImagesBound)
+		oidnUnsetFilterImage(OidnFilter, "albedo");
 	if (Normal)
 		oidnSetFilterImage(OidnFilter, "normal", Normal->OidnBuffer, OIDN_FORMAT_HALF3, W, H, 0, PxStride, Normal->Footprint.Footprint.RowPitch);
+	else if (bImagesBound)
+		oidnUnsetFilterImage(OidnFilter, "normal");
 	oidnSetFilterImage(OidnFilter, "output", Output.OidnBuffer, OIDN_FORMAT_HALF3, W, H, 0, PxStride, Output.Footprint.Footprint.RowPitch);
 	oidnCommitFilter(OidnFilter);
+	OidnCheck(OidnDevice, "CommitFilter");
+	bImagesBound = true;
 }
 
 void FOIDenoiser::Execute()
 {
 	oidnExecuteFilter(OidnFilter);
+	oidnSyncDevice(OidnDevice);
 	OidnCheck(OidnDevice, "Execute");
 }
 
@@ -109,31 +116,30 @@ void FOIDenoiser::RefreshBuffers(
 	ID3D12Resource* TexDenoisedOut
 )
 {
+	if (bImagesBound)
+	{
+		oidnUnsetFilterImage(OidnFilter, "color");
+		oidnUnsetFilterImage(OidnFilter, "albedo");
+		oidnUnsetFilterImage(OidnFilter, "normal");
+		oidnUnsetFilterImage(OidnFilter, "output");
+		bImagesBound = false;
+	}
+
 	Color.ReleaseInterop();
-	if (TexAlbedo) Albedo.ReleaseInterop();
-	if (TexNormal) Normal.ReleaseInterop();
+	Albedo.ReleaseInterop();
+	Normal.ReleaseInterop();
 	Output.ReleaseInterop();
 	
 
-	Color = CreateLinearImageForTexture(TexColor);
-	if (TexAlbedo) Albedo = CreateLinearImageForTexture(TexAlbedo);
-	if (TexNormal) Normal = CreateLinearImageForTexture(TexNormal);
-	Output = CreateLinearImageForTexture(TexDenoisedOut);
+	Color = CreateLinearImageForTexture(TexColor, D3D12_RESOURCE_STATE_COPY_DEST);
+	if (TexAlbedo) Albedo = CreateLinearImageForTexture(TexAlbedo, D3D12_RESOURCE_STATE_COPY_DEST);
+	if (TexNormal) Normal = CreateLinearImageForTexture(TexNormal, D3D12_RESOURCE_STATE_COPY_DEST);
+	Output = CreateLinearImageForTexture(TexDenoisedOut, D3D12_RESOURCE_STATE_COPY_SOURCE);
 
 	ImportToOidn(Color);
 	if (TexAlbedo) ImportToOidn(Albedo);
 	if (TexNormal) ImportToOidn(Normal);
 	ImportToOidn(Output);
-}
-
-void FOIDenoiser::SubmitAndWait(ID3D12CommandQueue* Q, ID3D12Fence* Fence, UINT64& Value, HANDLE FenceEvent)
-{
-	Q->Signal(Fence, ++Value);
-	if (Fence->GetCompletedValue() < Value)
-	{
-		Fence->SetEventOnCompletion(Value, FenceEvent);
-		WaitForSingleObject(FenceEvent, INFINITE);
-	}
 }
 
 static void CopyTextureToLinearBuffer(FGraphicsContext* GraphicsContext, FTexture* SrcTexture, const FSharedLinearImage& DstBuffer)
@@ -146,13 +152,13 @@ static void CopyTextureToLinearBuffer(FGraphicsContext* GraphicsContext, FTextur
 }
 
 void FOIDenoiser::AddPass(
+	FGraphicsContext* GraphicsContext,
 	FTexture* SrcColor,
 	FTexture* SrcAlbedo,
 	FTexture* SrcNormal,
 	FTexture* DenoiseOutput
 )
 {
-	FGraphicsContext* GraphicsContext = RHIGetCurrentGraphicsContext();
 	GraphicsContext->AddResourceBarrier(SrcColor, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	if (SrcAlbedo)
 		GraphicsContext->AddResourceBarrier(SrcAlbedo, D3D12_RESOURCE_STATE_COPY_SOURCE);
@@ -166,19 +172,22 @@ void FOIDenoiser::AddPass(
 	if (SrcNormal)
 		CopyTextureToLinearBuffer(GraphicsContext, SrcNormal, Normal);
 
-	FrameInterop Interop;
-	if (!Interop.Fence)
+	// Submit all rendering and texture-to-buffer copies before OIDN consumes the
+	// shared resources. Signaling an unsubmitted command list does not order it.
+	RHIGetDirectCommandQueue()->ExecuteContext(GraphicsContext);
+	RHIGetDirectCommandQueue()->Flush();
+
+	if (!bImagesBound)
 	{
-		RHIGetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&Interop.Fence));
-		Interop.FenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+		BindImages(Color, SrcAlbedo ? &Albedo : nullptr, SrcNormal ? &Normal : nullptr, Output, SrcColor);
 	}
-
-	SubmitAndWait(RHIGetDirectCommandQueue()->GetD3D12CommandQueue(), Interop.Fence.Get(), Interop.FenceValue, Interop.FenceEvent);
-
-	BindImages(Color, &Albedo, &Normal, Output, SrcColor);
 	Execute();
 
-	GraphicsContext = RHIGetCurrentGraphicsContext();
+	// Continue the frame on a fresh command list after the synchronous external
+	// GPU work. Restore the bindless root signatures expected by later passes.
+	GraphicsContext->Reset();
+	GraphicsContext->SetGraphicsRootSignature();
+	GraphicsContext->SetComputeRootSignature();
 	GraphicsContext->AddResourceBarrier(DenoiseOutput, D3D12_RESOURCE_STATE_COPY_DEST);
 	GraphicsContext->ExecuteResourceBarriers();
 

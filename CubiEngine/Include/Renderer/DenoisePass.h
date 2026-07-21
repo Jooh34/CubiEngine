@@ -12,7 +12,7 @@ class FDenoisePass : public FRenderPass
 public:
     FDenoisePass(uint32_t Width, uint32_t Height);
     void InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight) override;
-    FTexture* AddPass(FGraphicsContext* GraphicsContext, FScene* Scene,
+    FTexture* AddPass(FGraphicsContext* GraphicsContext,
         FTexture* HDR,
         FTexture* Albedo = nullptr,
         FTexture* Normal = nullptr
@@ -25,5 +25,8 @@ private:
 
     std::unique_ptr<FTexture> DenoisedOutput{};
 
-    bool bRefeshResource = false;
+    FTexture* BoundHDR = nullptr;
+    FTexture* BoundAlbedo = nullptr;
+    FTexture* BoundNormal = nullptr;
+    FTexture* BoundOutput = nullptr;
 };

@@ -5,6 +5,8 @@
 #include "Graphics/PipelineState.h"
 #include "Graphics/RaytracingPipelineState.h"
 
+#include <type_traits>
+
 class FQueryHeap;
 
 class FGraphicsContext : public FContext
@@ -15,6 +17,7 @@ public:
     void Reset();
 
     void ClearRenderTargetView(const FTexture* InRenderTarget, std::span<const float, 4> Color);
+    void ClearUnorderedAccessViewFloat(const FTexture* Texture, std::span<const float, 4> Color);
     void ClearDepthStencilView(const FTexture* Texture);
 
     void SetRenderTarget(const FTexture* RenderTarget) const;
@@ -38,11 +41,27 @@ public:
         uint32_t StartInstanceLocation) const;
 
     void SetGraphicsRootSignature() const;
-    void SetGraphicsRoot32BitConstants(const void* RenderResources)  const;
+    template<typename T>
+    void SetGraphicsRoot32BitConstants(const T* RenderResources) const
+    {
+        SetRoot32BitConstants<T>(0u, RenderResources, true);
+    }
+
     void SetComputeRootSignature() const;
     void SetRaytracingComputeRootSignature() const;
-    void SetComputeRoot32BitConstants(const void* RenderResources)  const;
-    void SetComputeRoot32BitConstants(UINT RootParameterIndex, UINT Num32BitValuesToSet, const void* RenderResources) const;
+    template<typename T>
+    void SetComputeRoot32BitConstants(const T* RenderResources) const
+    {
+        SetRoot32BitConstants<T>(0u, RenderResources, false);
+    }
+
+    template<typename T>
+    void SetComputeRoot32BitConstants(UINT RootParameterIndex, const T* RenderResources) const
+    {
+        static_assert(sizeof(T) / sizeof(uint32_t) <= RAYTRACING_NUMBER_32_BIT_CONSTANTS,
+            "Root constants exceed the raytracing root signature limit.");
+        SetRoot32BitConstants<T>(RootParameterIndex, RenderResources, false);
+    }
 
     void CopyResource(ID3D12Resource* const Destination, ID3D12Resource* const Source) const;
 
@@ -59,4 +78,23 @@ public:
 
 private:
     static constexpr uint32_t NUMBER_32_BIT_CONSTANTS = 64;
+    static constexpr uint32_t RAYTRACING_NUMBER_32_BIT_CONSTANTS = 48;
+
+    template<typename T>
+    void SetRoot32BitConstants(UINT RootParameterIndex, const T* RenderResources, bool bGraphics) const
+    {
+        static_assert(std::is_trivially_copyable_v<T>, "Root constants must be trivially copyable.");
+        static_assert(sizeof(T) % sizeof(uint32_t) == 0u, "Root constants must be DWORD aligned.");
+        constexpr UINT Num32BitValues = static_cast<UINT>(sizeof(T) / sizeof(uint32_t));
+        static_assert(Num32BitValues <= NUMBER_32_BIT_CONSTANTS, "Root constants exceed the root signature limit.");
+
+        if (bGraphics)
+        {
+            D3D12CommandList->SetGraphicsRoot32BitConstants(RootParameterIndex, Num32BitValues, RenderResources, 0u);
+        }
+        else
+        {
+            D3D12CommandList->SetComputeRoot32BitConstants(RootParameterIndex, Num32BitValues, RenderResources, 0u);
+        }
+    }
 };

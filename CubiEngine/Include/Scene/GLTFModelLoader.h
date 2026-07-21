@@ -29,8 +29,11 @@ private:
 
     void LoadSamplers(const tinygltf::Model& GLTFModel);
     void LoadMaterials(const tinygltf::Model& GLTFModel);
-    void LoadNode(const FModelCreationDesc& ModelCreationDesc,
-         const uint32_t NodeIndex, const tinygltf::Model& GLTFModel, const FTransform& LocalTransform);
+    void LoadNode(uint32_t NodeIndex, const tinygltf::Model& GLTFModel, const FTransform& ParentTransform);
+    FSampler ResolveSampler(const tinygltf::Texture& Texture) const;
+
+    FSampler DefaultSampler{};
+    std::shared_ptr<FPBRMaterial> DefaultMaterial{};
 
 	XMFLOAT3 OverrideBaseColorValue{ -1.0f, -1.0f, -1.0f };
 	float OverrideRoughnessValue = -1.0f;

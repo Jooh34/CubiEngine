@@ -14,6 +14,12 @@ void FTransform::Set(const XMFLOAT3& InRotation, const XMFLOAT3& InScale, const 
 	InverseTransformMatrix = Dx::XMMatrixInverse(nullptr, modelMatrix);
 }
 
+void FTransform::SetMatrix(const XMMATRIX& InMatrix)
+{
+    TransformMatrix = InMatrix;
+    InverseTransformMatrix = Dx::XMMatrixInverse(nullptr, TransformMatrix);
+}
+
 FTransform FTransform::Multiply(const FTransform& Other) const
 {
     FTransform Transform{};

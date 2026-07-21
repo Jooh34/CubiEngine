@@ -32,6 +32,8 @@ FTemporalAAPass::FTemporalAAPass(uint32_t Width, uint32_t Height)
 
 void FTemporalAAPass::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
+    HistoryFrameCount = 0;
+
     FTextureCreationDesc HistoryTextureDesc{
         .Usage = ETextureUsage::UAVTexture,
         .Width = InWidth,

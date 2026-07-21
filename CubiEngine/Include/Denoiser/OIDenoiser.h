@@ -3,6 +3,8 @@
 #include <OpenImageDenoise/oidn.h>
 #include "Graphics/Resource.h"
 
+class FGraphicsContext;
+
 struct FSharedLinearImage
 {
 	// D3D12-side
@@ -21,13 +23,6 @@ struct FSharedLinearImage
 	}
 };
 
-struct FrameInterop
-{
-	ComPtr<ID3D12Fence> Fence;
-	UINT64 FenceValue = 0;
-	HANDLE FenceEvent = nullptr;
-};
-
 class FOIDenoiser
 {
 public:
@@ -41,7 +36,7 @@ public:
 	};
 
 	void Initialize(const FCreateDesc& InCreateDesc);
-	FSharedLinearImage CreateLinearImageForTexture(ID3D12Resource* SrcTexture);
+	FSharedLinearImage CreateLinearImageForTexture(ID3D12Resource* SrcTexture, D3D12_RESOURCE_STATES InitialState);
 	void ImportToOidn(FSharedLinearImage& Img);
 	void BindImages(FSharedLinearImage& Color, FSharedLinearImage* Albedo, FSharedLinearImage* Normal, FSharedLinearImage& Output, FTexture* SrcColor);
 	void Execute();
@@ -53,9 +48,8 @@ public:
 		ID3D12Resource* TexDenoisedOut
 	);
 
-	void SubmitAndWait(ID3D12CommandQueue* Q, ID3D12Fence* Fence, UINT64& Value, HANDLE FenceEvent);
-
 	void AddPass(
+		FGraphicsContext* GraphicsContext,
 		FTexture* SrcColor,
 		FTexture* SrcAlbedo,
 		FTexture* SrcNormal,
@@ -63,18 +57,17 @@ public:
 
 	virtual ~FOIDenoiser()
 	{
+		if (OidnFilter) { oidnReleaseFilter(OidnFilter); OidnFilter = nullptr; }
+
 		Color.ReleaseInterop();
 		Output.ReleaseInterop();
 		Albedo.ReleaseInterop();
 		Normal.ReleaseInterop();
 
 		if (OidnDevice) { oidnReleaseDevice(OidnDevice); OidnDevice = nullptr; }
-		if (OidnFilter) { oidnReleaseFilter(OidnFilter); OidnFilter = nullptr; }
 	}
 
 	OIDNDevice CreateOIDNDeviceForD3D12(wrl::ComPtr<IDXGIAdapter> Adapter);
-
-	void ExecuteFilter();
 
 	// Public images (created once, reused)
 	FSharedLinearImage Color{};
@@ -90,4 +83,5 @@ private:
 	OIDNFilter OidnFilter = nullptr;
 
 	bool bInitialized = false;
+	bool bImagesBound = false;
 };

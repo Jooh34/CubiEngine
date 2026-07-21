@@ -4,6 +4,7 @@ class FTransform
 {
 public:
     void Set(const XMFLOAT3& InRotation, const XMFLOAT3& InScale, const XMFLOAT3& InTranslate);
+	void SetMatrix(const XMMATRIX& InMatrix);
 	FTransform Multiply(const FTransform& Other) const;
 
 	XMMATRIX GetModelMatrix() const { return TransformMatrix; }

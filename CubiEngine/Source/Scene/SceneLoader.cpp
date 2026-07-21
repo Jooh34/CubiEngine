@@ -37,7 +37,7 @@ void FSceneLoader::LoadScene(ESceneType SceneType, FScene* Scene)
             FModelCreationDesc Suzanne = {
                  .ModelPath = "Models/Suzanne/glTF/Suzanne.gltf",
                  .ModelName = L"Suzanne",
-				 .Rotation = { 0.f, 90.f, 0.f },
+				 .Rotation = { 0.f, DegreeToRadian(90.f), 0.f },
                  .Scale = {1.f, 1.f, 1.f},
 				 .Translate = { -5.f, 1.f, 0.f },
             };

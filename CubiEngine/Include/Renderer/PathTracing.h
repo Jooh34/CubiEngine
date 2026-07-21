@@ -31,4 +31,5 @@ private:
 
     uint32_t CollectedFrame = 0;
     uint32_t SamplePerPixel = 8;
+    bool bResetAccumulation = true;
 };

@@ -4,6 +4,9 @@
 #include "Scene/Scene.h"
 #include "ShaderInterlop/RenderResources.hlsli"
 
+static_assert(sizeof(interlop::PathTraceRenderResources) == 48u * sizeof(uint32_t),
+    "Path tracing root constants must match the 48-DWORD raytracing root signature.");
+
 FPathTracingPass::FPathTracingPass(uint32_t InWidth, uint32_t InHeight)
     : FRenderPass(InWidth, InHeight),
     PathTracingPassPipelineState(FRaytracingPipelineStateCreationDesc{
@@ -19,6 +22,8 @@ FPathTracingPass::FPathTracingPass(uint32_t InWidth, uint32_t InHeight)
 
 void FPathTracingPass::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
 {
+    bResetAccumulation = true;
+
     FTextureCreationDesc PathTracingSceneTextureDesc = {
         .Usage = ETextureUsage::UAVTexture,
         .Width = InWidth,
@@ -67,6 +72,7 @@ void FPathTracingPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene)
     GraphicsContext->AddResourceBarrier(PathTracingSceneTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->AddResourceBarrier(PathTracingAlbedoTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->AddResourceBarrier(PathTracingNormalTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    GraphicsContext->AddResourceBarrier(FrameAccumulatedTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     GraphicsContext->ExecuteResourceBarriers();
 
     D3D12_DISPATCH_RAYS_DESC RayDesc = PathTracingPassSBT.CreateRayDesc(Width, Height);
@@ -97,10 +103,10 @@ void FPathTracingPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene)
         .debugBufferIndex = Scene->GetDebugBuffer().CbvIndex,
         .maxPathDepth = 10,
         .numSamples = (uint32_t)Scene->GetRenderSettings().PathTracingSamplePerPixel,
-		.bRefreshPathTracingTexture = IsViewProjectChanged ? 1u : 0u,
+		.bRefreshPathTracingTexture = (IsViewProjectChanged || bResetAccumulation) ? 1u : 0u,
     };
 
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 4; i++)
     {
 		RenderResources.randomFloats[i] = XMFLOAT4{
 			static_cast<float>(rand()) / RAND_MAX,
@@ -110,10 +116,11 @@ void FPathTracingPass::AddPass(FGraphicsContext* GraphicsContext, FScene* Scene)
 		};
     }
 
-    GraphicsContext->SetComputeRoot32BitConstants(RTParams_CBuffer, 48u, &RenderResources);
+    GraphicsContext->SetComputeRoot32BitConstants(RTParams_CBuffer, &RenderResources);
 
     // Dispatch the rays and write to the raytracing output
     GraphicsContext->DispatchRays(RayDesc);
+    bResetAccumulation = false;
 
     // reset default rootSignature
     GraphicsContext->SetComputeRootSignature();

@@ -85,15 +85,17 @@ void Application::Render(float DeltaTime)
 
 void Application::Cleanup()
 {
-    SDL_DestroyWindow(Window);
-    SDL_Quit();
-
     if (D3DRenderer) {
 		D3DRenderer->Cleanup();
         delete D3DRenderer;
+        D3DRenderer = nullptr;
     }
 
     ReleaseRHI();
+
+    SDL_DestroyWindow(Window);
+    Window = nullptr;
+    SDL_Quit();
 }
 
 void Application::HandleEvents()

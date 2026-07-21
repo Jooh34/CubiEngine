@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+
 struct FDescriptorHandle
 {
     D3D12_CPU_DESCRIPTOR_HANDLE CpuDescriptorHandle{};
@@ -25,7 +27,7 @@ public:
     uint32_t GetDescriptorIndex(const FDescriptorHandle& InDescriptorHandle) const
     {
         uint32_t i = static_cast<uint32_t> (
-            (InDescriptorHandle.GpuDescriptorHandle.ptr - DescriptorHandleFromHeapStart.GpuDescriptorHandle.ptr) /
+            (InDescriptorHandle.CpuDescriptorHandle.ptr - DescriptorHandleFromHeapStart.CpuDescriptorHandle.ptr) /
             DescriptorSize);
 
         assert(i < NumDescriptor);
@@ -33,11 +35,10 @@ public:
         return i;
     }
 
-    uint32_t GetCurrentDescriptorIndex() const { return GetDescriptorIndex(CurrentDescriptorHandle); }
-    FDescriptorHandle GetCurrentDescriptorHandle() const { return CurrentDescriptorHandle; }
+    uint32_t AllocateDescriptor();
+    void FreeDescriptor(uint32_t Index);
 
     void OffsetDescriptor(FDescriptorHandle& InHandle, const uint32_t Offset = 1u) const;
-    void OffsetCurrentHandle(const uint32_t Offset = 1u);
 
     ID3D12DescriptorHeap* const GetD3D12DescriptorHeap() const { return D3D12DescriptorHeap.Get(); }
 
@@ -48,5 +49,8 @@ private:
     uint32_t DescriptorSize{};
 
     FDescriptorHandle DescriptorHandleFromHeapStart;
-    FDescriptorHandle CurrentDescriptorHandle;
+    uint32_t NextDescriptorIndex{};
+    std::vector<uint32_t> FreeDescriptorIndices;
+    std::vector<bool> AllocatedDescriptors;
+    std::mutex AllocationMutex;
 };

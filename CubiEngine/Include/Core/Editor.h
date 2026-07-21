@@ -25,6 +25,8 @@ public:
 
 private:
     SDL_Window* Window;
+    std::string IniFilePath;
+    uint32_t FontDescriptorIndex{ 0xFFFFFFFFu };
 
     bool bShowUI = true;
 };

@@ -298,8 +298,6 @@ FTexture* FRenderer::RenderDebugRaytracingScene(FGraphicsContext* GraphicsContex
 
 FTexture* FRenderer::RenderPathTracingScene(FGraphicsContext* GraphicsContext)
 {
-    FTexture* Output = nullptr;
-
     if (PathTracingPass)
     {
         SCOPED_NAMED_EVENT(GraphicsContext, PathTracing);
@@ -308,26 +306,26 @@ FTexture* FRenderer::RenderPathTracingScene(FGraphicsContext* GraphicsContext)
         PathTracingPass->AddPass(GraphicsContext, Scene.get());
     }
 
+    FTexture* HDR = PathTracingPass->GetPathTracingSceneTexture();
+    if (Scene->GetRenderSettings().bEnablePathTracingDenoiser)
+    {
+        if (Scene->GetRenderSettings().bDenoiserAlbedoNormal)
+        {
+			HDR = DenoisePass->AddPass(GraphicsContext, HDR,
+                PathTracingPass->GetPathTracingAlbedo(), PathTracingPass->GetPathTracingNormal()
+            );
+        }
+        else
+        {
+			HDR = DenoisePass->AddPass(GraphicsContext, HDR);
+        }
+    }
+
+    FTexture* Output = SceneTexture.LDRTexture.get();
     {
         SCOPED_NAMED_EVENT(GraphicsContext, PostProcess);
         SCOPED_GPU_EVENT(PostProcess);
 
-        FTexture* HDR = PathTracingPass->GetPathTracingSceneTexture();
-        if (Scene->GetRenderSettings().bEnablePathTracingDenoiser)
-        {
-            if (Scene->GetRenderSettings().bDenoiserAlbedoNormal)
-            {
-				HDR = DenoisePass->AddPass(GraphicsContext, Scene.get(), HDR,
-                    PathTracingPass->GetPathTracingAlbedo(), PathTracingPass->GetPathTracingNormal()
-                );
-            }
-            else
-            {
-				HDR = DenoisePass->AddPass(GraphicsContext, Scene.get(), HDR);
-            }
-        }
-
-        Output = SceneTexture.LDRTexture.get();
         {
             SCOPED_NAMED_EVENT(GraphicsContext, ToneMapping);
             SCOPED_GPU_EVENT(ToneMapping);
@@ -363,15 +361,29 @@ void FRenderer::RenderShadow(FGraphicsContext* GraphicsContext, FSceneTexture& S
 
 void FRenderer::OnWindowResized(uint32_t InWidth, uint32_t InHeight)
 {
+    if (InWidth == 0u || InHeight == 0u || (Width == InWidth && Height == InHeight))
+    {
+        return;
+    }
+
+    // The editor may hold a raw pointer to a size-dependent debug texture.
+    Scene->GetRenderSettings().SelectedDebugTexture = nullptr;
+    Scene->GetRenderSettings().SelectedTextureIndex = 0;
+
+    // ResizeSwapchainResources flushes the GPU. Do this before releasing any
+    // scene or pass resources that may still be referenced by submitted work.
+    RHIResizeSwapchainResources(InWidth, InHeight);
+
     Width = InWidth;
     Height = InHeight;
     InitSizeDependantResource(InWidth, InHeight);
-    RHIResizeSwapchainResources(InWidth, InHeight);
 
 	for (auto& RenderPass : RenderPasses)
 	{
 		RenderPass->OnWindowResized(InWidth, InHeight);
 	}
+
+    Editor->OnWindowResized(InWidth, InHeight);
 }
 
 void FRenderer::InitSizeDependantResource(uint32_t InWidth, uint32_t InHeight)
@@ -406,7 +418,6 @@ void FRenderer::InitializeSceneTexture(uint32_t InWidth, uint32_t InHeight)
         .Name = L"LDR Texture",
     };
 
-    // TODO : re-use RTV descriptor handle
     FTextureCreationDesc GBufferADesc{
         .Usage = ETextureUsage::RenderTarget,
         .Width = InWidth,

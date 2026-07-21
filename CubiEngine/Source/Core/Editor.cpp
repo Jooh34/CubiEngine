@@ -25,13 +25,13 @@ FEditor::FEditor(SDL_Window* Window, uint32_t Width, uint32_t Height)
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)Width, (float)Height);
 
-    const std::string iniFilePath = FFileSystem::GetFullPath("imgui.ini");
-    const auto relativeIniFilePath = std::filesystem::relative(iniFilePath);
-    std::string ini = relativeIniFilePath.string();
-    io.IniFilename = ini.c_str();
+    const std::string IniAbsolutePath = FFileSystem::GetFullPath("imgui.ini");
+    IniFilePath = std::filesystem::relative(IniAbsolutePath).string();
+    io.IniFilename = IniFilePath.c_str();
 
     FDescriptorHeap* DescriptorHeap = RHIGetCbvSrvUavDescriptorHeap();
-    FDescriptorHandle FontDescriptorHandle = DescriptorHeap->GetCurrentDescriptorHandle();
+    FontDescriptorIndex = DescriptorHeap->AllocateDescriptor();
+    FDescriptorHandle FontDescriptorHandle = DescriptorHeap->GetDescriptorHandleFromIndex(FontDescriptorIndex);
 
     ImGui_ImplSDL2_InitForD3D(Window);
     ImGui_ImplDX12_Init(RHIGetDevice(), FRAMES_IN_FLIGHT,
@@ -41,7 +41,6 @@ FEditor::FEditor(SDL_Window* Window, uint32_t Width, uint32_t Height)
         FontDescriptorHandle.GpuDescriptorHandle
     );
 
-    DescriptorHeap->OffsetCurrentHandle();
 }
 
 FEditor::~FEditor()
@@ -49,6 +48,11 @@ FEditor::~FEditor()
     ImGui_ImplDX12_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
+
+    if (GD3D12RHI && FontDescriptorIndex != INVALID_INDEX_U32)
+    {
+        RHIGetCbvSrvUavDescriptorHeap()->FreeDescriptor(FontDescriptorIndex);
+    }
 }
 
 void FEditor::GameTick(float DeltaTime, FInput* Input)

@@ -403,6 +403,6 @@ namespace interlop
         uint bRefreshPathTracingTexture;
         float padding;
 
-        float4 randomFloats[16];
+        float4 randomFloats[4];
     };
 }

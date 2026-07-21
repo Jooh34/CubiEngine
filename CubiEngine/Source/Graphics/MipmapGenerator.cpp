@@ -40,8 +40,8 @@ void FMipmapGenerator::GenerateMipmap(FTexture* Texture)
     for (uint32_t srcMipLevel = 0; srcMipLevel < ResourceDesc.MipLevels - 1u; srcMipLevel++)
     {
         uint32_t dstMipLevel = srcMipLevel + 1;
-        uint32_t dstWidth = Texture->Width >> dstMipLevel;
-        uint32_t dstHeight = Texture->Height >> dstMipLevel;
+        uint32_t dstWidth = max(Texture->Width >> dstMipLevel, 1u);
+        uint32_t dstHeight = max(Texture->Height >> dstMipLevel, 1u);
         bool IsSRGB = FTexture::IsSRGB(ResourceDesc.Format);
 
         const interlop::GenerateMipmapResource Resource = {

@@ -43,8 +43,6 @@ DXGI_FORMAT RHIGetSwapChainFormat();
 FGraphicsContext* RHIGetCurrentGraphicsContext();
 std::unique_ptr<FComputeContext> RHIGetComputeContext();
 
-FDescriptorHandle RHIGetCurrentCbvSrvUavDescriptorHandle();
-
 IDXGIAdapter* RHIGetAdapter();
 IDXGIAdapter1* RHIGetAdapter1();
 
@@ -160,8 +158,6 @@ public:
     FTextureManager* GetTextureManager() { return TextureManager.get(); }
 
 private:
-    bool bInitialized = false;
-
     void InitDeviceResources();
     void InitSwapchainResources(const uint32_t Width, const uint32_t Height);
     void InitD3D12Core();

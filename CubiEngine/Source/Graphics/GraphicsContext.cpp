@@ -56,6 +56,19 @@ void FGraphicsContext::ClearRenderTargetView(const FTexture* InRenderTarget, std
     D3D12CommandList->ClearRenderTargetView(rtvDescriptorHandle.CpuDescriptorHandle, Color.data(), 0u, nullptr);
 }
 
+void FGraphicsContext::ClearUnorderedAccessViewFloat(const FTexture* Texture, std::span<const float, 4> Color)
+{
+    assert(Texture && Texture->UavIndex != INVALID_INDEX_U32);
+    const FDescriptorHandle UavHandle = RHIGetCbvSrvUavDescriptorHeap()->GetDescriptorHandleFromIndex(Texture->UavIndex);
+    D3D12CommandList->ClearUnorderedAccessViewFloat(
+        UavHandle.GpuDescriptorHandle,
+        UavHandle.CpuDescriptorHandle,
+        Texture->GetResource(),
+        Color.data(),
+        0u,
+        nullptr);
+}
+
 void FGraphicsContext::ClearDepthStencilView(const FTexture* Texture)
 {
     const auto DsvHandle =
@@ -170,11 +183,6 @@ void FGraphicsContext::SetGraphicsRootSignature() const
     D3D12CommandList->SetGraphicsRootSignature(FPipelineState::StaticRootSignature.Get());
 }
 
-void FGraphicsContext::SetGraphicsRoot32BitConstants(const void* RenderResources) const
-{
-    D3D12CommandList->SetGraphicsRoot32BitConstants(0u, NUMBER_32_BIT_CONSTANTS, RenderResources, 0u);
-}
-
 void FGraphicsContext::SetComputeRootSignature() const
 {
     D3D12CommandList->SetComputeRootSignature(FPipelineState::StaticRootSignature.Get());
@@ -183,16 +191,6 @@ void FGraphicsContext::SetComputeRootSignature() const
 void FGraphicsContext::SetRaytracingComputeRootSignature() const
 {
     D3D12CommandList->SetComputeRootSignature(FRaytracingPipelineState::StaticGlobalRootSignature.Get());
-}
-
-void FGraphicsContext::SetComputeRoot32BitConstants(const void* RenderResources) const
-{
-    D3D12CommandList->SetComputeRoot32BitConstants(0u, NUMBER_32_BIT_CONSTANTS, RenderResources, 0u);
-}
-
-void FGraphicsContext::SetComputeRoot32BitConstants(UINT RootParameterIndex, UINT Num32BitValuesToSet, const void* RenderResources) const
-{
-    D3D12CommandList->SetComputeRoot32BitConstants(RootParameterIndex, Num32BitValuesToSet, RenderResources, 0u);
 }
 
 void FGraphicsContext::CopyResource(ID3D12Resource* const Destination, ID3D12Resource* const Source) const

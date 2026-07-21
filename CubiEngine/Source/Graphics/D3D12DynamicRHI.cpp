@@ -24,6 +24,13 @@ FD3D12DynamicRHI::~FD3D12DynamicRHI()
 {
     FlushAllQueue();
 
+    // Texture destruction accesses the texture manager and descriptor heaps.
+    // Release swap-chain textures while those services are still alive.
+    for (auto& BackBuffer : BackBuffers)
+    {
+        BackBuffer.reset();
+    }
+
     // Uncomment this code if live object  warning occurs.
     // ComPtr<ID3D12DebugDevice> debugDevice;
     //if (SUCCEEDED(Device.As(&debugDevice))) {
@@ -63,11 +70,6 @@ void ReleaseRHI()
 ID3D12Device5* RHIGetDevice()
 {
     return GD3D12RHI->GetDevice();
-}
-
-FDescriptorHandle RHIGetCurrentCbvSrvUavDescriptorHandle()
-{
-    return GD3D12RHI->GetCbvSrvUavDescriptorHeap()->GetCurrentDescriptorHandle();
 }
 
 IDXGIAdapter* RHIGetAdapter()
@@ -224,12 +226,10 @@ FSampler FD3D12DynamicRHI::CreateSampler(const FSamplerCreationDesc& Desc) const
 {
     FSampler Sampler{};
 
-    Sampler.SamplerIndex = SamplerDescriptorHeap->GetCurrentDescriptorIndex();
-    FDescriptorHandle Handle = SamplerDescriptorHeap->GetCurrentDescriptorHandle();
+    Sampler.SamplerIndex = SamplerDescriptorHeap->AllocateDescriptor();
+    FDescriptorHandle Handle = SamplerDescriptorHeap->GetDescriptorHandleFromIndex(Sampler.SamplerIndex);
 
     Device->CreateSampler(&Desc.SamplerDesc, Handle.CpuDescriptorHandle);
-
-    SamplerDescriptorHeap->OffsetCurrentHandle();
 
     return Sampler;
 }
@@ -255,6 +255,8 @@ std::unique_ptr<FTexture> FD3D12DynamicRHI::CreateTexture(const FTextureCreation
     void* TextureData{ (void*)Data };
 
     float* HdrTextureData{ nullptr };
+    std::unique_ptr<stbi_uc, decltype(&stbi_image_free)> LoadedTextureData(nullptr, stbi_image_free);
+    std::unique_ptr<float, decltype(&stbi_image_free)> LoadedHdrTextureData(nullptr, stbi_image_free);
 
     DirectX::ScratchImage scratchImage;
 
@@ -264,8 +266,9 @@ std::unique_ptr<FTexture> FD3D12DynamicRHI::CreateTexture(const FTextureCreation
 
         int ComponentCount = 4;
         std::string FullPath = FFileSystem::GetFullPath(wStringToString(TextureCreationDesc.Path));
-        HdrTextureData =
-            stbi_loadf(FullPath.c_str(), &Width, &Height, nullptr, ComponentCount);
+        LoadedHdrTextureData.reset(
+            stbi_loadf(FullPath.c_str(), &Width, &Height, nullptr, ComponentCount));
+        HdrTextureData = LoadedHdrTextureData.get();
 
         if (!HdrTextureData)
         {
@@ -280,7 +283,8 @@ std::unique_ptr<FTexture> FD3D12DynamicRHI::CreateTexture(const FTextureCreation
     {
         int32_t Width, Height, Channels;
         std::string FullPath = FFileSystem::GetFullPath(wStringToString(TextureCreationDesc.Path));
-        TextureData = stbi_load(FullPath.c_str(), &Width, &Height, &Channels, 0);
+        LoadedTextureData.reset(stbi_load(FullPath.c_str(), &Width, &Height, &Channels, 4));
+        TextureData = LoadedTextureData.get();
 
         if (!TextureData)
         {
@@ -658,8 +662,7 @@ void FD3D12DynamicRHI::ResizeSwapchainResources(uint32_t InWidth, uint32_t InHei
 
     for (uint32_t i = 0; i < FRAMES_IN_FLIGHT; i++)
     {
-        BackBuffers[i]->Allocation.Reset();
-        BackBuffers[i] = nullptr; // Release
+        BackBuffers[i].reset();
     }
 
     // Resize the swap chain buffers
@@ -775,56 +778,51 @@ void FD3D12DynamicRHI::InitBindlessRootSignature()
 
 uint32_t FD3D12DynamicRHI::CreateCbv(const FCbvCreationDesc& CbvCreationDesc) const
 {
-    const uint32_t Index = CbvSrvUavDescriptorHeap->GetCurrentDescriptorIndex();
+    const uint32_t Index = CbvSrvUavDescriptorHeap->AllocateDescriptor();
+    const FDescriptorHandle Handle = CbvSrvUavDescriptorHeap->GetDescriptorHandleFromIndex(Index);
 
-    Device->CreateConstantBufferView(&CbvCreationDesc.CbvDesc,
-        CbvSrvUavDescriptorHeap->GetCurrentDescriptorHandle().CpuDescriptorHandle);
+    Device->CreateConstantBufferView(&CbvCreationDesc.CbvDesc, Handle.CpuDescriptorHandle);
 
-    CbvSrvUavDescriptorHeap->OffsetCurrentHandle();
     return Index;
 }
 
 uint32_t FD3D12DynamicRHI::CreateSrv(const FSrvCreationDesc& SrvCreationDesc, ID3D12Resource* const Resource) const
 {
-    const uint32_t Index = CbvSrvUavDescriptorHeap->GetCurrentDescriptorIndex();
+    const uint32_t Index = CbvSrvUavDescriptorHeap->AllocateDescriptor();
+    const FDescriptorHandle Handle = CbvSrvUavDescriptorHeap->GetDescriptorHandleFromIndex(Index);
 
-    Device->CreateShaderResourceView(Resource, &SrvCreationDesc.SrvDesc,
-        CbvSrvUavDescriptorHeap->GetCurrentDescriptorHandle().CpuDescriptorHandle);
+    Device->CreateShaderResourceView(Resource, &SrvCreationDesc.SrvDesc, Handle.CpuDescriptorHandle);
 
-    CbvSrvUavDescriptorHeap->OffsetCurrentHandle();
     return Index;
 }
 
 uint32_t FD3D12DynamicRHI::CreateUav(const FUavCreationDesc& UavCreationDesc, ID3D12Resource* const Resource) const
 {
-    const uint32_t Index = CbvSrvUavDescriptorHeap->GetCurrentDescriptorIndex();
+    const uint32_t Index = CbvSrvUavDescriptorHeap->AllocateDescriptor();
+    const FDescriptorHandle Handle = CbvSrvUavDescriptorHeap->GetDescriptorHandleFromIndex(Index);
 
-    Device->CreateUnorderedAccessView(Resource, nullptr, &UavCreationDesc.UavDesc,
-        CbvSrvUavDescriptorHeap->GetCurrentDescriptorHandle().CpuDescriptorHandle);
+    Device->CreateUnorderedAccessView(Resource, nullptr, &UavCreationDesc.UavDesc, Handle.CpuDescriptorHandle);
 
-    CbvSrvUavDescriptorHeap->OffsetCurrentHandle();
     return Index;
 }
 
 uint32_t FD3D12DynamicRHI::CreateDsv(const FDsvCreationDesc& DsvCreationDesc, ID3D12Resource* const Resource) const
 {
-    const uint32_t Index = DsvDescriptorHeap->GetCurrentDescriptorIndex();
+    const uint32_t Index = DsvDescriptorHeap->AllocateDescriptor();
+    const FDescriptorHandle Handle = DsvDescriptorHeap->GetDescriptorHandleFromIndex(Index);
 
-    Device->CreateDepthStencilView(Resource, &DsvCreationDesc.DsvDesc,
-        DsvDescriptorHeap->GetCurrentDescriptorHandle().CpuDescriptorHandle);
+    Device->CreateDepthStencilView(Resource, &DsvCreationDesc.DsvDesc, Handle.CpuDescriptorHandle);
 
-    DsvDescriptorHeap->OffsetCurrentHandle();
     return Index;
 }
 
 uint32_t FD3D12DynamicRHI::CreateRtv(const FRtvCreationDesc& RtvCreationDesc, ID3D12Resource* const Resource) const
 {
-    const uint32_t Index = RtvDescriptorHeap->GetCurrentDescriptorIndex();
+    const uint32_t Index = RtvDescriptorHeap->AllocateDescriptor();
+    const FDescriptorHandle Handle = RtvDescriptorHeap->GetDescriptorHandleFromIndex(Index);
 
-    Device->CreateRenderTargetView(Resource, &RtvCreationDesc.RtvDesc,
-        RtvDescriptorHeap->GetCurrentDescriptorHandle().CpuDescriptorHandle);
+    Device->CreateRenderTargetView(Resource, &RtvCreationDesc.RtvDesc, Handle.CpuDescriptorHandle);
 
-    RtvDescriptorHeap->OffsetCurrentHandle();
     return Index;
 }
 
@@ -1035,30 +1033,21 @@ CREATE_BUFFER_TEMPLATE_FUNC(interlop::MeshVertex)
 
 void FD3D12DynamicRHI::CreateBackBufferRTVs()
 {
-    FDescriptorHandle RtvHandle = RtvDescriptorHeap->GetDescriptorHandleFromStart();
-    //FDescriptorHandle RtvHandle = RtvDescriptorHeap->GetCurrentDescriptorHandle();
-
     // Create Backbuffer render target views.
     for (const uint32_t i : std::views::iota(0u, FRAMES_IN_FLIGHT))
     {
         wrl::ComPtr<ID3D12Resource> BackBuffer{};
         ThrowIfFailed(SwapChain->GetBuffer(i, IID_PPV_ARGS(&BackBuffer)));
 
+        const uint32_t RtvIndex = RtvDescriptorHeap->AllocateDescriptor();
+        const FDescriptorHandle RtvHandle = RtvDescriptorHeap->GetDescriptorHandleFromIndex(RtvIndex);
         Device->CreateRenderTargetView(BackBuffer.Get(), nullptr, RtvHandle.CpuDescriptorHandle);
 
         BackBuffers[i] = std::make_unique<FTexture>();
         BackBuffers[i]->Allocation.Resource = BackBuffer;
         BackBuffers[i]->Allocation.Resource->SetName(L"SwapChain BackBuffer");
-        BackBuffers[i]->RtvIndex = RtvDescriptorHeap->GetDescriptorIndex(RtvHandle);
+        BackBuffers[i]->RtvIndex = RtvIndex;
         BackBuffers[i]->ResourceState = D3D12_RESOURCE_STATE_PRESENT;
-
-        RtvDescriptorHeap->OffsetDescriptor(RtvHandle);
-    }
-
-    if (!bInitialized)
-    {
-        RtvDescriptorHeap->OffsetCurrentHandle(FRAMES_IN_FLIGHT);
-        bInitialized = true;
     }
 }
 

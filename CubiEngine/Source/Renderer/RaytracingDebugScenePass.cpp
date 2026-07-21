@@ -54,7 +54,7 @@ void FRaytracingDebugScenePass::AddPass(FGraphicsContext* GraphicsContext, FScen
         .envmapTextureIndex = Scene->GetEnvironmentMap()->CubeMapTexture->SrvIndex,
     };
 
-    GraphicsContext->SetComputeRoot32BitConstants(RTParams_CBuffer, 48u, &RenderResources);
+    GraphicsContext->SetComputeRoot32BitConstants(RTParams_CBuffer, &RenderResources);
 
     // Dispatch the rays and write to the raytracing output
     GraphicsContext->DispatchRays(RayDesc);

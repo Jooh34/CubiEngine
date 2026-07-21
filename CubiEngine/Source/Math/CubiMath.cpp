@@ -92,7 +92,12 @@ void GenerateTangentVectorList(std::vector<XMFLOAT3>& OutTangents,
         float deltaU2 = uv2.x - uv0.x;
         float deltaV2 = uv2.y - uv0.y;
 
-        float f = 1.0f / (deltaU1 * deltaV2 - deltaU2 * deltaV1);
+        const float Determinant = deltaU1 * deltaV2 - deltaU2 * deltaV1;
+        if (fabsf(Determinant) <= 1e-8f)
+        {
+            continue;
+        }
+        float f = 1.0f / Determinant;
 
         XMFLOAT3 tangent = {
             f * (deltaV2 * edge1.x - deltaV1 * edge2.x),
