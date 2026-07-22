@@ -99,9 +99,12 @@ void FGraphicsContext::SetRenderTarget(const FTexture* RenderTarget, const FText
 
 void FGraphicsContext::SetRenderTargets(const std::span<const FTexture*> RenderTargets, const FTexture* DepthStencilTexture) const
 {
+    assert(!RenderTargets.empty());
+    assert(RenderTargets.size() <= D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT);
+
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> RtvHandles(RenderTargets.size());
     
-    for (int i=0; i<RenderTargets.size(); i++)
+    for (size_t i = 0; i < RenderTargets.size(); i++)
     {
         RtvHandles[i] = RHIGetRtvDescriptorHeap()
             ->GetDescriptorHandleFromIndex(RenderTargets[i]->RtvIndex).CpuDescriptorHandle;
@@ -110,7 +113,8 @@ void FGraphicsContext::SetRenderTargets(const std::span<const FTexture*> RenderT
     D3D12_CPU_DESCRIPTOR_HANDLE DsvHandle =
         RHIGetDsvDescriptorHeap()->GetDescriptorHandleFromIndex(DepthStencilTexture->DsvIndex).CpuDescriptorHandle;
 
-    D3D12CommandList->OMSetRenderTargets(RtvHandles.size(), RtvHandles.data(), TRUE, &DsvHandle);
+    D3D12CommandList->OMSetRenderTargets(
+        static_cast<UINT>(RtvHandles.size()), RtvHandles.data(), FALSE, &DsvHandle);
 }
 
 void FGraphicsContext::SetRenderTargetDepthOnly(const FTexture* DepthStencilTexture) const
